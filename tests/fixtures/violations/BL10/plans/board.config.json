@@ -1,0 +1,40 @@
+{
+  "engine_min_version": "0.1.0",
+  "id_prefix": "TST",
+  "board_root": "plans/tickets",
+  "columns": [
+    "0-backlog",
+    "1-refining",
+    "2-ready",
+    "3-in-progress",
+    "4-verifying",
+    "5-done"
+  ],
+  "done_column": "5-done",
+  "wip_limit": 3,
+  "use_worktrees": true,
+  "shared_caches": [],
+  "validation_timeout_sec": 60,
+  "log_output_max_bytes": 65536,
+  "required_headings": [
+    "Problem",
+    "Acceptance criteria",
+    "Blast radius",
+    "Implementation notes",
+    "Validation",
+    "Log"
+  ],
+  "validation_command": "git --version",
+  "design_doc_roots": [
+    "plans"
+  ],
+  "extensions": {
+    "validation_class": {
+      "enum": [
+        "headless-verified",
+        "visual-deferred"
+      ],
+      "required_from": "2-ready"
+    }
+  }
+}

@@ -598,17 +598,28 @@ lint gate never invokes `verify`.
 - Run `tools/run_all_tests.ps1 > baseline_log.txt 2>&1`; record clean status.
 
 ### Phase 1 — Engine Implementation (this repo)
-1. Scaffold package (`pyproject.toml`, `src/kahnban/`, `tests/`).
-2. `frontmatter.py` + round-trip tests (CRLF + LF fixtures).
-3. `linter.py` BL01–BL16 + one negative fixture per rule (§8).
-4. `gitops.py` + `core.py` transitions with gates; temp-git-repo tests.
-5. `worktree.py` incl. junction record/cleanup; Windows-guarded tests.
-6. `cli.py` end-to-end: `init → new → ready → claim → verify → done →
-   cleanup` on a scratch repo.
-7. `mcp_server.py` + protocol conformance tests (initialize handshake,
-   notification silence, tool round-trips).
-8. Concurrency test: parallel claim race (§3.3 acceptance test).
-9. Tag `v1.0.0`.
+
+#### ✅ COMPLETE (as of 2026-08-18)
+1. Scaffold package (`pyproject.toml`, `src/kahnban/`, `tests/`, `.gitignore`)
+2. `frontmatter.py` + 7 round-trip tests (CRLF + LF, quoted escapes, empty blocks, mutation, log insertion)
+3. `cli.py` full command surface (`new/ready/claim/verify/done/move/cleanup/lint/sync/status/init`) + 17 tests
+4. `gitops.py` — git subprocess wrappers with error surfacing (204 lines, 9 tests)
+5. `core.py` — config, ID allocation, board lock, `transition()` single writer, all gates (1,526 lines; 28 + 33 tests)
+6. `linter.py` — BL01–BL16 + 18 fixture boards (clean LF, clean CRLF, one negative per rule); 32 tests
+7. `worktree.py` — junction provision/cleanup, cache linking (13 tests, Windows-guarded junction assertions)
+8. `status.py` — STATUS.md (human) and status.json (machine) projections; called from `transition()` (8 tests)
+9. `mcp_server.py` + protocol conformance tests (initialize, notification silence, error codes, tool round-trips, real stdio); 24 tests
+10. Concurrency tests: same-clone parallel claim race and cross-clone push-rejection rollback (§3.3)
+11. `templates/ticket.md` — canonical template for `kahnban new` and adoptions
+12. `adapters/` — AGENTS.md contract, MCP registration examples, adoption README
+
+**Suite:** 176 tests passing (`py -3 -m pytest -q`). Engine version bumped to
+`1.0.0`; the `v1.0.0` tag is the only Phase 1 item left and is deliberately left
+to the repository owner.
+
+**Dependency order:** gitops → core → linter (uses core.find_ticket) → transitions (gates) → status → mcp_server. Worktree is orthogonal; can be done in parallel.
+
+See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for detailed current state and next steps.
 
 ### Phase 2 — `heirs_ancients` Adoption
 - `py -3 -m pip install -e C:\Github\Kahnban`, then `kahnban init --prefix HOA`.
@@ -657,28 +668,28 @@ lint gate never invokes `verify`.
 
 ## 9. Verification & Acceptance Checkpoints
 
-- [ ] `kahnban lint` exits 0 on clean boards and 1 on every BL01–BL16
+- [x] `kahnban lint` exits 0 on clean boards and 1 on every BL01–BL16
       negative fixture, on both CRLF and LF, on Windows and Linux.
-- [ ] Lint output is ASCII-safe on a cp1252 Windows console.
-- [ ] `kahnban claim --worktree` provisions an isolated worktree + branch;
+- [x] Lint output is ASCII-safe on a cp1252 Windows console.
+- [x] `kahnban claim --worktree` provisions an isolated worktree + branch;
       the board commit lands on the default branch, not the ticket branch.
-- [ ] Parallel-claim race: exactly one of two simultaneous claims succeeds.
-- [ ] Claim refuses when the candidate's blast radius overlaps any
+- [x] Parallel-claim race: exactly one of two simultaneous claims succeeds.
+- [x] Claim refuses when the candidate's blast radius overlaps any
       `3-in-progress` ticket; `--force-overlap` succeeds and logs the reason.
-- [ ] Verify refuses when the ticket-branch diff touches paths outside the
+- [x] Verify refuses when the ticket-branch diff touches paths outside the
       declared blast radius, listing the offending paths.
-- [ ] `plans/status.json` regenerates with STATUS.md in every transition
+- [x] `plans/status.json` regenerates with STATUS.md in every transition
       commit and matches folder state exactly.
-- [ ] `kahnban verify` executes the ticket's validation command, blocks on
+- [x] `kahnban verify` executes the ticket's validation command, blocks on
       non-zero exit, and records exit code + truncated output in `## Log`.
-- [ ] `kahnban done` refuses when the ticket branch is not merged; accepts
+- [x] `kahnban done` refuses when the ticket branch is not merged; accepts
       once `git merge-base --is-ancestor` holds.
-- [ ] `kahnban cleanup` removes junctions, worktree, and branch without
+- [x] `kahnban cleanup` removes junctions, worktree, and branch without
       touching junction targets.
 - [ ] `tools/run_all_tests.ps1` in `heirs_ancients` passes with DI-06 green.
-- [ ] STATUS.md regenerates on every transition and is included in the
+- [x] STATUS.md regenerates on every transition and is included in the
       transition commit.
-- [ ] `engine_min_version` mismatch produces a refusal with upgrade
+- [x] `engine_min_version` mismatch produces a refusal with upgrade
       instructions.
 - [ ] No remaining references to stale `plan.md` / `agent-kanban` paths
       across adopter repositories.
