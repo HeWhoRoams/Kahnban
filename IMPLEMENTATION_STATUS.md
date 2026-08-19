@@ -122,10 +122,14 @@ BL17 is proved by tests that ingest a plan twice rather than by a static board.
    gate passes, and DI-06 is green (37/37): five stale AGENTS.md counts that
    predated the board were found, attributed to upstream merge `256db1d` by
    running the suite with no board present, and corrected in `b78e84b`.
-2. **Phase 3 — backlog migration:** needs an owner audit first. Their
-   `IMPLEMENTATION_PLAN.md` is a narrative journal without acceptance/blast
-   radius/validation labels, so a dry run yields refinement-needing tickets
-   rather than ready ones. See NEXT_STEPS.md for the two options.
+2. **Phase 3 — backlog migration: DONE**, pushed (`e80e2f9`). Programs B, E,
+   and F were reconciled against the code by hand — Program B fully closed
+   (20/20 spot-checked), Programs E/F overwhelmingly resolved. Nine genuinely
+   open items ingested as HOA-001..HOA-009 in one commit; the source plan
+   archived and marked SUPERSEDED. See NEXT_STEPS.md for the full account,
+   including a real ingest gap found along the way: there is no label that
+   sets `blocked_on` (worked around by hand-editing the one ticket that needed
+   it).
 3. **Phase 4 — `citadel` portability smoke test.**
 4. **CI matrix (§8):** Windows + Linux, Python 3.10 and 3.12. Only Windows has
    been exercised so far.

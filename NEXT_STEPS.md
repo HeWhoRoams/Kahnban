@@ -62,47 +62,46 @@ Adoption also surfaced an engine bug, now fixed: `--config` / `--project-root`
 only worked *before* the subcommand, while §6.2's own gate command puts
 `--config` after it. Both positions now work, with regression tests.
 
-## 3. Phase 3 — backlog migration (now an ingest job)
+## 3. Phase 3 — backlog migration — DONE 2026-08-19
 
-Audit the open items in `plans/IMPLEMENTATION_PLAN.md` (reconcile Programs B and
-E against the code), then ingest rather than hand-writing tickets:
+Reconciled by hand (the domain work the engine correctly can't do): read
+Program B (all 20 items), Program E (the decision table plus the full §6.2
+CONQUEST/DIPLOMATIC investigation), and Program F end to end, then verified a
+sample of the claimed-implemented items directly against the code (garrison
+persistence, save ordering, the Hall of Fame grid, the schema `$ref` walk, the
+duplicate-key guard, and others — all matched). Result: **Program B is fully
+closed** (every item carries an implementation note the code confirms) and
+**Programs E/F are overwhelmingly resolved** — only nine genuinely open threads
+remained, written up in the documented ingest shape
+(`adapters/PLAN-INGESTION.md`) as `plans/BACKLOG_RECONCILED_2026-08-19.md` and
+ingested onto their board as **HOA-001 through HOA-009**, one commit
+(`825ce06`).
 
-```powershell
-kahnban ingest plans/IMPLEMENTATION_PLAN.md --dry-run                     # auto-detect
-kahnban ingest plans/IMPLEMENTATION_PLAN.md --dry-run --heading-level 3   # work items
-kahnban ingest plans/IMPLEMENTATION_PLAN.md --section "Program B" --heading-level 4 --dry-run
-```
+`plans/IMPLEMENTATION_PLAN.md` is archived to
+`plans/archive/IMPLEMENTATION_PLAN_2026-08-19.md`, marked `SUPERSEDED` at the
+top rather than deleted (it keeps the measured balance runs and owner-decision
+rationale the tickets don't repeat). `AGENTS.md`'s two inbound references and
+the four ticket bodies that cite the old filename were repointed to the
+archived path.
 
-**What a dry run over that document actually shows** (checked 2026-08-19): it is
-a 2,887-line narrative journal, not a task list. Auto-detection picks level 4
-and finds four retrospective notes; `--heading-level 3` finds the real work
-items (A1…A9, Program B/C/D/E entries) but none of them carry acceptance
-criteria, a blast radius, or a validation command, because the document does not
-use those labels. Every ingested ticket would therefore land in `0-backlog`
-needing manual refinement — the gate refusing them is correct, not a parser
-failure.
+**One real engine gap found and worked around, not yet fixed upstream:**
+`kahnban ingest` has no label that sets a ticket's `blocked_on` field —
+`depends_on` is the only frontmatter field ingest populates automatically
+(and only from an unresolvable dependency reference), so a "Blocked on: ..."
+line in a source plan lands as ordinary prose. One ticket (HOA-005, "retire the
+`allocation` model after a release that hasn't shipped yet") genuinely needed
+`blocked_on` set so the ready gate would refuse it before its trigger fires.
+Fixed by hand-editing the ticket's frontmatter directly (legitimate while it's
+still in `0-backlog`/`1-refining` — confirmed `kahnban ready` then refused it
+with the correct reason) rather than by an ingest feature, since a `blocked_on:`
+label would need its own alias handling and possibly a dedicated `IngestOptions`
+field to avoid colliding with `depends_on`-derived blocking. Worth a small
+follow-up ticket in Kahnban itself if plan ingestion keeps encountering
+gate-style blocks like this one.
 
-Two honest options, both requiring an owner decision this engine cannot make:
-
-1. **Scope and refine.** `--section "Program B — Verified bugs"` to ingest just
-   the open bug list, then refine each ticket by hand. Cheapest path to a live
-   board.
-2. **Restate then ingest.** Extract the still-open items into a new plan
-   document written in the shape documented in
-   [adapters/PLAN-INGESTION.md](adapters/PLAN-INGESTION.md) — which is also the
-   prompt shape to hand the planning agent — then
-   `kahnban ingest <that file> --ready` and most tickets arrive ready to claim.
-
-Either way, reconciling which Program B and E items are still open against the
-code is domain work, so it was deliberately left undone rather than guessed at.
-
-Afterwards move `plans/IMPLEMENTATION_PLAN.md` to
-`plans/archive/IMPLEMENTATION_PLAN_2026-08-18.md` marked `SUPERSEDED` and fix
-inbound references in `AGENTS.md`, `README.md`, and the design docs. Note that
-archiving the source document makes BL17 emit a warning for every ticket that
-came from it (`source_doc` no longer exists) — either keep the source path
-stable, or accept the warnings as the record that those tickets are no longer
-reconcilable against a live plan.
+Verified: `kahnban lint` is 0 violations on the 9 tickets, and
+`tools/run_all_tests.ps1 -Suite data_integrity_test` is still 37/37 through the
+board gate after the archive move. Pushed to `heirs_ancients` main (`e80e2f9`).
 
 ## 4. Phase 4 — `citadel` portability smoke test
 
