@@ -118,11 +118,12 @@ BL17 is proved by tests that ingest a plan twice rather than by a static board.
 
 1. **Merge `entry-points` and tag `v1.1.0`** — the branch is committed but not
    merged and not pushed; `main` is also 2 commits ahead of `origin/main`.
-2. **Phase 2 — `heirs_ancients` adoption: DONE** (branch `kahnban-adoption`,
-   unmerged). Board config, column tree, AGENTS.md protocol, MCP registration,
-   and the `kahnban lint` gate in `tools/run_all_tests.ps1`; DI-06 verified
-   green through the gate (37/37, runner exit 0). Merge to `main` there to make
-   the board live — transitions refuse off the default branch by design.
+2. **Phase 2 — `heirs_ancients` adoption: DONE**, merged to their `main` and
+   pushed (`43d52b2`). Board config, column tree, AGENTS.md protocol, MCP
+   registration, and the `kahnban lint` gate in `tools/run_all_tests.ps1`. The
+   gate passes; DI-06 currently fails there on five stale AGENTS.md counts that
+   predate the board (verified by running the suite on plain `origin/main`), and
+   a background task was filed to correct them.
 3. **Phase 3 — backlog migration:** needs an owner audit first. Their
    `IMPLEMENTATION_PLAN.md` is a narrative journal without acceptance/blast
    radius/validation labels, so a dry run yields refinement-needing tickets

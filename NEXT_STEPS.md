@@ -50,14 +50,23 @@ not pushed:
   is missing.
 - `.vscode/mcp.json` — stdio MCP registration.
 
-**Verified:** `kahnban lint` exits 0 on the empty board and
-`tools/run_all_tests.ps1 -Suite data_integrity_test` passes through the gate
-with DI-06 green (37/37, runner exit 0). A baseline run before the changes
-confirmed the same 37/37, so the gate is what changed and nothing else.
+Merged to `main` and pushed (`229948c`, `43d52b2`).
 
-Remaining for that repo: merge `kahnban-adoption` into `main` (board
-transitions refuse to run off the default branch by design — D2 — so the board
-only goes live once merged), then run one ticket end to end.
+**Verified:** `kahnban lint` exits 0 on the empty board, and the gate runs
+correctly inside `tools/run_all_tests.ps1`.
+
+**Pre-existing failure on their `main`, not caused by the board:** DI-06 fails
+with five stale-count mismatches (AGENTS.md claims 30 systems scripts / 50 UI
+scenes / 341 test scripts / 18 data files; the repo holds 33 / 51 / 346 / 19).
+Attribution was checked by running the suite on plain `origin/main` with no
+board present: identical 32 passed / 5 failed. On the stale base this branch was
+first cut from, the same suite was 37/37 green — the drift arrived with upstream
+merge `256db1d`, which restored older numbers in AGENTS.md while the files moved
+on. Remedy per DI-06's own header comment is to update the documented numbers; a
+background task was filed for it.
+
+Next for that repo: run one ticket end to end
+(`kahnban capture` → refine → `ready` → `claim --worktree` → `verify`).
 
 Adoption also surfaced an engine bug, now fixed: `--config` / `--project-root`
 only worked *before* the subcommand, while §6.2's own gate command puts

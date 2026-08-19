@@ -730,7 +730,9 @@ See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for detailed current st
       once `git merge-base --is-ancestor` holds.
 - [x] `kahnban cleanup` removes junctions, worktree, and branch without
       touching junction targets.
-- [x] `tools/run_all_tests.ps1` in `heirs_ancients` passes with DI-06 green.
+- [~] `tools/run_all_tests.ps1` in `heirs_ancients` runs the board gate green;
+      DI-06 itself is red upstream on five stale AGENTS.md counts that predate
+      the adoption (same failures reproduce with no board present).
 - [x] STATUS.md regenerates on every transition and is included in the
       transition commit.
 - [x] `engine_min_version` mismatch produces a refusal with upgrade
