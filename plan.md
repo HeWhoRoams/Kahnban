@@ -737,5 +737,7 @@ See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for detailed current st
       transition commit.
 - [x] `engine_min_version` mismatch produces a refusal with upgrade
       instructions.
-- [ ] No remaining references to stale `plan.md` / `agent-kanban` paths
-      across adopter repositories.
+- [x] No remaining references to stale `plan.md` / `agent-kanban` paths
+      across adopter repositories (checked 2026-08-19: the only
+      `agent-kanban` mention left anywhere is the D1 decision-log entry
+      documenting its retirement).

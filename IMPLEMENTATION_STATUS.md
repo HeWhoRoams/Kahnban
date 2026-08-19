@@ -2,9 +2,9 @@
 
 **Date:** 2026-08-19
 **Current Phase:** Phase 1 (Engine) complete, plus the entry-point layer (§2.6)
-**Status:** All 241 tests passing; engine version `1.1.0`
-**Git:** `v1.0.0` tags the engine commit (`394a0a8`); the entry-point layer sits
-on branch `entry-points`, awaiting review and a `v1.1.0` tag after merge
+**Status:** All 248 tests passing; engine version `1.1.1`
+**Git:** `main` merged, tagged, and pushed through `v1.1.1` (`ae113d4`); nothing
+outstanding on branches
 
 ---
 
@@ -116,20 +116,18 @@ BL17 is proved by tests that ingest a plan twice rather than by a static board.
 
 ## What's Left
 
-1. **Merge `entry-points` and tag `v1.1.0`** — the branch is committed but not
-   merged and not pushed; `main` is also 2 commits ahead of `origin/main`.
-2. **Phase 2 — `heirs_ancients` adoption: DONE**, merged to their `main` and
+1. **Phase 2 — `heirs_ancients` adoption: DONE**, merged to their `main` and
    pushed (`43d52b2`). Board config, column tree, AGENTS.md protocol, MCP
    registration, and the `kahnban lint` gate in `tools/run_all_tests.ps1`. The
    gate passes, and DI-06 is green (37/37): five stale AGENTS.md counts that
    predated the board were found, attributed to upstream merge `256db1d` by
    running the suite with no board present, and corrected in `b78e84b`.
-3. **Phase 3 — backlog migration:** needs an owner audit first. Their
+2. **Phase 3 — backlog migration:** needs an owner audit first. Their
    `IMPLEMENTATION_PLAN.md` is a narrative journal without acceptance/blast
    radius/validation labels, so a dry run yields refinement-needing tickets
    rather than ready ones. See NEXT_STEPS.md for the two options.
-4. **Phase 4 — `citadel` portability smoke test.**
-5. **CI matrix (§8):** Windows + Linux, Python 3.10 and 3.12. Only Windows has
+3. **Phase 4 — `citadel` portability smoke test.**
+4. **CI matrix (§8):** Windows + Linux, Python 3.10 and 3.12. Only Windows has
    been exercised so far.
 
 ### Deliberate deviations and known rough edges

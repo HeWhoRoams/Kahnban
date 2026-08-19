@@ -1,7 +1,7 @@
 # NEXT STEPS FOR THE NEXT AGENT
 
 **Current date:** 2026-08-19
-**Status:** Phase 1 engine + entry points complete — 241 tests passing, version `1.1.0`
+**Status:** Phase 1 engine + entry points complete — 248 tests passing, version `1.1.1`
 
 Phase 1 of [plan.md](plan.md) §7 is code complete. Every module listed in the
 Layer 1 tree exists with tests, all BL01–BL16 rules have negative fixtures, and
@@ -11,23 +11,12 @@ plan documents and feature specs, plus the matching MCP tools and BL17.
 
 ---
 
-## 1. Merge, tag, and push (repository owner)
+## 1. Merge, tag, and push — DONE
 
-State of the repository:
-
-- `394a0a8` on `main` holds the v1.0.0 engine and is tagged **`v1.0.0`**.
-- Branch **`entry-points`** holds the entry-point layer (ingest/capture, BL17,
-  provenance) with the version bumped to `1.1.0`.
-- `main` is **2 commits ahead of `origin/main`**; nothing has been pushed.
-
-```powershell
-git checkout main
-git merge --ff-only entry-points
-git tag v1.1.0
-git push origin main --follow-tags
-```
-
-Review before pushing — no push has been performed.
+`main` is merged, tagged, and pushed through `v1.1.1` (`ae113d4`), in sync with
+`origin/main`. Tags on the remote: `v1.0.0` (engine, `394a0a8`), `v1.1.0`
+(entry-point layer), `v1.1.1` (the `--config` position fix below). Nothing
+outstanding here.
 
 ---
 
