@@ -1,0 +1,8 @@
+# Source and docs are stored LF in the repository and checked out per platform.
+* text=auto
+
+# Lint fixtures encode line endings as part of what they test: `clean-board/`
+# must stay LF and `clean-board-crlf/` must stay CRLF on every platform. Without
+# this, autocrlf normalizes both to the checkout platform's endings and the
+# CRLF half of the plan §9 acceptance criterion silently tests nothing.
+tests/fixtures/** -text

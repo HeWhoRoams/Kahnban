@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import gitops
+from kahnban import core, frontmatter, gitops
 
 
 DEFAULT_CONFIG = {
@@ -131,6 +131,32 @@ Something needs doing.
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(text, encoding="utf-8")
     return destination
+
+
+def refine_ticket(
+    config,
+    ticket_id: str,
+    *,
+    blast_radius: tuple[str, ...] = ("src/widget.py",),
+    acceptance: tuple[str, ...] = ("behaves as described",),
+    validation: str = "git --version",
+    commit: bool = True,
+) -> Path:
+    """Fill in what the refinement gate requires, as a human or agent would."""
+    ticket = core.find_ticket(config, ticket_id)
+    fields, body = frontmatter.parse(core.read_text(ticket.path))
+    body = core.replace_section(
+        body, "Blast radius", "\n".join(f"- `{item}`" for item in blast_radius)
+    )
+    body = core.replace_section(
+        body, "Acceptance criteria", "\n".join(f"- [ ] {item}" for item in acceptance)
+    )
+    body = core.replace_section(body, "Validation", f"```\n{validation}\n```")
+    core.write_text(ticket.path, frontmatter.serialize(fields, body))
+    if commit:
+        git(config.project_root, "add", "-A")
+        git(config.project_root, "commit", "-m", f"refine {ticket_id}")
+    return ticket.path
 
 
 def scaffold_board(repo: Path, config_overrides: dict | None = None) -> Path:

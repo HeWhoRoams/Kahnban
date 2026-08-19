@@ -1,4 +1,4 @@
-"""Board lint rules BL01-BL16 (plan §4.4).
+"""Board lint rules BL01-BL17 (plan §4.4; BL17 covers ingest provenance).
 
 Output is deliberately ASCII-only (``[OK]`` / ``[WARN]`` / ``[FAIL]``) so it
 survives a cp1252 Windows console.  ``template.md`` is exempt from every rule and
@@ -32,6 +32,7 @@ RULES: dict[str, str] = {
     "BL14": "in-progress: branch recorded in frontmatter",
     "BL15": "done: ticket branch merged into the default branch",
     "BL16": "no two in-progress tickets have overlapping blast radii",
+    "BL17": "ingest provenance is unique and its source document exists",
 }
 
 VIOLATION = "violation"
@@ -158,6 +159,7 @@ def lint(config: core.Config, *, strict: bool = False) -> LintResult:
     _check_column_contents(config, result)
     _check_wip(config, result, strict=strict)
     _check_blast_radius_overlap(config, result, parsed)
+    _check_provenance(config, result, tickets, parsed)
     return result
 
 
@@ -398,6 +400,58 @@ def _check_blast_radius_overlap(
                     f"blast radius '{mine}' overlaps {right_id} entry '{theirs}'",
                     ticket=left_id,
                 )
+
+
+def _check_provenance(
+    config: core.Config,
+    result: LintResult,
+    tickets: Sequence[core.Ticket],
+    parsed: Mapping[Path, tuple[Mapping[str, object], str]],
+) -> None:
+    """BL17 — two tickets must never claim the same plan section.
+
+    A duplicated ``(source_doc, source_anchor)`` pair means a plan was ingested
+    twice; the pair is what makes re-ingest idempotent.
+    """
+    claims: dict[tuple[str, str], list[str]] = {}
+    for ticket in tickets:
+        if ticket.path not in parsed:
+            continue
+        fields, _ = parsed[ticket.path]
+        document = str(fields.get("source_doc") or "").strip()
+        anchor = str(fields.get("source_anchor") or "").strip()
+        location = _relative(config, ticket.path)
+        if not document and not anchor:
+            continue
+        if bool(document) != bool(anchor):
+            result.add(
+                "BL17",
+                "source_doc and source_anchor must be set together "
+                f"(source_doc={document!r}, source_anchor={anchor!r})",
+                severity=WARNING,
+                ticket=ticket.ticket_id,
+                path=location,
+            )
+            continue
+        normalized = document.replace("\\", "/").strip().lstrip("./").lower()
+        claims.setdefault((normalized, anchor), []).append(ticket.ticket_id)
+        if not (config.project_root / document).exists():
+            result.add(
+                "BL17",
+                f"source_doc '{document}' no longer exists; re-ingest cannot "
+                "reconcile this ticket",
+                severity=WARNING,
+                ticket=ticket.ticket_id,
+                path=location,
+            )
+    for (document, anchor), owners in sorted(claims.items()):
+        if len(owners) > 1:
+            result.add(
+                "BL17",
+                f"{len(owners)} tickets claim {document}#{anchor}: "
+                + ", ".join(sorted(owners)),
+                ticket=sorted(owners)[0],
+            )
 
 
 def render_text(result: LintResult) -> str:

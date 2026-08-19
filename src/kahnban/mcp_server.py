@@ -21,7 +21,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, TextIO
 
-from kahnban import __version__, core, frontmatter, gitops, linter, worktree
+from kahnban import __version__, core, frontmatter, gitops, ingest, linter, worktree
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "kahnban"
@@ -70,15 +70,103 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
     },
     {
         "name": "kanban_ticket_new",
-        "description": "Create a ticket in the backlog column.",
+        "description": (
+            "Create a ticket in the backlog column. Body sections may be filled "
+            "in directly; acceptance criteria are always written unchecked."
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "title": _string("One-line outcome statement."),
-                "problem": _string("Optional problem statement for the body."),
+                "problem": _string("Problem statement for the body."),
                 "owner": _string("Optional owner; defaults to unassigned."),
+                "acceptance": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Testable conditions, one per checkbox.",
+                },
+                "blast_radius": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Files or directory prefixes this ticket owns.",
+                },
+                "notes": _string("Implementation notes."),
+                "validation": _string("Command that exits non-zero on failure."),
+                "depends_on": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Ticket ids that must be done first.",
+                },
+                "design_docs": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Paths to design documents that must exist.",
+                },
             },
             "required": ["title"],
+        },
+    },
+    {
+        "name": "kanban_plan_ingest",
+        "description": (
+            "Turn a markdown plan document into backlog tickets, one per work "
+            "section. Idempotent: re-ingesting skips sections already on the "
+            "board and reports sections whose source text changed. Everything "
+            "lands in the backlog with unchecked criteria; pass ready=true to "
+            "run each ticket through the real refinement gate."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": _string("Plan document path, relative to the project root."),
+                "dry_run": {
+                    "type": "boolean",
+                    "description": "Report what would be created without writing.",
+                },
+                "heading_level": {
+                    "type": "integer",
+                    "description": "Heading level marking a work item (auto-detected).",
+                },
+                "section": _string("Only ingest the subtree under this heading."),
+                "per_file": {
+                    "type": "boolean",
+                    "description": "Treat the whole document as one ticket.",
+                },
+                "chain": {
+                    "type": "boolean",
+                    "description": "Make each ticket depend on the previous one.",
+                },
+                "update": {
+                    "type": "boolean",
+                    "description": "Refresh un-started tickets whose source changed.",
+                },
+                "ready": {
+                    "type": "boolean",
+                    "description": "Attempt the refinement gate after ingesting.",
+                },
+                "owner": _string("Owner for the created tickets."),
+            },
+            "required": ["path"],
+        },
+    },
+    {
+        "name": "kanban_capture",
+        "description": (
+            "Capture rough ideas as backlog tickets in a single commit - the "
+            "ideation entry point."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ideas": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "One title per idea.",
+                },
+                "owner": _string("Owner for the created tickets."),
+                "dry_run": {"type": "boolean"},
+            },
+            "required": ["ideas"],
         },
     },
     {
@@ -375,15 +463,69 @@ def tool_ticket_get(project_root: Path, arguments: Mapping[str, Any]) -> dict[st
     }
 
 
+def _string_list(arguments: Mapping[str, Any], key: str) -> list[str]:
+    value = arguments.get(key) or []
+    if isinstance(value, str):
+        value = [value]
+    if not isinstance(value, Sequence):
+        raise _ToolInputError(f"'{key}' must be an array of strings")
+    return [str(item) for item in value if str(item).strip()]
+
+
 def tool_ticket_new(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
     config = _config(project_root)
-    result = core.create_ticket(
-        config,
-        _require(arguments, "title"),
-        problem=arguments.get("problem"),
+    draft = core.TicketDraft(
+        title=_require(arguments, "title"),
+        problem=str(arguments.get("problem") or ""),
         owner=str(arguments.get("owner") or "unassigned"),
+        acceptance=_string_list(arguments, "acceptance"),
+        blast_radius=_string_list(arguments, "blast_radius"),
+        notes=str(arguments.get("notes") or ""),
+        validation=str(arguments.get("validation") or ""),
+        depends_on=_string_list(arguments, "depends_on"),
+        design_docs=_string_list(arguments, "design_docs"),
     )
-    return _transition_payload(result)
+    return _transition_payload(core.create_ticket(config, draft=draft))
+
+
+def tool_plan_ingest(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    config = _config(project_root)
+    raw_path = Path(_require(arguments, "path"))
+    document = raw_path if raw_path.is_absolute() else config.project_root / raw_path
+    heading_level = arguments.get("heading_level")
+    options = ingest.options_for(
+        config,
+        heading_level=int(heading_level) if heading_level else None,
+        section=str(arguments["section"]) if arguments.get("section") else None,
+        per_file=bool(arguments.get("per_file")),
+        chain=bool(arguments.get("chain")),
+        owner=str(arguments.get("owner") or "unassigned"),
+        update=bool(arguments.get("update")),
+        promote=bool(arguments.get("ready")),
+    )
+    report = ingest.ingest_document(
+        config, document, options=options, dry_run=bool(arguments.get("dry_run"))
+    )
+    payload = report.as_dict()
+    payload["ok"] = report.dry_run or not report.drifted
+    payload["summary"] = ingest.render_report([report])
+    return payload
+
+
+def tool_capture(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    config = _config(project_root)
+    ideas = _string_list(arguments, "ideas")
+    if not ideas:
+        raise _ToolInputError("'ideas' must contain at least one title")
+    report = ingest.capture(
+        config,
+        ideas,
+        owner=str(arguments.get("owner") or "unassigned"),
+        dry_run=bool(arguments.get("dry_run")),
+    )
+    payload = report.as_dict()
+    payload["ok"] = True
+    return payload
 
 
 def tool_ticket_ready(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
@@ -479,6 +621,8 @@ TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
     "kanban_board_status": tool_board_status,
     "kanban_ticket_get": tool_ticket_get,
     "kanban_ticket_new": tool_ticket_new,
+    "kanban_plan_ingest": tool_plan_ingest,
+    "kanban_capture": tool_capture,
     "kanban_ticket_ready": tool_ticket_ready,
     "kanban_ticket_claim": tool_ticket_claim,
     "kanban_ticket_verify": tool_ticket_verify,

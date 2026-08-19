@@ -88,7 +88,8 @@ Kahnban/
 │   ├── core.py               ← state machine, transitions, ID allocation
 │   ├── gitops.py             ← all subprocess git calls, error surfacing
 │   ├── worktree.py           ← worktree provision/cleanup, cache junctions
-│   ├── linter.py             ← rules BL01–BL16
+│   ├── linter.py             ← rules BL01–BL17
+│   ├── ingest.py             ← plan/idea -> ticket drafts (entry points)
 │   ├── status.py             ← STATUS.md projection
 │   ├── mcp_server.py         ← stdio JSON-RPC 2.0 MCP server
 │   └── templates/ticket.md   ← canonical ticket template
@@ -228,6 +229,45 @@ Frontmatter subset supported by the parser (documented, tested):
 scalar values, inline lists (`[a, b]`), block lists (`- item`), quoted
 strings. Nested mappings are a lint error (BL01). Colons inside values are
 preserved (`split(":", 1)` semantics).
+
+### 2.6 Entry Points — Ideation, Plan, or Feature (v1.1)
+
+Kahnban is a conduit from whatever produced the work to an executable pipeline.
+Every entry point produces `core.TicketDraft` objects and lands them in the
+backlog column through one commit:
+
+| Entry point | Command | MCP tool |
+| :--- | :--- | :--- |
+| Ideation (rough titles) | `kahnban capture "<idea>" …` | `kanban_capture` |
+| A markdown plan document | `kahnban ingest <plan.md>` | `kanban_plan_ingest` |
+| One feature spec per file | `kahnban ingest --per-file <glob>` | `kanban_plan_ingest` (`per_file`) |
+| A single ticket | `kahnban new <title>` | `kanban_ticket_new` (body fields accepted) |
+
+Two invariants make plan ingestion safe to run repeatedly:
+
+- **No fabricated readiness.** Drafted tickets always enter the backlog column
+  with acceptance boxes **unchecked**, whatever the source claimed, and a
+  draft-managed section left empty stays empty — a ticket never inherits the
+  template's example checkbox or example path. `--ready` attempts promotion by
+  running each ticket through the real §2.2 refinement gate; tickets that fail
+  stay behind with their refusal reported. The gate decides, not the flag.
+- **Idempotent re-ingest.** Each ticket records `source_doc`, `source_anchor`
+  (slugged heading path, excluding the document title so retitling is harmless),
+  and `source_hash` (digest of the section text). Re-ingesting skips unchanged
+  sections, creates only new ones, and reports changed ones as **drift** with a
+  non-zero exit instead of duplicating them. `--update` re-renders a drifted
+  ticket only while it is still in `0-backlog` or `1-refining`, preserving its
+  `## Log`; a claimed or done ticket is never rewritten. BL17 fails the board if
+  two tickets ever claim the same section.
+
+Parsing is heuristic over ordinary markdown and reports what it could not
+interpret rather than guessing: fenced blocks never contribute headings, prose in
+a files list produces no blast radius (and leaves a note), unmapped subsections
+are preserved under `## Implementation notes`, dependency references resolve by
+title/anchor/ID with unresolvable ones written to `blocked_on`. Field vocabulary
+is configurable per adopter via `board.config.json → ingest.section_aliases`,
+which extends the built-in aliases. See `adapters/PLAN-INGESTION.md` for the
+recognized labels and the prompt snippet that makes an AI plan ingest losslessly.
 
 ---
 
@@ -390,6 +430,7 @@ test suite in §8.)
 | BL14 | `3-in-progress`: `branch` set in frontmatter |
 | BL15 | `5-done`: ticket branch merged to default branch (`is_ancestor`), or a `merge-commit: <sha>` Log entry whose sha exists on the default branch. Skipped with a warning when the branch was already cleaned up and the Log holds the recorded sha |
 | BL16 | No two `3-in-progress` tickets have overlapping `## Blast radius` entries (§3.5) — catches forced or manually-moved states |
+| BL17 | Ingest provenance: no two tickets claim the same `source_doc#source_anchor` (a double ingest); a missing `source_doc` or a half-set pair is a warning (§2.6) |
 
 Output requirements:
 - ASCII-safe status markers (`[WARN]`, `[FAIL]`, `[OK]`) — v3's emoji output
@@ -613,7 +654,10 @@ lint gate never invokes `verify`.
 11. `templates/ticket.md` — canonical template for `kahnban new` and adoptions
 12. `adapters/` — AGENTS.md contract, MCP registration examples, adoption README
 
-**Suite:** 176 tests passing (`py -3 -m pytest -q`). Engine version bumped to
+13. `ingest.py` + `capture`/`ingest` commands and MCP tools — ideation, plan,
+    and feature-spec entry points (§2.6); BL17 provenance rule (48 + 17 tests)
+
+**Suite:** 241 tests passing (`py -3 -m pytest -q`). Engine version bumped to
 `1.0.0`; the `v1.0.0` tag is the only Phase 1 item left and is deliberately left
 to the repository owner.
 

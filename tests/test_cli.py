@@ -9,7 +9,7 @@ import pytest
 
 from kahnban import __version__, core, gitops
 from kahnban.cli import main
-from conftest import git, write_ticket
+from conftest import git, refine_ticket, write_ticket
 
 
 def run(argv: list[str], board: Path | None = None) -> int:
@@ -84,13 +84,7 @@ def test_new_ready_and_sync_round_trip(board: Path, capsys: pytest.CaptureFixtur
     assert "TST-001" in out
 
     config = core.load_config(board)
-    ticket = core.find_ticket(config, "TST-001")
-    text = core.read_text(ticket.path).replace(
-        "- `path/to/file/this/ticket/owns.ext`", "- `src/panel.py`"
-    )
-    core.write_text(ticket.path, text)
-    git(board, "add", "-A")
-    git(board, "commit", "-m", "refine the ticket")
+    refine_ticket(config, "TST-001", blast_radius=("src/panel.py",))
 
     assert run(["move", "TST-001", "1-refining", "--reason", "refining now"], board) == 0
     assert run(["ready", "TST-001"], board) == 0

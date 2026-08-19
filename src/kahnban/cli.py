@@ -9,11 +9,13 @@ Windows command-line limits and quoting.
 from __future__ import annotations
 
 import argparse
+import glob
+import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from kahnban import __version__, core, gitops, linter, worktree
+from kahnban import __version__, core, gitops, ingest, linter, worktree
 
 EXIT_OK = 0
 EXIT_REFUSED = 1
@@ -141,6 +143,66 @@ def cmd_cleanup(args: argparse.Namespace) -> int:
             reason=args.reason or "",
         )
     )
+    return EXIT_OK
+
+
+def _ingest_options(
+    config: core.Config, args: argparse.Namespace
+) -> ingest.IngestOptions:
+    return ingest.options_for(
+        config,
+        heading_level=args.heading_level,
+        section=args.section,
+        per_file=args.per_file,
+        chain=args.chain,
+        owner=args.owner,
+        update=args.update,
+        promote=args.ready,
+    )
+
+
+def cmd_ingest(args: argparse.Namespace) -> int:
+    config = _load(args)
+    paths: list[Path] = []
+    for pattern in args.plan:
+        candidate = Path(pattern)
+        if candidate.is_file():
+            paths.append(candidate)
+            continue
+        # glob.glob (not Path.glob) so absolute patterns work too.
+        matches = sorted(
+            found
+            for found in (Path(item) for item in glob.glob(pattern, recursive=True))
+            if found.is_file()
+        )
+        if not matches:
+            raise ingest.IngestError(f"no plan document matched: {pattern}")
+        paths.extend(matches)
+    reports = ingest.ingest(
+        config, paths, options=_ingest_options(config, args), dry_run=args.dry_run
+    )
+    if args.json:
+        print(json.dumps([report.as_dict() for report in reports], indent=2))
+    else:
+        print(ingest.render_report(reports), end="")
+    drifted = any(report.drifted for report in reports)
+    return EXIT_REFUSED if drifted and not args.dry_run else EXIT_OK
+
+
+def cmd_capture(args: argparse.Namespace) -> int:
+    config = _load(args)
+    ideas = list(args.idea)
+    text = _read_text_argument(None, args.from_file)
+    if text:
+        ideas.extend(
+            line.strip().lstrip("-*").strip()
+            for line in text.splitlines()
+            if line.strip()
+        )
+    if not ideas:
+        raise core.GateError("no ideas given; pass titles or --from-file FILE")
+    report = ingest.capture(config, ideas, owner=args.owner, dry_run=args.dry_run)
+    print(ingest.render_report([report]), end="")
     return EXIT_OK
 
 
@@ -273,6 +335,58 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cleanup.add_argument("--reason", help="required with --abandon")
     cleanup.set_defaults(handler=cmd_cleanup)
+
+    ingest_command = subparsers.add_parser(
+        "ingest",
+        help="turn a markdown plan into backlog tickets (idempotent)",
+        description=(
+            "Split a plan document into one ticket per work section. Tickets "
+            "always land in the backlog with acceptance boxes unchecked; use "
+            "--ready to run each one through the real refinement gate."
+        ),
+    )
+    ingest_command.add_argument("plan", nargs="+", help="plan file(s) or glob(s)")
+    ingest_command.add_argument(
+        "--dry-run", action="store_true", help="show what would be created"
+    )
+    ingest_command.add_argument(
+        "--heading-level", type=int, help="heading level that marks a work item"
+    )
+    ingest_command.add_argument(
+        "--section", help="only ingest the subtree under this heading"
+    )
+    ingest_command.add_argument(
+        "--per-file", action="store_true", help="one ticket per document"
+    )
+    ingest_command.add_argument(
+        "--chain",
+        action="store_true",
+        help="make each ticket depend on the previous one (sequential plans)",
+    )
+    ingest_command.add_argument(
+        "--update",
+        action="store_true",
+        help="refresh un-started tickets whose source section changed",
+    )
+    ingest_command.add_argument(
+        "--ready",
+        action="store_true",
+        help="attempt the refinement gate; tickets that fail stay in the backlog",
+    )
+    ingest_command.add_argument("--owner", default="unassigned")
+    ingest_command.add_argument("--json", action="store_true")
+    ingest_command.set_defaults(handler=cmd_ingest)
+
+    capture = subparsers.add_parser(
+        "capture", help="capture rough ideas as backlog tickets (one commit)"
+    )
+    capture.add_argument("idea", nargs="*", help="one title per idea")
+    capture.add_argument(
+        "--from-file", help="file with one idea per line ('-' for stdin)"
+    )
+    capture.add_argument("--owner", default="unassigned")
+    capture.add_argument("--dry-run", action="store_true")
+    capture.set_defaults(handler=cmd_capture)
 
     lint = subparsers.add_parser("lint", help="run board rules BL01-BL16")
     lint.add_argument("--json", action="store_true", help="machine-readable output")

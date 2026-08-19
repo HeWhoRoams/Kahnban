@@ -40,14 +40,31 @@ Tune `plans/board.config.json` afterwards:
 | `required_headings` | Headings BL05 enforces |
 | `design_doc_roots` | Where BL11 resolves `design_docs` entries |
 | `extensions` | Repo-specific frontmatter fields (`enum`, `required_from`, `when`) |
+| `ingest` | Plan-parsing defaults: `heading_level`, `section_aliases` |
 
-## 3. Wire the agent contract and MCP clients
+## 3. Get the work onto the board
+
+Whatever produced the work — a conversation, an AI-generated plan, a folder of
+feature specs — see [PLAN-INGESTION.md](PLAN-INGESTION.md) for the matching entry
+point. The short version:
+
+```powershell
+kahnban capture "Try a warm cache"            # ideation
+kahnban ingest plans/PLAN.md --dry-run        # preview a plan
+kahnban ingest plans/PLAN.md --ready          # write it, then attempt the gate
+kahnban ingest --per-file specs/*.md          # one ticket per spec document
+```
+
+Ingestion is idempotent: re-run it after the plan is regenerated and only new
+sections are added, with changed sections reported rather than duplicated.
+
+## 4. Wire the agent contract and MCP clients
 
 - Copy [AGENTS.md](AGENTS.md) into the repo's `AGENTS.md` / `CLAUDE.md` /
   `.cursorrules`.
 - Register the MCP server using [MCP.md](MCP.md).
 
-## 4. Gate the test runner on board lint
+## 5. Gate the test runner on board lint
 
 Insert at the top of `tools/run_all_tests.ps1` (or the CI workflow):
 

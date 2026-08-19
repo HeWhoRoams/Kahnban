@@ -63,7 +63,9 @@ On non-Windows hosts replace `py -3` with `python3`.
 | :--- | :--- | :--- |
 | `kanban_board_status` | Column counts + lint summary | read-only |
 | `kanban_ticket_get` | Column, frontmatter, blast radius, body | read-only |
-| `kanban_ticket_new` | Create a ticket in the backlog | |
+| `kanban_ticket_new` | Create a ticket in the backlog | body sections accepted |
+| `kanban_plan_ingest` | Turn a markdown plan into tickets | idempotent; `dry_run`, `ready` |
+| `kanban_capture` | Capture rough ideas as tickets | one commit |
 | `kanban_ticket_ready` | Refining -> ready, gated | |
 | `kanban_ticket_claim` | Ready -> in-progress, provisions the worktree | `create_worktree` defaults to true |
 | `kanban_ticket_verify` | **Runs the validation command server-side** | returns exit code + captured output |

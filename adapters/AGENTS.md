@@ -33,11 +33,19 @@ follows.
    `kahnban done <TICKET-ID>`, moves a ticket to `5-done`. Run
    `kahnban cleanup <TICKET-ID>` afterwards to remove the worktree and branch.
 
+8. **Getting Work Onto the Board:** never hand-write ticket files. Use the
+   entry point that matches what you have — `kahnban capture` for rough ideas,
+   `kahnban ingest` for a plan document, `kahnban new` for a single ticket. See
+   [PLAN-INGESTION.md](PLAN-INGESTION.md). Ingested tickets always start in the
+   backlog with unchecked criteria; that is deliberate, not an oversight.
+
 ## Command quick reference
 
 ```powershell
-kahnban lint                                  # board rules BL01-BL16
-kahnban status                                # counts + lint summary
+kahnban lint                                   # board rules BL01-BL17
+kahnban status                                 # counts + lint summary
+kahnban capture "<idea>" ["<idea>" ...]        # ideation -> backlog, one commit
+kahnban ingest <plan.md> [--dry-run] [--ready] # plan -> backlog, idempotent
 kahnban new "<title>" --problem-file spec.txt  # long text by file, never argv
 kahnban ready <ID>
 kahnban claim <ID> --owner <name> --worktree

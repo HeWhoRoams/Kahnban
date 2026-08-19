@@ -89,6 +89,7 @@ class Config:
     validation_command: str = ""
     design_doc_roots: tuple[str, ...] = ("plans",)
     extensions: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
+    ingest: Mapping[str, object] = field(default_factory=dict)
 
     @property
     def board_path(self) -> Path:
@@ -241,6 +242,7 @@ def load_config(
         validation_command=str(raw.get("validation_command", "")),
         design_doc_roots=tuple(raw.get("design_doc_roots") or ("plans",)),
         extensions=dict(raw.get("extensions") or {}),
+        ingest=dict(raw.get("ingest") or {}),
     )
     if check_version:
         require_engine_version(config)
@@ -259,6 +261,34 @@ class Ticket:
     @property
     def text(self) -> str:
         return read_text(self.path)
+
+
+@dataclass
+class TicketDraft:
+    """A ticket before it has an ID — the unit every entry point produces.
+
+    ``kahnban new`` builds one from a title, ``kahnban capture`` one per idea,
+    and ``kahnban ingest`` one per section of a plan document.  Provenance
+    fields let a re-ingest recognize what it already created.
+    """
+
+    title: str
+    problem: str = ""
+    acceptance: list[str] = field(default_factory=list)
+    blast_radius: list[str] = field(default_factory=list)
+    notes: str = ""
+    validation: str = ""
+    depends_on: list[str] = field(default_factory=list)
+    design_docs: list[str] = field(default_factory=list)
+    blocked_on: str = ""
+    owner: str = "unassigned"
+    source_doc: str = ""
+    source_anchor: str = ""
+    source_hash: str = ""
+    extra_frontmatter: dict[str, object] = field(default_factory=dict)
+    log_note: str = ""
+    # Populated by the ingest parser for reporting; never written to the ticket.
+    unresolved_dependencies: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -730,65 +760,262 @@ def transition(
 # --- gates ------------------------------------------------------------------
 
 
-def create_ticket(
-    config: Config,
-    title: str,
-    *,
-    problem: str | None = None,
-    owner: str = "unassigned",
-    timestamp: datetime | None = None,
-) -> TransitionResult:
-    """``kahnban new`` — allocate an ID and commit a ticket into the backlog."""
-    if not title.strip():
-        raise GateError("a ticket title is required")
-    _require_board_branch(config)
-    now = timestamp or datetime.now()
-    ticket_id = next_id(config)
-    column = config.backlog_column
-    destination = config.board_path / column / f"{ticket_id}-{slugify(title)}.md"
-    if destination.exists():
-        raise KahnbanError(f"ticket file already exists: {destination}")
-
+def template_text(config: Config) -> str:
+    """The board's ticket template, falling back to the engine's copy."""
     template_path = config.board_path / TEMPLATE_NAME
     if not template_path.is_file():
         template_path = Path(__file__).parent / "templates" / "ticket.md"
-    fields, body = frontmatter.parse(read_text(template_path))
-    fields.update(
-        {
-            "id": ticket_id,
-            "title": title.strip(),
-            "status": config.status_for(column),
-            "owner": owner,
-            "created": now.date().isoformat(),
-            "updated": now.date().isoformat(),
-        }
+    return read_text(template_path)
+
+
+def normalize_acceptance(lines: Iterable[str]) -> list[str]:
+    """Render acceptance lines as unchecked checkboxes.
+
+    Imported criteria are never carried over as checked: a box is only ticked
+    after ``kahnban verify`` runs the validation command (Principle 5).
+    """
+    rendered: list[str] = []
+    for raw in lines:
+        text = raw.strip()
+        if not text:
+            continue
+        match = CHECKBOX_PATTERN.match(text)
+        if match:
+            text = text[match.end() :].strip()
+        elif text.startswith(("-", "*")):
+            text = text[1:].strip()
+        if text:
+            rendered.append(f"- [ ] {text}")
+    return rendered
+
+
+def render_ticket(
+    config: Config,
+    draft: TicketDraft,
+    ticket_id: str,
+    *,
+    column: str,
+    timestamp: datetime,
+    base_text: str | None = None,
+) -> str:
+    """Build a complete ticket file from a draft and the board template."""
+    fields, body = frontmatter.parse(base_text or template_text(config))
+    updates: dict[str, object] = {
+        "id": ticket_id,
+        "title": draft.title.strip(),
+        "status": config.status_for(column),
+        "owner": draft.owner or "unassigned",
+        "created": timestamp.date().isoformat(),
+        "updated": timestamp.date().isoformat(),
+        "depends_on": list(draft.depends_on),
+        "design_docs": list(draft.design_docs),
+        "blocked_on": draft.blocked_on,
+    }
+    if draft.source_doc or draft.source_anchor or draft.source_hash:
+        updates["source_doc"] = draft.source_doc
+        updates["source_anchor"] = draft.source_anchor
+        updates["source_hash"] = draft.source_hash
+    updates.update(draft.extra_frontmatter)
+    for key, value in updates.items():
+        fields[key] = value
+
+    # Every draft-managed section is replaced, blank included: a ticket must
+    # never inherit the template's example checkbox or example path, or an empty
+    # draft would satisfy the refinement gate on boilerplate alone.
+    body = replace_section(body, "Problem", draft.problem.strip())
+    body = replace_section(
+        body, "Acceptance criteria", "\n".join(normalize_acceptance(draft.acceptance))
     )
-    if problem:
-        body = _replace_section(body, "Problem", problem.strip())
-    body = _replace_section(body, "Log", "")
-    text = frontmatter.append_log(
-        frontmatter.serialize(fields, body),
-        log_line(f"created -> {column}", timestamp=now),
+    body = replace_section(
+        body,
+        "Blast radius",
+        "\n".join(f"- `{normalize_path_entry(item)}`" for item in draft.blast_radius),
     )
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    write_text(destination, text)
+    body = replace_section(body, "Implementation notes", draft.notes.strip())
+    command = draft.validation.strip() or config.validation_command.strip()
+    body = replace_section(
+        body, "Validation", f"```\n{command}\n```" if command else ""
+    )
+    body = replace_section(body, "Log", "")
+    return frontmatter.serialize(fields, body)
+
+
+def allocate_ids(config: Config, count: int) -> list[str]:
+    """Sequential IDs for a batch, allocated once from the global scan.
+
+    Callers that need the IDs before writing (dependency wiring during a plan
+    ingest) allocate here and pass them back to :func:`create_tickets`.
+    """
+    if count <= 0:
+        return []
+    first = next_id(config)
+    prefix, _, number = first.rpartition("-")
+    width = len(number)
+    start = int(number)
+    return [f"{prefix}-{start + offset:0{width}d}" for offset in range(count)]
+
+
+def create_tickets(
+    config: Config,
+    drafts: Sequence[TicketDraft],
+    *,
+    identifiers: Sequence[str] | None = None,
+    timestamp: datetime | None = None,
+    commit_message: str | None = None,
+    log_note: str = "",
+) -> list[TransitionResult]:
+    """Write a batch of tickets into the backlog as **one** board commit.
+
+    IDs are allocated together so a 40-ticket plan ingest does not produce 40
+    commits, and a failed batch leaves nothing half-written.
+    """
+    if not drafts:
+        return []
+    for draft in drafts:
+        if not draft.title.strip():
+            raise GateError("every ticket draft needs a title")
+    _require_board_branch(config)
+    now = timestamp or datetime.now()
+    column = config.backlog_column
+    if identifiers is None:
+        identifiers = allocate_ids(config, len(drafts))
+    elif len(identifiers) != len(drafts):
+        raise KahnbanError(
+            f"got {len(identifiers)} identifiers for {len(drafts)} drafts"
+        )
+
+    written: list[Path] = []
+    results: list[TransitionResult] = []
+    for ticket_id, draft in zip(identifiers, drafts):
+        destination = (
+            config.board_path / column / f"{ticket_id}-{slugify(draft.title)}.md"
+        )
+        if destination.exists():
+            raise KahnbanError(f"ticket file already exists: {destination}")
+        text = render_ticket(
+            config, draft, ticket_id, column=column, timestamp=now
+        )
+        entry = f"created -> {column}"
+        note = draft.log_note or log_note
+        if note:
+            entry = f"{entry} | {note}"
+        text = frontmatter.append_log(text, log_line(entry, timestamp=now))
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        write_text(destination, text)
+        written.append(destination)
+        results.append(
+            TransitionResult(
+                ticket_id=ticket_id,
+                from_column="(new)",
+                to_column=column,
+                path=destination,
+            )
+        )
 
     projections = sync(config, timestamp=now)
     gitops.add(
         config.project_root,
-        [_relative(config, path) for path in (destination, *projections)],
+        [_relative(config, path) for path in (*written, *projections)],
     )
-    sha = gitops.commit(config.project_root, f"kanban({ticket_id}): create -> {column}")
+    if commit_message is None:
+        if len(results) == 1:
+            commit_message = f"kanban({results[0].ticket_id}): create -> {column}"
+        else:
+            commit_message = (
+                f"kanban: create {len(results)} tickets -> {column} "
+                f"({results[0].ticket_id}..{results[-1].ticket_id})"
+            )
+    sha = gitops.commit(config.project_root, commit_message)
+    for result in results:
+        result.commit = sha
+    return results
+
+
+def create_ticket(
+    config: Config,
+    title: str | None = None,
+    *,
+    problem: str | None = None,
+    owner: str = "unassigned",
+    draft: TicketDraft | None = None,
+    timestamp: datetime | None = None,
+) -> TransitionResult:
+    """``kahnban new`` — allocate an ID and commit one ticket into the backlog."""
+    if draft is None:
+        if not (title or "").strip():
+            raise GateError("a ticket title is required")
+        draft = TicketDraft(
+            title=str(title), problem=problem or "", owner=owner
+        )
+    return create_tickets(config, [draft], timestamp=timestamp)[0]
+
+
+def update_ticket_body(
+    config: Config,
+    ticket_id: str,
+    draft: TicketDraft,
+    *,
+    note: str,
+    timestamp: datetime | None = None,
+) -> TransitionResult:
+    """Re-render an un-started ticket from a draft, preserving its ID and Log.
+
+    Used when a source plan changed: the ticket keeps its identity and audit
+    trail, and the refreshed content is committed with a logged reason.
+    """
+    ticket = find_ticket(config, ticket_id)
+    if ticket.column not in (config.backlog_column, config.refining_column):
+        raise GateError(
+            f"{ticket.ticket_id} is in {ticket.column}; re-ingest only rewrites "
+            f"tickets still in {config.backlog_column} or {config.refining_column}"
+        )
+    _require_board_branch(config)
+    now = timestamp or datetime.now()
+    previous_fields, previous_body = frontmatter.parse(ticket.text)
+    text = render_ticket(
+        config,
+        draft,
+        ticket.ticket_id,
+        column=ticket.column,
+        timestamp=now,
+        base_text=template_text(config),
+    )
+    fields, body = frontmatter.parse(text)
+    fields["created"] = previous_fields.get("created", now.date().isoformat())
+    text = frontmatter.serialize(fields, body)
+    for entry in core_log_entries(previous_body):
+        text = frontmatter.append_log(text, entry)
+    text = frontmatter.append_log(text, log_line(note, timestamp=now))
+    write_text(ticket.path, text)
+
+    projections = sync(config, timestamp=now)
+    gitops.add(
+        config.project_root,
+        [_relative(config, path) for path in (ticket.path, *projections)],
+    )
+    sha = gitops.commit(
+        config.project_root, f"kanban({ticket.ticket_id}): refresh from source"
+    )
     return TransitionResult(
-        ticket_id=ticket_id,
-        from_column="(new)",
-        to_column=column,
-        path=destination,
+        ticket_id=ticket.ticket_id,
+        from_column=ticket.column,
+        to_column=ticket.column,
+        path=ticket.path,
         commit=sha,
     )
 
 
-def _replace_section(body: str, heading: str, content: str) -> str:
+def core_log_entries(body: str) -> list[str]:
+    """Existing ``## Log`` lines, so a rewrite never drops the audit trail."""
+    return [
+        line.rstrip()
+        for line in section(body, "Log").split("\n")
+        if line.strip()
+    ]
+
+
+def replace_section(body: str, heading: str, content: str) -> str:
+    """Replace one ``## <heading>`` section body, leaving the rest untouched."""
     lines = frontmatter.normalize_newlines(body).split("\n")
     wanted = heading.strip().lower()
     for index, line in enumerate(lines):
@@ -1483,6 +1710,7 @@ def init_board(
         "validation_command": validation_command,
         "design_doc_roots": ["plans"],
         "extensions": {},
+        "ingest": {"heading_level": None, "section_aliases": {}},
     }
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(

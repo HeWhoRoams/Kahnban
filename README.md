@@ -1,6 +1,6 @@
 # Kahnban — Portable Agentic Kanban Workflow Engine
 
-**Status:** Phase 1 complete — engine `1.0.0`, 176 tests passing
+**Status:** Engine `1.1.0` — v1.0.0 pipeline plus the entry-point layer, 241 tests passing
 
 Kahnban is a zero-dependency, model-agnostic Kanban system for AI vibe-coding
 workflows. It provides machine-enforced gates, strict transparency into in-flight
@@ -11,7 +11,7 @@ maintains a single source of truth backed by Git storage.
 
 ```powershell
 py -3 -m pip install -e .        # install the engine (editable)
-py -3 -m pytest -q               # 176 tests (drives real git repos, ~3 min)
+py -3 -m pytest -q               # 241 tests (drives real git repos, ~5 min)
 kahnban --version
 ```
 
@@ -20,7 +20,21 @@ Adopt it in a repository:
 ```powershell
 cd C:\github\<adopter>
 kahnban init --prefix HOA
+```
+
+Get work onto the board from whatever you have:
+
+```powershell
+kahnban capture "Try a warm cache"              # ideation
+kahnban ingest plans/PLAN.md --dry-run          # preview an AI-generated plan
+kahnban ingest plans/PLAN.md --ready            # ingest it, then attempt the gate
+kahnban ingest --per-file specs/*.md            # one ticket per feature spec
 kahnban new "Add the targeting panel" --problem-file spec.txt
+```
+
+Then run a ticket through the pipeline:
+
+```powershell
 kahnban ready HOA-001
 kahnban claim HOA-001 --owner agent-a --worktree
 # ... work inside .worktrees\HOA-001 on branch ticket/HOA-001 ...
@@ -41,9 +55,14 @@ it into the test runner as a gate.
 - **[adapters/README.md](adapters/README.md)** — adopting Kahnban in a repository
 - **[adapters/AGENTS.md](adapters/AGENTS.md)** — the agent working agreement to copy
 - **[adapters/MCP.md](adapters/MCP.md)** — MCP client registration per IDE
+- **[adapters/PLAN-INGESTION.md](adapters/PLAN-INGESTION.md)** — entry points:
+  ideation, an AI-generated plan, or a feature spec
 
 ## Key Principles
 
+0. **One Conduit, Many Entry Points** — ideation, an AI-generated plan
+   document, a feature spec, or a single ticket all converge on the same drafts
+   and the same gates; ingestion is idempotent and never fabricates readiness
 1. **Folders Are Status** — columns are physical directories (`0-backlog` …
    `5-done`); board state commits to the default branch immediately
 2. **Universal Client** — agents use MCP or the CLI; both call the same
@@ -61,27 +80,28 @@ it into the test runner as a gate.
 
 | Component | Status | Tests | Lines |
 | :--- | :---: | ---: | ---: |
-| frontmatter | done | 7 | 195 |
+| frontmatter | done | 10 | 195 |
 | gitops | done | 9 | 204 |
-| core | done | 61 | 1,526 |
-| linter | done | 32 | 422 |
+| core | done | 61 | 1,754 |
+| ingest | done | 48 | 988 |
+| linter | done | 32 | 476 |
 | status | done | 8 | 149 |
 | worktree | done | 13 | 193 |
-| mcp_server | done | 24 | 520 |
-| cli | done | 17 | 323 |
+| mcp_server | done | 24 | 664 |
+| cli | done | 34 | 437 |
 | lifecycle (e2e) | done | 2 | — |
 
-**Total:** 176 tests passing; ~3,530 lines of engine code, zero runtime
+**Total:** 241 tests passing; ~5,070 lines of engine code, zero runtime
 dependencies.
 
-## Board Rules (BL01–BL16)
+## Board Rules (BL01–BL17)
 
 `kahnban lint` checks frontmatter validity, ID/filename agreement, ID
 uniqueness across columns and archive, status/folder agreement, required
 headings, acceptance-criteria discipline, ownership, dependency satisfaction,
 extension-field rules, design-doc existence, the WIP limit, column tidiness,
-branch recording, merge verification for done tickets, and blast-radius
-disjointness across in-progress tickets. Every rule has a negative fixture board
+branch recording, merge verification for done tickets, blast-radius
+disjointness across in-progress tickets, and ingest-provenance uniqueness. Every rule has a negative fixture board
 under `tests/fixtures/violations/`.
 
 ## Adopter Repos

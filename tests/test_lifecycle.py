@@ -13,7 +13,7 @@ import pytest
 
 from kahnban import core, frontmatter, gitops, linter
 from kahnban.cli import main
-from conftest import git, init_repo
+from conftest import git, init_repo, refine_ticket
 
 VALIDATION = f'{sys.executable} -c "print(\'validation ok\')"'
 
@@ -23,19 +23,9 @@ def cli(repo: Path, *argv: str) -> int:
 
 
 def refine(config: core.Config, ticket_id: str) -> None:
-    """Fill in what the refinement gate requires, as a human or agent would."""
-    ticket = core.find_ticket(config, ticket_id)
-    text = core.read_text(ticket.path)
-    text = text.replace(
-        "- `path/to/file/this/ticket/owns.ext`", "- `src/widget.py`"
+    refine_ticket(
+        config, ticket_id, blast_radius=("src/widget.py",), validation=VALIDATION
     )
-    text = text.replace(
-        "```\ncommand that exits non-zero on failure\n```",
-        f"```\n{VALIDATION}\n```",
-    )
-    core.write_text(ticket.path, text)
-    git(config.project_root, "add", "-A")
-    git(config.project_root, "commit", "-m", f"refine {ticket_id}")
 
 
 def test_full_ticket_lifecycle(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -139,13 +129,7 @@ def test_two_agents_work_disjoint_domains_concurrently(tmp_path: Path) -> None:
     for title, owned in (("Own the ui", "src/ui/"), ("Own the engine", "src/engine/")):
         assert cli(repo, "new", title) == 0
     for ticket_id, owned in (("E2E-001", "src/ui/"), ("E2E-002", "src/engine/")):
-        ticket = core.find_ticket(config, ticket_id)
-        text = core.read_text(ticket.path).replace(
-            "- `path/to/file/this/ticket/owns.ext`", f"- `{owned}`"
-        )
-        core.write_text(ticket.path, text)
-        git(repo, "add", "-A")
-        git(repo, "commit", "-m", f"refine {ticket_id}")
+        refine_ticket(config, ticket_id, blast_radius=(owned,), validation=VALIDATION)
         assert cli(repo, "move", ticket_id, "1-refining", "--reason", "refining") == 0
         assert cli(repo, "ready", ticket_id) == 0
         assert cli(repo, "claim", ticket_id, "--owner", f"agent-{ticket_id}") == 0
@@ -156,15 +140,9 @@ def test_two_agents_work_disjoint_domains_concurrently(tmp_path: Path) -> None:
 
     # A third ticket that reaches into a claimed domain is refused.
     assert cli(repo, "new", "Touch the ui too") == 0
-    third = core.find_ticket(config, "E2E-003")
-    core.write_text(
-        third.path,
-        core.read_text(third.path).replace(
-            "- `path/to/file/this/ticket/owns.ext`", "- `src/ui/panel.py`"
-        ),
+    refine_ticket(
+        config, "E2E-003", blast_radius=("src/ui/panel.py",), validation=VALIDATION
     )
-    git(repo, "add", "-A")
-    git(repo, "commit", "-m", "refine E2E-003")
     assert cli(repo, "move", "E2E-003", "1-refining", "--reason", "refining") == 0
     assert cli(repo, "ready", "E2E-003") == 0
 
