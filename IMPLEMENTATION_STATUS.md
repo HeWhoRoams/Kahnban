@@ -121,9 +121,9 @@ BL17 is proved by tests that ingest a plan twice rather than by a static board.
 2. **Phase 2 — `heirs_ancients` adoption: DONE**, merged to their `main` and
    pushed (`43d52b2`). Board config, column tree, AGENTS.md protocol, MCP
    registration, and the `kahnban lint` gate in `tools/run_all_tests.ps1`. The
-   gate passes; DI-06 currently fails there on five stale AGENTS.md counts that
-   predate the board (verified by running the suite on plain `origin/main`), and
-   a background task was filed to correct them.
+   gate passes, and DI-06 is green (37/37): five stale AGENTS.md counts that
+   predated the board were found, attributed to upstream merge `256db1d` by
+   running the suite with no board present, and corrected in `b78e84b`.
 3. **Phase 3 — backlog migration:** needs an owner audit first. Their
    `IMPLEMENTATION_PLAN.md` is a narrative journal without acceptance/blast
    radius/validation labels, so a dry run yields refinement-needing tickets

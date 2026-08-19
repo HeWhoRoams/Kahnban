@@ -55,15 +55,16 @@ Merged to `main` and pushed (`229948c`, `43d52b2`).
 **Verified:** `kahnban lint` exits 0 on the empty board, and the gate runs
 correctly inside `tools/run_all_tests.ps1`.
 
-**Pre-existing failure on their `main`, not caused by the board:** DI-06 fails
-with five stale-count mismatches (AGENTS.md claims 30 systems scripts / 50 UI
-scenes / 341 test scripts / 18 data files; the repo holds 33 / 51 / 346 / 19).
-Attribution was checked by running the suite on plain `origin/main` with no
-board present: identical 32 passed / 5 failed. On the stale base this branch was
-first cut from, the same suite was 37/37 green — the drift arrived with upstream
-merge `256db1d`, which restored older numbers in AGENTS.md while the files moved
-on. Remedy per DI-06's own header comment is to update the documented numbers; a
-background task was filed for it.
+**Pre-existing DI-06 failure — found, attributed, and fixed.** DI-06 was failing
+on their `main` with five stale-count mismatches (AGENTS.md claimed 30 systems
+scripts / 50 UI scenes / 341 test scripts / 18 data files; the repo holds
+33 / 51 / 346 / 19). Attribution was checked by running the suite on plain
+`origin/main` with no board present: identical 32 passed / 5 failed, so the board
+was not the cause — the drift arrived with upstream merge `256db1d`, which
+restored older numbers while the files moved on. Corrected in `b78e84b` (counted
+independently with DI-06's own `_count_files_in` semantics; the `game/ui`
+breakdown went 11 → 12 modals so 33 + 12 + 6 still totals 51). The suite is now
+37 passed / 0 failed, `RESULT: PASS`, runner exit 0.
 
 Next for that repo: run one ticket end to end
 (`kahnban capture` → refine → `ready` → `claim --worktree` → `verify`).
