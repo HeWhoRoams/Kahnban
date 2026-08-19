@@ -693,3 +693,94 @@ def test_report_rendering_survives_a_plan_containing_emoji(
     [written] = ingest.ingest(config, [plan])
     stored = core.read_text(written.created[0].path)
     assert "✅" in stored
+
+
+# --- blocked_on ---------------------------------------------------------
+
+
+def test_blocked_on_label_is_recognized_as_a_heading_and_inline_form() -> None:
+    plan = """# Plan
+## Ticket one
+Blocked on: waiting on a tagged release before this is safe
+## Ticket two
+### Blocked on
+External API key has not been provisioned yet.
+"""
+
+    drafts, _ = ingest.parse_document(plan, source_doc="plan.md")
+
+    assert drafts[0].blocked_on == (
+        "waiting on a tagged release before this is safe"
+    )
+    assert drafts[1].blocked_on == "External API key has not been provisioned yet."
+
+
+def test_blocked_on_is_distinct_from_blocked_by_dependency_references() -> None:
+    """'Blocked by' names a ticket (depends_on); 'Blocked on' is free text."""
+    plan = """# Plan
+## Ticket one
+x
+## Ticket two
+Blocked by: Ticket one
+Blocked on: an unrelated external approval
+"""
+
+    drafts, _ = ingest.parse_document(plan, source_doc="plan.md")
+    second = drafts[1]
+
+    assert second.unresolved_dependencies == ["Ticket one"]
+    assert second.blocked_on == "an unrelated external approval"
+
+
+def test_blocked_on_survives_ingest_and_gates_readiness(board: Path) -> None:
+    plan = write_plan(
+        board,
+        "# Plan\n## Ticket one\nBlocked on: no tagged release has shipped yet\n"
+        "**Acceptance:**\n- [ ] a\n**Files:** `src/a.py`\n**Validation:** `git --version`\n",
+    )
+    config = core.load_config(board)
+
+    ingest.ingest(config, [plan])
+
+    ticket = core.find_ticket(config, "TST-001")
+    assert fields_of(ticket.path)["blocked_on"] == "no tagged release has shipped yet"
+    core.move(config, "TST-001", "1-refining", reason="refining")
+    with pytest.raises(core.GateError, match="blocked_on is set"):
+        core.ready(config, "TST-001")
+
+
+def test_explicit_blocked_on_combines_with_an_unresolved_dependency_not_lost(
+    board: Path,
+) -> None:
+    """An unresolved depends_on reference must not silently erase an explicit
+    blocked_on label parsed from the same section."""
+    plan = write_plan(
+        board,
+        "# Plan\n## Ticket one\n"
+        "Blocked on: owner sign-off pending\n"
+        "Depends on: Some ticket that does not exist\n",
+    )
+    config = core.load_config(board)
+
+    [report] = ingest.ingest(config, [plan])
+
+    fields = fields_of(core.find_ticket(config, "TST-001").path)
+    assert "owner sign-off pending" in str(fields["blocked_on"])
+    assert "unresolved dependency" in str(fields["blocked_on"])
+    assert any("unresolved dependencies" in warning for warning in report.warnings)
+
+
+def test_blocked_on_alias_is_configurable(board: Path) -> None:
+    config_path = board / "plans" / "board.config.json"
+    payload = json.loads(config_path.read_text(encoding="utf-8"))
+    payload["ingest"] = {"section_aliases": {"blocked_on": ["pending on"]}}
+    config_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    plan = write_plan(
+        board, "# Plan\n## Ticket one\nPending on: a licensing decision\n"
+    )
+    config = core.load_config(board)
+
+    ingest.ingest(config, [plan], options=ingest.options_for(config))
+
+    fields = fields_of(core.find_ticket(config, "TST-001").path)
+    assert fields["blocked_on"] == "a licensing decision"

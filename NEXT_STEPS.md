@@ -84,20 +84,21 @@ rationale the tickets don't repeat). `AGENTS.md`'s two inbound references and
 the four ticket bodies that cite the old filename were repointed to the
 archived path.
 
-**One real engine gap found and worked around, not yet fixed upstream:**
-`kahnban ingest` has no label that sets a ticket's `blocked_on` field —
-`depends_on` is the only frontmatter field ingest populates automatically
-(and only from an unresolvable dependency reference), so a "Blocked on: ..."
-line in a source plan lands as ordinary prose. One ticket (HOA-005, "retire the
-`allocation` model after a release that hasn't shipped yet") genuinely needed
-`blocked_on` set so the ready gate would refuse it before its trigger fires.
-Fixed by hand-editing the ticket's frontmatter directly (legitimate while it's
-still in `0-backlog`/`1-refining` — confirmed `kahnban ready` then refused it
-with the correct reason) rather than by an ingest feature, since a `blocked_on:`
-label would need its own alias handling and possibly a dedicated `IngestOptions`
-field to avoid colliding with `depends_on`-derived blocking. Worth a small
-follow-up ticket in Kahnban itself if plan ingestion keeps encountering
-gate-style blocks like this one.
+**One real engine gap found, then fixed upstream (1.1.2):** `kahnban ingest`
+had no label that set a ticket's `blocked_on` field — `depends_on` was the only
+frontmatter field ingest populated automatically (and only from an
+unresolvable dependency reference), so the "Blocked on: ..." line written for
+HOA-005 landed as ordinary prose and had to be patched into the ticket's
+frontmatter by hand. Fixed properly: `blocked_on` is now a recognized label
+(`Blocked on:`, `## Blocked on`, `blocker`, `on hold`, `waiting on`, …),
+deliberately kept distinct from `depends_on`'s "blocked by" (a ticket
+reference, resolved to an ID) since a blocking *reason* — a pending release, an
+owner decision — usually isn't itself a ticket. An unresolvable dependency
+reference now combines with an explicit `blocked_on` instead of overwriting it.
+See `adapters/PLAN-INGESTION.md`'s label table and 5 new tests in
+`tests/test_ingest.py`. HOA-005 itself was not re-ingested — its hand-fixed
+frontmatter is already correct and re-ingest is hash-idempotent, so nothing
+would change.
 
 Verified: `kahnban lint` is 0 violations on the 9 tickets, and
 `tools/run_all_tests.ps1 -Suite data_integrity_test` is still 37/37 through the

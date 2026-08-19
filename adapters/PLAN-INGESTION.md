@@ -95,6 +95,19 @@ Recognized labels (as a heading *or* an inline `Label:`), case-insensitive:
 | `## Validation` | validation, verification, tests, test plan, how to test, validate, test command |
 | `depends_on` | depends on, dependencies, blocked by, prerequisites, requires |
 | `design_docs` | design docs, references, see also |
+| `blocked_on` | blocked on, blocker, blocking reason, on hold, waiting on |
+
+`depends_on` and `blocked_on` read differently even though both gate the ready
+check: **"Blocked by: TICKET-004"** names another ticket and is resolved to its
+ID (or, if it can't be resolved, becomes an entry in `blocked_on` automatically
+— see below); **"Blocked on: a tagged release hasn't shipped yet"** is a
+free-text reason that isn't itself a ticket, and is stored verbatim. Use
+whichever label matches what you're actually saying.
+
+An unresolvable dependency reference and an explicit `blocked_on` label combine
+rather than overwrite each other — a ticket can be blocked for its own stated
+reason *and* on a dependency nobody can find, and both show up in the field,
+joined with `|`.
 
 Add your own vocabulary in `plans/board.config.json` — configured names *extend*
 the defaults:

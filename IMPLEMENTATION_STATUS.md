@@ -2,9 +2,9 @@
 
 **Date:** 2026-08-19
 **Current Phase:** Phase 1 (Engine) complete, plus the entry-point layer (§2.6)
-**Status:** All 248 tests passing; engine version `1.1.1`
-**Git:** `main` merged, tagged, and pushed through `v1.1.1` (`ae113d4`); nothing
-outstanding on branches
+**Status:** All 253 tests passing; engine version `1.1.2`
+**Git:** `main` through `v1.1.1`; `1.1.2` (the `blocked_on` ingest fix) is
+committed but not yet tagged/pushed — see below
 
 ---
 
@@ -15,7 +15,7 @@ outstanding on branches
 | `frontmatter.py` | 195 | 10 | Parse/serialize/mutate/append_log over the documented YAML subset |
 | `gitops.py` | 204 | 9 | List-form subprocess wrappers; every failure raises `GitError` with stderr |
 | `core.py` | 1,754 | 61 | Config, lookup, ID allocation, board lock, `transition()`, all gates, drafts |
-| `ingest.py` | 988 | 48 | Plan/idea → ticket drafts, idempotency, dependency wiring, promotion |
+| `ingest.py` | 1,013 | 53 | Plan/idea → ticket drafts, idempotency, dependency + `blocked_on` wiring, promotion |
 | `linter.py` | 476 | 32 | BL01–BL17, ASCII output, `--json`, exemptions |
 | `status.py` | 149 | 8 | STATUS.md + status.json projections |
 | `worktree.py` | 193 | 13 | Worktree provisioning, NTFS junctions, junction-safe teardown |
@@ -126,16 +126,22 @@ BL17 is proved by tests that ingest a plan twice rather than by a static board.
    and F were reconciled against the code by hand — Program B fully closed
    (20/20 spot-checked), Programs E/F overwhelmingly resolved. Nine genuinely
    open items ingested as HOA-001..HOA-009 in one commit; the source plan
-   archived and marked SUPERSEDED. See NEXT_STEPS.md for the full account,
-   including a real ingest gap found along the way: there is no label that
-   sets `blocked_on` (worked around by hand-editing the one ticket that needed
-   it).
+   archived and marked SUPERSEDED. This surfaced a real ingest gap — no label
+   set `blocked_on`, worked around there by hand-editing one ticket's
+   frontmatter — **fixed upstream in 1.1.2**, see below.
 3. **Phase 4 — `citadel` portability smoke test.**
 4. **CI matrix (§8):** Windows + Linux, Python 3.10 and 3.12. Only Windows has
    been exercised so far.
 
 ### Deliberate deviations and known rough edges
 
+- **`blocked_on` is now an ingestible field (1.1.2).** `Blocked on:` /
+  `## Blocked on` / `blocker` / `on hold` / `waiting on` set it directly,
+  deliberately kept distinct from `depends_on`'s `blocked by` (a ticket
+  reference, resolved to an ID) since a blocking *reason* usually isn't itself
+  a ticket. An unresolvable `depends_on` reference now combines with an
+  explicit `blocked_on` (joined with `|`) instead of overwriting it — found
+  because the two paths wrote the same field with no coordination between them.
 - `core.py` (1,754 lines) carries the helpers the linter shares plus every gate
   and the draft renderer. If it grows again, split the gates into `gates.py`.
 - **A `kahnban new` ticket now has empty body sections** rather than the

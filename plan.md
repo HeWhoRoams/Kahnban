@@ -264,10 +264,14 @@ Parsing is heuristic over ordinary markdown and reports what it could not
 interpret rather than guessing: fenced blocks never contribute headings, prose in
 a files list produces no blast radius (and leaves a note), unmapped subsections
 are preserved under `## Implementation notes`, dependency references resolve by
-title/anchor/ID with unresolvable ones written to `blocked_on`. Field vocabulary
-is configurable per adopter via `board.config.json → ingest.section_aliases`,
-which extends the built-in aliases. See `adapters/PLAN-INGESTION.md` for the
-recognized labels and the prompt snippet that makes an AI plan ingest losslessly.
+title/anchor/ID with unresolvable ones written to `blocked_on`. A ticket can also
+be blocked directly with its own `## Blocked on` / `Blocked on:` label — free
+text, distinct from `depends_on`'s ticket references — and an unresolvable
+dependency combines with an explicit `blocked_on` rather than overwriting it.
+Field vocabulary is configurable per adopter via
+`board.config.json → ingest.section_aliases`, which extends the built-in
+aliases. See `adapters/PLAN-INGESTION.md` for the recognized labels and the
+prompt snippet that makes an AI plan ingest losslessly.
 
 ---
 

@@ -94,6 +94,19 @@ DEFAULT_ALIASES: dict[str, tuple[str, ...]] = {
         "requires",
     ),
     "design_docs": ("design docs", "design_docs", "references", "see also"),
+    # Deliberately distinct from "blocked by" above: "blocked by X" names a
+    # ticket X must wait on (depends_on, resolved to an ID); "blocked on Y"
+    # names a free-text reason — a pending release, an owner decision, an
+    # external dependency — that isn't itself a ticket. Both gate readiness,
+    # but only one is a reference the engine can resolve.
+    "blocked_on": (
+        "blocked on",
+        "blocked_on",
+        "blocker",
+        "blocking reason",
+        "on hold",
+        "waiting on",
+    ),
 }
 
 
@@ -573,6 +586,12 @@ def draft_from_section(
         elif field_name == "design_docs":
             paths, _ = _extract_paths(lines)
             draft.design_docs.extend(paths)
+        elif field_name == "blocked_on":
+            reason = " ".join(line.strip() for line in lines if line.strip())
+            if reason:
+                draft.blocked_on = (
+                    f"{draft.blocked_on} | {reason}" if draft.blocked_on else reason
+                )
 
     # Checkbox lines written directly under the section (no label) are criteria.
     if not draft.acceptance and problem_parts:
@@ -737,7 +756,13 @@ def resolve_dependencies(
         if unresolved:
             # Honest failure mode: the ticket cannot pass the ready gate until a
             # human resolves the reference, and the reason is on the ticket.
-            draft.blocked_on = "unresolved dependency: " + ", ".join(unresolved)
+            # Combine rather than overwrite: an explicit "Blocked on:" label
+            # (parsed before dependencies are resolved) must survive alongside
+            # this one, not be silently replaced by it.
+            reason = "unresolved dependency: " + ", ".join(unresolved)
+            draft.blocked_on = (
+                f"{draft.blocked_on} | {reason}" if draft.blocked_on else reason
+            )
             warnings.append(
                 f"{ticket_id} has unresolved dependencies "
                 f"({', '.join(unresolved)}); recorded in blocked_on"
