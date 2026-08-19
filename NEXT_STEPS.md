@@ -31,27 +31,37 @@ Review before pushing — no push has been performed.
 
 ---
 
-## 2. Phase 2 — adopt in `heirs_ancients`
+## 2. Phase 2 — `heirs_ancients` adoption — DONE 2026-08-19
 
-```powershell
-py -3 -m pip install -e C:\Github\Kahnban
-cd C:\github\heirs_ancients
-kahnban init --prefix HOA
-```
+Committed on branch **`kahnban-adoption`** in `C:\github\heirs_ancients`
+(`6d5212f` board scaffold, `bd04259` configuration and wiring), not merged and
+not pushed:
 
-Then:
-1. Replace `plans/board.config.json` with the §6.1 config (WIP limit 3,
-   `shared_caches: [".godot"]`, `validation_command` pointing at
-   `tools\run_all_tests.ps1`, and the `validation_class` / `balance_risk`
-   extension fields).
-2. Copy `adapters/AGENTS.md` into `AGENTS.md`, `CLAUDE.md`, and `.cursorrules`.
-3. Register the MCP server with the `.vscode/mcp.json` snippet from
-   `adapters/MCP.md`.
-4. Insert the lint gate at the top of `tools/run_all_tests.ps1` (§6.2) and
-   confirm `tests/data_integrity_test.gd` DI-06 stays green — the gate is a
-   runner step, not a new `.gd` test, precisely so the headless test count does
-   not change.
-5. Run `kahnban lint` and one full ticket lifecycle before migrating the backlog.
+- `plans/board.config.json` — §6.1 config: HOA prefix, WIP limit 3, worktrees
+  on, `.godot` shared as a junction, `validation_command` →
+  `tools/run_all_tests.ps1`, plus the `validation_class` and `balance_risk`
+  extension fields and this repo's `ingest.section_aliases` vocabulary.
+- `plans/tickets/` — column tree, archive, and a template carrying both
+  extension fields.
+- `AGENTS.md` — Kanban protocol section appended (no numeric claims, so DI-06's
+  regex anchors are untouched).
+- `tools/run_all_tests.ps1` — `kahnban lint` as the first gate; skips itself
+  when no board config exists and reports the install command when the engine
+  is missing.
+- `.vscode/mcp.json` — stdio MCP registration.
+
+**Verified:** `kahnban lint` exits 0 on the empty board and
+`tools/run_all_tests.ps1 -Suite data_integrity_test` passes through the gate
+with DI-06 green (37/37, runner exit 0). A baseline run before the changes
+confirmed the same 37/37, so the gate is what changed and nothing else.
+
+Remaining for that repo: merge `kahnban-adoption` into `main` (board
+transitions refuse to run off the default branch by design — D2 — so the board
+only goes live once merged), then run one ticket end to end.
+
+Adoption also surfaced an engine bug, now fixed: `--config` / `--project-root`
+only worked *before* the subcommand, while §6.2's own gate command puts
+`--config` after it. Both positions now work, with regression tests.
 
 ## 3. Phase 3 — backlog migration (now an ingest job)
 
@@ -59,16 +69,33 @@ Audit the open items in `plans/IMPLEMENTATION_PLAN.md` (reconcile Programs B and
 E against the code), then ingest rather than hand-writing tickets:
 
 ```powershell
-kahnban ingest plans/IMPLEMENTATION_PLAN.md --dry-run       # read what it found
-kahnban ingest plans/IMPLEMENTATION_PLAN.md --section "Program B" --ready
-kahnban lint
+kahnban ingest plans/IMPLEMENTATION_PLAN.md --dry-run                     # auto-detect
+kahnban ingest plans/IMPLEMENTATION_PLAN.md --dry-run --heading-level 3   # work items
+kahnban ingest plans/IMPLEMENTATION_PLAN.md --section "Program B" --heading-level 4 --dry-run
 ```
 
-Expect prose-heavy sections to land in `0-backlog` unpromoted — that is the
-refinement gate doing its job, not a parser failure. Refine those by hand (or
-rewrite the source plan in the shape documented in
-[adapters/PLAN-INGESTION.md](adapters/PLAN-INGESTION.md) and re-ingest with
-`--update`).
+**What a dry run over that document actually shows** (checked 2026-08-19): it is
+a 2,887-line narrative journal, not a task list. Auto-detection picks level 4
+and finds four retrospective notes; `--heading-level 3` finds the real work
+items (A1…A9, Program B/C/D/E entries) but none of them carry acceptance
+criteria, a blast radius, or a validation command, because the document does not
+use those labels. Every ingested ticket would therefore land in `0-backlog`
+needing manual refinement — the gate refusing them is correct, not a parser
+failure.
+
+Two honest options, both requiring an owner decision this engine cannot make:
+
+1. **Scope and refine.** `--section "Program B — Verified bugs"` to ingest just
+   the open bug list, then refine each ticket by hand. Cheapest path to a live
+   board.
+2. **Restate then ingest.** Extract the still-open items into a new plan
+   document written in the shape documented in
+   [adapters/PLAN-INGESTION.md](adapters/PLAN-INGESTION.md) — which is also the
+   prompt shape to hand the planning agent — then
+   `kahnban ingest <that file> --ready` and most tickets arrive ready to claim.
+
+Either way, reconciling which Program B and E items are still open against the
+code is domain work, so it was deliberately left undone rather than guessed at.
 
 Afterwards move `plans/IMPLEMENTATION_PLAN.md` to
 `plans/archive/IMPLEMENTATION_PLAN_2026-08-18.md` marked `SUPERSEDED` and fix

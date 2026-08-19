@@ -252,6 +252,26 @@ def cmd_status(args: argparse.Namespace) -> int:
 # --- parser -----------------------------------------------------------------
 
 
+ROOT_HELP = "repository root holding plans/board.config.json (default: discovered)"
+CONFIG_HELP = "path to board.config.json"
+
+
+def _board_options() -> argparse.ArgumentParser:
+    """Board-location flags, reusable in the subcommand position.
+
+    ``argparse.SUPPRESS`` keeps an unspecified subcommand flag from clobbering a
+    value already given before the subcommand, so both of these work and mean
+    the same thing:
+
+        kahnban --config plans/board.config.json lint
+        kahnban lint --config plans/board.config.json
+    """
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--project-root", default=argparse.SUPPRESS, help=ROOT_HELP)
+    common.add_argument("--config", default=argparse.SUPPRESS, help=CONFIG_HELP)
+    return common
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kahnban",
@@ -260,14 +280,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
     )
-    parser.add_argument(
-        "--project-root",
-        help="repository root holding plans/board.config.json (default: discovered)",
-    )
-    parser.add_argument("--config", help="path to board.config.json")
+    parser.add_argument("--project-root", help=ROOT_HELP)
+    parser.add_argument("--config", help=CONFIG_HELP)
+    board = _board_options()
     subparsers = parser.add_subparsers(dest="command")
 
-    new = subparsers.add_parser("new", help="create a ticket in the backlog")
+    new = subparsers.add_parser(
+        "new",
+        parents=[board], help="create a ticket in the backlog")
     new.add_argument("title")
     new.add_argument("--problem", help="short problem statement")
     new.add_argument(
@@ -276,11 +296,15 @@ def build_parser() -> argparse.ArgumentParser:
     new.add_argument("--owner", default="unassigned")
     new.set_defaults(handler=cmd_new)
 
-    ready = subparsers.add_parser("ready", help="refining -> ready (gated)")
+    ready = subparsers.add_parser(
+        "ready",
+        parents=[board], help="refining -> ready (gated)")
     ready.add_argument("ticket_id")
     ready.set_defaults(handler=cmd_ready)
 
-    claim = subparsers.add_parser("claim", help="ready -> in-progress (gated)")
+    claim = subparsers.add_parser(
+        "claim",
+        parents=[board], help="ready -> in-progress (gated)")
     claim.add_argument("ticket_id")
     claim.add_argument("--owner", required=True)
     claim.add_argument(
@@ -302,7 +326,8 @@ def build_parser() -> argparse.ArgumentParser:
     claim.set_defaults(handler=cmd_claim)
 
     verify = subparsers.add_parser(
-        "verify", help="run the ticket's validation command; in-progress -> verifying"
+        "verify",
+        parents=[board], help="run the ticket's validation command; in-progress -> verifying"
     )
     verify.add_argument("ticket_id")
     verify.add_argument(
@@ -315,19 +340,24 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--reason", help="required with any override")
     verify.set_defaults(handler=cmd_verify)
 
-    done = subparsers.add_parser("done", help="verifying -> done (requires a merge)")
+    done = subparsers.add_parser(
+        "done",
+        parents=[board], help="verifying -> done (requires a merge)")
     done.add_argument("ticket_id")
     done.add_argument("--merge-commit", help="sha of the merge on the default branch")
     done.set_defaults(handler=cmd_done)
 
-    move = subparsers.add_parser("move", help="escape hatch; always logged")
+    move = subparsers.add_parser(
+        "move",
+        parents=[board], help="escape hatch; always logged")
     move.add_argument("ticket_id")
     move.add_argument("column")
     move.add_argument("--reason", required=True)
     move.set_defaults(handler=cmd_move)
 
     cleanup = subparsers.add_parser(
-        "cleanup", help="remove junctions, worktree, and branch"
+        "cleanup",
+        parents=[board], help="remove junctions, worktree, and branch"
     )
     cleanup.add_argument("ticket_id")
     cleanup.add_argument(
@@ -338,7 +368,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     ingest_command = subparsers.add_parser(
         "ingest",
-        help="turn a markdown plan into backlog tickets (idempotent)",
+        parents=[board], help="turn a markdown plan into backlog tickets (idempotent)",
         description=(
             "Split a plan document into one ticket per work section. Tickets "
             "always land in the backlog with acceptance boxes unchecked; use "
@@ -378,7 +408,8 @@ def build_parser() -> argparse.ArgumentParser:
     ingest_command.set_defaults(handler=cmd_ingest)
 
     capture = subparsers.add_parser(
-        "capture", help="capture rough ideas as backlog tickets (one commit)"
+        "capture",
+        parents=[board], help="capture rough ideas as backlog tickets (one commit)"
     )
     capture.add_argument("idea", nargs="*", help="one title per idea")
     capture.add_argument(
@@ -388,20 +419,28 @@ def build_parser() -> argparse.ArgumentParser:
     capture.add_argument("--dry-run", action="store_true")
     capture.set_defaults(handler=cmd_capture)
 
-    lint = subparsers.add_parser("lint", help="run board rules BL01-BL16")
+    lint = subparsers.add_parser(
+        "lint",
+        parents=[board], help="run board rules BL01-BL16")
     lint.add_argument("--json", action="store_true", help="machine-readable output")
     lint.add_argument(
         "--strict", action="store_true", help="promote WIP warnings to violations"
     )
     lint.set_defaults(handler=cmd_lint)
 
-    sync = subparsers.add_parser("sync", help="regenerate STATUS.md and status.json")
+    sync = subparsers.add_parser(
+        "sync",
+        parents=[board], help="regenerate STATUS.md and status.json")
     sync.set_defaults(handler=cmd_sync)
 
-    status_command = subparsers.add_parser("status", help="column counts + lint summary")
+    status_command = subparsers.add_parser(
+        "status",
+        parents=[board], help="column counts + lint summary")
     status_command.set_defaults(handler=cmd_status)
 
-    init = subparsers.add_parser("init", help="scaffold the board in this repository")
+    init = subparsers.add_parser(
+        "init",
+        parents=[board], help="scaffold the board in this repository")
     init.add_argument("--prefix", required=True, help="ticket id prefix, e.g. HOA")
     init.add_argument("--wip-limit", type=int, default=3)
     init.add_argument("--validation-command", help="default validation command")

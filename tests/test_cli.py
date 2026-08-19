@@ -275,3 +275,45 @@ def test_module_entry_point_runs(board: Path) -> None:
 
     assert completed.returncode == 0, completed.stderr
     assert "[OK]" in completed.stdout
+
+
+def test_board_flags_work_before_and_after_the_subcommand(
+    board: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """plan.md §6.2 calls `kahnban lint --config <path>` — after the subcommand."""
+    config_path = str(board / "plans" / "board.config.json")
+
+    assert main(["--config", config_path, "lint"]) == 0
+    assert "[OK]" in capsys.readouterr().out
+
+    assert main(["lint", "--config", config_path]) == 0
+    assert "[OK]" in capsys.readouterr().out
+
+    assert main(["status", "--project-root", str(board)]) == 0
+    assert "Columns:" in capsys.readouterr().out
+
+
+def test_subcommand_flags_do_not_clobber_the_global_ones(
+    board: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An unspecified subcommand flag must not erase a value given globally."""
+    assert main(["--project-root", str(board), "lint", "--strict"]) == 0
+
+    assert "[OK]" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["new", "A ticket"],
+        ["capture", "An idea"],
+        ["sync"],
+        ["status"],
+    ],
+)
+def test_every_board_subcommand_accepts_project_root_in_place(
+    board: Path, argv: list[str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert main([*argv, "--project-root", str(board)]) == 0
+
+    capsys.readouterr()

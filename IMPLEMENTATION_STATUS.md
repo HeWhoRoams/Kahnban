@@ -118,13 +118,15 @@ BL17 is proved by tests that ingest a plan twice rather than by a static board.
 
 1. **Merge `entry-points` and tag `v1.1.0`** — the branch is committed but not
    merged and not pushed; `main` is also 2 commits ahead of `origin/main`.
-2. **Phase 2 — `heirs_ancients` adoption:** `pip install -e C:\Github\Kahnban`,
-   `kahnban init --prefix HOA`, apply the §6.1 config, copy
-   `adapters/AGENTS.md`, register the MCP server, add the lint gate to
-   `tools/run_all_tests.ps1` keeping DI-06 green.
-3. **Phase 3 — backlog migration:** this is now an ingest job —
-   `kahnban ingest plans/IMPLEMENTATION_PLAN.md --dry-run`, review, then
-   `--ready`; archive the source plan as superseded afterwards.
+2. **Phase 2 — `heirs_ancients` adoption: DONE** (branch `kahnban-adoption`,
+   unmerged). Board config, column tree, AGENTS.md protocol, MCP registration,
+   and the `kahnban lint` gate in `tools/run_all_tests.ps1`; DI-06 verified
+   green through the gate (37/37, runner exit 0). Merge to `main` there to make
+   the board live — transitions refuse off the default branch by design.
+3. **Phase 3 — backlog migration:** needs an owner audit first. Their
+   `IMPLEMENTATION_PLAN.md` is a narrative journal without acceptance/blast
+   radius/validation labels, so a dry run yields refinement-needing tickets
+   rather than ready ones. See NEXT_STEPS.md for the two options.
 4. **Phase 4 — `citadel` portability smoke test.**
 5. **CI matrix (§8):** Windows + Linux, Python 3.10 and 3.12. Only Windows has
    been exercised so far.
