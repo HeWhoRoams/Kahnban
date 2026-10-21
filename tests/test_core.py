@@ -435,3 +435,9 @@ def test_ready_gate_enforces_extension_required_from(board: Path) -> None:
 
     with pytest.raises(core.GateError, match="validation_class"):
         core.ready(config, "TST-001")
+
+
+def test_collect_records_type_hints() -> None:
+    import typing
+    hints = typing.get_type_hints(core.collect_records)
+    assert "return" in hints

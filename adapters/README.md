@@ -71,6 +71,20 @@ To make these skills active in your harness, copy or symlink `adapters/skills/*`
   kahnban session --flush --ticket HOA-001       # flush live worktree status
   kahnban handoff --note "context for next model" # convenient flush alias for harness transitions
   ```
+  **CLI Session Flags & Agent Overrides:**
+  When agents operate in containerized or non-standard environments, auto-detection of branches and worktrees can be explicitly overridden:
+  - `--flush`: Force resynchronization of dirty files and in-progress tickets from Git and board.
+  - `--ticket <ID>`: Explicit active ticket ID override.
+  - `--worktree <PATH>`: Active worktree directory path override.
+  - `--branch <NAME>`: Active Git branch name override.
+  - `--harness <NAME>`: Agent harness identifier (`claude-code`, `antigravity`, `chatgpt`, `cursor`).
+  - `--status <STATUS>`: Session status (`idle`, `in_progress`, `review`, `blocked`).
+  - `--note <TEXT>`: Context or hand-off progress note for incoming agents.
+  - `--blocker <TEXT>`: Failing test trace or blocker description.
+  - `--next-cmd <CMD>`: Immediate shell command queued for next model invocation.
+
+  **MCP Tool Bridge:**
+  Equivalent operations are exposed via MCP tools (`kanban_session_get`, `kanban_session_update`), supporting full spec parameter aliases (`ticket_id`/`active_ticket`, `summary`/`context`, `next_command`/`next_commands`).
 
 ---
 

@@ -220,3 +220,54 @@ def test_write_session_dataclass_input(tmp_path: Path) -> None:
     assert read_back.last_updated == "2026-10-20T20:00:00"
     assert read_back.agent_harness == "antigravity"
 
+
+
+def test_read_session_subagents_table_roundtrip(tmp_path: Path) -> None:
+    subagents = [
+        {
+            "id": "HOA-002",
+            "owner": "subagent-alpha",
+            "worktree": ".worktrees/HOA-002",
+            "branch": "ticket/HOA-002",
+            "title": "Sector generator seam",
+        },
+        {
+            "id": "HOA-003",
+            "owner": "subagent-beta",
+            "worktree": ".worktrees/HOA-003",
+            "branch": "ticket/HOA-003",
+            "title": "Starbase UI component",
+        },
+    ]
+    session_file = session.write_session(
+        tmp_path,
+        active_ticket="HOA-001",
+        subagents=subagents,
+    )
+    assert session_file.exists()
+
+    state = session.read_session(tmp_path)
+    assert state is not None
+    assert len(state.subagents) == 2
+    assert state.subagents[0]["id"] == "HOA-002"
+    assert state.subagents[0]["owner"] == "subagent-alpha"
+    assert state.subagents[0]["worktree"] == ".worktrees/HOA-002"
+    assert state.subagents[0]["branch"] == "ticket/HOA-002"
+    assert state.subagents[0]["title"] == "Sector generator seam"
+    assert state.subagents[1]["id"] == "HOA-003"
+
+
+def test_session_update_apply_value_object(board: Path) -> None:
+    config = core.load_config(board)
+    update = session.SessionUpdate(
+        ticket_id="HOA-777",
+        context="Applied via value object",
+        status="review",
+        next_commands=["pytest -q"],
+    )
+    state, path = session.sync_session(config, update=update)
+    assert path.exists()
+    assert state.active_ticket == "HOA-777"
+    assert state.status == "review"
+    assert state.context == "Applied via value object"
+    assert state.next_commands == ["pytest -q"]

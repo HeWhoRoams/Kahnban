@@ -264,8 +264,7 @@ def cmd_session(args: argparse.Namespace) -> int:
 
     if flush or ticket_arg or note_arg or cmd_arg or blocker_arg:
         next_cmds = [cmd_arg] if cmd_arg else None
-        state, written = session.sync_session(
-            config,
+        session_update = session.SessionUpdate(
             ticket_id=ticket_arg,
             branch=getattr(args, "branch", None),
             worktree=getattr(args, "worktree", None),
@@ -274,6 +273,10 @@ def cmd_session(args: argparse.Namespace) -> int:
             context=note_arg,
             blockers=blocker_arg,
             next_commands=next_cmds,
+        )
+        state, written = session.sync_session(
+            config,
+            update=session_update,
         )
         print(f"[OK] updated session state in {written}")
         return EXIT_OK

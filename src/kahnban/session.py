@@ -36,6 +36,49 @@ class SessionState:
     next_commands: list[str] = field(default_factory=list)
 
 
+@dataclass
+class SessionUpdate:
+    ticket_id: str | None = None
+    branch: str | None = None
+    worktree: str | None = None
+    agent_harness: str | None = None
+    status: str | None = None
+    context: str | None = None
+    blockers: str | None = None
+    next_commands: Sequence[str] | None = None
+    modified_files: Sequence[str] | None = None
+
+    def apply(self, inspected: dict[str, Any], timestamp: datetime | None = None) -> SessionState:
+        resolved_ticket = self.ticket_id or inspected.get("active_ticket") or ""
+        resolved_branch = self.branch or inspected.get("branch") or ""
+        resolved_wt = self.worktree or inspected.get("active_worktree") or ""
+        resolved_harness = self.agent_harness or "generic"
+        resolved_status = self.status or ("in_progress" if resolved_ticket else "idle")
+        resolved_context = (self.context or "").strip()
+        resolved_blockers = (self.blockers or "").strip()
+        resolved_cmds = list(self.next_commands) if self.next_commands is not None else []
+        resolved_mods = (
+            list(self.modified_files)
+            if self.modified_files is not None
+            else list(inspected.get("modified_files", []))
+        )
+
+        now = (timestamp or datetime.now()).isoformat(timespec="seconds")
+        return SessionState(
+            last_updated=now,
+            active_ticket=resolved_ticket,
+            active_worktree=resolved_wt,
+            branch=resolved_branch,
+            agent_harness=resolved_harness,
+            status=resolved_status,
+            context=resolved_context,
+            subagents=list(inspected.get("in_progress_tickets", [])),
+            modified_files=resolved_mods,
+            blockers=resolved_blockers,
+            next_commands=resolved_cmds,
+        )
+
+
 def get_session_path(project_root: Path) -> Path:
     """Return the canonical path to ACTIVE_SESSION.md, preferring .agents/state/."""
     root = Path(project_root).resolve()
@@ -64,6 +107,25 @@ def write_text_atomic(path: Path, text: str) -> None:
         raise
 
 
+def _clean_porcelain_path(line: str) -> str:
+    clean = line[3:].strip() if len(line) > 3 else line.strip()
+    return clean.split(" -> ")[-1].strip() if " -> " in clean else clean
+
+
+def _git_modified_files(repo_path: Path) -> list[str]:
+    """Helper to collect clean modified file paths from git status --porcelain."""
+    if not (repo_path.is_dir() and gitops.is_repo(repo_path)):
+        return []
+    try:
+        return [
+            _clean_porcelain_path(line)
+            for line in gitops.status_porcelain(repo_path)
+            if _clean_porcelain_path(line)
+        ]
+    except Exception:
+        return []
+
+
 def read_session(project_root: Path) -> SessionState | None:
     """Read and parse ACTIVE_SESSION.md if present; return None if missing."""
     session_path = get_session_path(project_root)
@@ -77,6 +139,26 @@ def read_session(project_root: Path) -> SessionState | None:
 
     context = core.section(body, "Current Context") or ""
     blockers = core.section(body, "Failing Test Traces / Blockers") or ""
+
+    raw_sub = core.section(body, "In-Flight Sub-Agents & Worktrees") or ""
+    subagents: list[dict[str, str]] = []
+    for line in raw_sub.splitlines():
+        trimmed = line.strip()
+        if not trimmed.startswith("|") or trimmed.startswith("| :---"):
+            continue
+        cells = [c.strip().strip("`") for c in trimmed.strip("|").split("|")]
+        if not cells or cells[0].lower() in ("ticket id", "id", "-"):
+            continue
+        t_id = cells[0] if len(cells) > 0 else ""
+        owner = cells[1] if len(cells) > 1 else ""
+        wt = cells[2] if len(cells) > 2 else ""
+        br = cells[3] if len(cells) > 3 else ""
+        obj = cells[4] if len(cells) > 4 else ""
+        if t_id and t_id != "-":
+            item = {"id": t_id, "owner": owner, "worktree": wt, "branch": br}
+            if obj and obj != "-":
+                item["title"] = obj
+            subagents.append(item)
 
     raw_next = core.section(body, "Immediate Next Shell Commands") or ""
     next_commands: list[str] = []
@@ -106,6 +188,7 @@ def read_session(project_root: Path) -> SessionState | None:
         agent_harness=str(fields.get("agent_harness", "generic")),
         status=str(fields.get("status", "idle")),
         context=context.strip(),
+        subagents=subagents,
         modified_files=modified_files,
         blockers=blockers.strip(),
         next_commands=next_commands,
@@ -136,31 +219,11 @@ def inspect_session(config: core.Config) -> dict[str, Any]:
     active_worktree = in_progress_tickets[0]["worktree"] if in_progress_tickets else ""
     branch = in_progress_tickets[0]["branch"] if in_progress_tickets else ""
 
-    def clean_path(line: str) -> str:
-        clean = line[3:].strip() if len(line) > 3 else line.strip()
-        return clean.split(" -> ")[-1].strip() if " -> " in clean else clean
-
     modified_files: list[str] = []
     if active_worktree:
-        wt_path = root / active_worktree
-        if wt_path.is_dir() and gitops.is_repo(wt_path):
-            try:
-                modified_files = [
-                    clean_path(line)
-                    for line in gitops.status_porcelain(wt_path)
-                    if clean_path(line)
-                ]
-            except Exception:
-                pass
+        modified_files = _git_modified_files(root / active_worktree)
     if not modified_files and gitops.is_repo(root):
-        try:
-            modified_files = [
-                clean_path(line)
-                for line in gitops.status_porcelain(root)
-                if clean_path(line)
-            ]
-        except Exception:
-            pass
+        modified_files = _git_modified_files(root)
 
     return {
         "active_ticket": active_ticket,
@@ -227,8 +290,8 @@ def write_session(
     if sub:
         lines.extend(
             [
-                "| Ticket ID | Owner / Agent | Worktree Path | Branch |",
-                "| :--- | :--- | :--- | :--- |",
+                "| Ticket ID | Owner / Agent | Worktree Path | Branch | Objective |",
+                "| :--- | :--- | :--- | :--- | :--- |",
             ]
         )
         for item in sub:
@@ -236,7 +299,8 @@ def write_session(
             owner = item.get("owner", "-")
             wt = item.get("worktree", "-")
             br = item.get("branch", "-")
-            lines.append(f"| {t_id} | {owner} | `{wt}` | `{br}` |")
+            obj = item.get("title") or item.get("objective", "-")
+            lines.append(f"| {t_id} | {owner} | `{wt}` | `{br}` | {obj} |")
     else:
         lines.append("_No parallel sub-agents active._")
     lines.append("")
@@ -275,6 +339,7 @@ def write_session(
 
 def sync_session(
     config: core.Config,
+    update: SessionUpdate | None = None,
     *,
     ticket_id: str | None = None,
     branch: str | None = None,
@@ -288,31 +353,40 @@ def sync_session(
     timestamp: datetime | None = None,
 ) -> tuple[SessionState, Path]:
     """Authoritative in-process routine to inspect live state, reconcile, and persist ACTIVE_SESSION.md."""
+    if update is None:
+        update = SessionUpdate(
+            ticket_id=ticket_id,
+            branch=branch,
+            worktree=worktree,
+            agent_harness=agent_harness,
+            status=status,
+            context=context,
+            blockers=blockers,
+            next_commands=next_commands,
+            modified_files=modified_files,
+        )
+    else:
+        # Honor keyword argument overrides if explicitly supplied alongside update object
+        if ticket_id is not None:
+            update.ticket_id = ticket_id
+        if branch is not None:
+            update.branch = branch
+        if worktree is not None:
+            update.worktree = worktree
+        if agent_harness is not None:
+            update.agent_harness = agent_harness
+        if status is not None:
+            update.status = status
+        if context is not None:
+            update.context = context
+        if blockers is not None:
+            update.blockers = blockers
+        if next_commands is not None:
+            update.next_commands = next_commands
+        if modified_files is not None:
+            update.modified_files = modified_files
+
     inspected = inspect_session(config)
-
-    resolved_ticket = ticket_id or inspected["active_ticket"] or ""
-    resolved_branch = branch or inspected["branch"] or ""
-    resolved_wt = worktree or inspected["active_worktree"] or ""
-    resolved_harness = agent_harness or "generic"
-    resolved_status = status or ("in_progress" if resolved_ticket else "idle")
-    resolved_context = (context or "").strip()
-    resolved_blockers = (blockers or "").strip()
-    resolved_cmds = list(next_commands) if next_commands is not None else []
-    resolved_mods = list(modified_files) if modified_files is not None else inspected["modified_files"]
-
-    now = (timestamp or datetime.now()).isoformat(timespec="seconds")
-    state = SessionState(
-        last_updated=now,
-        active_ticket=resolved_ticket,
-        active_worktree=resolved_wt,
-        branch=resolved_branch,
-        agent_harness=resolved_harness,
-        status=resolved_status,
-        context=resolved_context,
-        subagents=inspected["in_progress_tickets"],
-        modified_files=resolved_mods,
-        blockers=resolved_blockers,
-        next_commands=resolved_cmds,
-    )
+    state = update.apply(inspected, timestamp=timestamp)
     written = write_session(config.project_root, state=state, timestamp=timestamp)
     return state, written

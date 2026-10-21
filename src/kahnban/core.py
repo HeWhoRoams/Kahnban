@@ -18,6 +18,7 @@ import subprocess
 import random
 import time
 from collections.abc import Iterable, Mapping, Sequence
+from typing import Any
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -675,7 +676,10 @@ def collect_records(config: Config) -> list[dict[str, Any]]:
         if isinstance(raw_depends, list):
             record["depends_on"] = [str(d) for d in raw_depends]
         elif raw_depends:
-            record["depends_on"] = [str(raw_depends)]
+            if isinstance(raw_depends, str):
+                record["depends_on"] = [d.strip() for d in raw_depends.split(",") if d.strip()]
+            else:
+                record["depends_on"] = [str(raw_depends)]
 
         record["blocked_on"] = str(fields.get("blocked_on", "") or "")
         record["blast_radius"] = parse_blast_radius(body)

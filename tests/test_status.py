@@ -228,7 +228,8 @@ def test_board_json_contains_rich_fields(board: Path) -> None:
     assert board_json_path.exists()
     payload = json.loads(board_json_path.read_text(encoding="utf-8"))
 
-    assert payload["generator"] == "kahnban"
+    from kahnban import __version__
+    assert payload["generator"] == f"kahnban-v{__version__}"
     assert "columns" in payload
     assert "tickets_by_id" in payload
 
@@ -242,4 +243,20 @@ def test_board_json_contains_rich_fields(board: Path) -> None:
         "src/engine/galaxy/map_generator.gd",
         "tests/test_map_generator.gd",
     ]
+
+def test_board_json_comma_separated_depends_on(board: Path) -> None:
+    config = core.load_config(board)
+    write_ticket(
+        config.board_path,
+        "0-backlog",
+        "TST-050",
+        "multiple-deps",
+        depends_on="TST-001, TST-002, TST-003",
+    )
+    commit_board(board)
+
+    core.sync(config, timestamp=WHEN)
+    board_json = json.loads((board / "plans" / "board.json").read_text(encoding="utf-8"))
+    ticket = board_json["tickets_by_id"]["TST-050"]
+    assert ticket["depends_on"] == ["TST-001", "TST-002", "TST-003"]
 

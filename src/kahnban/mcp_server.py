@@ -716,8 +716,7 @@ def tool_session_update(project_root: Path, arguments: Mapping[str, Any]) -> dic
     else:
         mods = None
 
-    state, written = session.sync_session(
-        config,
+    session_update = session.SessionUpdate(
         ticket_id=str(ticket_id) if ticket_id is not None else None,
         agent_harness=str(harness) if harness is not None else None,
         status=str(status_text) if status_text is not None else None,
@@ -725,6 +724,10 @@ def tool_session_update(project_root: Path, arguments: Mapping[str, Any]) -> dic
         blockers=str(blockers) if blockers is not None else None,
         next_commands=next_cmds,
         modified_files=mods,
+    )
+    state, written = session.sync_session(
+        config,
+        update=session_update,
     )
     return {
         "ok": True,

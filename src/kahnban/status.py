@@ -14,6 +14,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from kahnban import __version__
+
 FIELDS = ("id", "title", "status", "owner", "branch", "worktree", "updated", "column")
 
 Record = Mapping[str, Any]
@@ -106,7 +108,7 @@ def render_json(
     grouped = _grouped(records, columns)
     payload = {
         "generated": timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
-        "generator": "kahnban",
+        "generator": f"kahnban-v{__version__}",
         "columns": [
             {
                 "name": column,
@@ -173,7 +175,7 @@ def render_board_json(
 
     payload = {
         "generated": timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
-        "generator": "kahnban",
+        "generator": f"kahnban-v{__version__}",
         "project": project_name,
         "wip_limit": wip_limit,
         "columns": board_columns,
@@ -225,7 +227,7 @@ def write(
 
     written = [markdown_path, json_path, board_json_path]
 
-    # If an adopter repo maintains a .kanban/ folder, mirror board.json there as well
+    # Optional bridge for external/third-party viewers expecting a root .kanban/board.json layout
     alt_kanban_dir = plans_dir.parent / ".kanban"
     if alt_kanban_dir.is_dir():
         alt_board_json = alt_kanban_dir / "board.json"
