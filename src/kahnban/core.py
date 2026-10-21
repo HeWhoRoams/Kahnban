@@ -15,6 +15,7 @@ import os
 import re
 import shutil
 import subprocess
+import random
 import time
 from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
@@ -201,7 +202,7 @@ def load_config(
         root = Path(project_root).resolve() if project_root else path.parent.parent
     else:
         root = find_project_root(Path(project_root) if project_root else None)
-        if gitops.is_repo(root):
+        if (root / ".git").exists():
             main = gitops.main_worktree(root)
             if main.resolve() != root.resolve() and (main / CONFIG_RELATIVE).is_file():
                 root = main.resolve()
@@ -572,14 +573,24 @@ def validation_command(config: Config, body: str) -> str:
 # --- locking ----------------------------------------------------------------
 
 
+LOCK_RETRY_ATTEMPTS = 15
+LOCK_RETRY_INTERVAL = 0.1
+
+
 @contextmanager
-def board_lock(config: Config, *, stale_seconds: int = LOCK_STALE_SECONDS):
+def board_lock(
+    config: Config,
+    *,
+    stale_seconds: int = LOCK_STALE_SECONDS,
+    max_retries: int = LOCK_RETRY_ATTEMPTS,
+    retry_interval: float = LOCK_RETRY_INTERVAL,
+):
     """Exclusive board lock covering gate checks through commit (§3.3)."""
     lock_path = config.board_path / LOCK_NAME
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     warnings: list[str] = []
     descriptor: int | None = None
-    for attempt in (1, 2):
+    for attempt in range(1, max_retries + 1):
         try:
             descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             break
@@ -589,7 +600,7 @@ def board_lock(config: Config, *, stale_seconds: int = LOCK_STALE_SECONDS):
                 holder = lock_path.read_text(encoding="utf-8").strip()
             except OSError:
                 age, holder = 0.0, "unknown"
-            if attempt == 1 and age > stale_seconds:
+            if age > stale_seconds:
                 warnings.append(
                     f"broke stale board lock after {int(age)}s (held by {holder})"
                 )
@@ -597,6 +608,12 @@ def board_lock(config: Config, *, stale_seconds: int = LOCK_STALE_SECONDS):
                     lock_path.unlink()
                 except OSError:
                     pass
+                continue
+            if attempt < max_retries:
+                jitter = random.uniform(0.01, 0.04)
+                backoff_factor = min(1.2 ** (attempt - 1), 3.0)
+                delay = min(retry_interval * backoff_factor + jitter, 0.5)
+                time.sleep(delay)
                 continue
             raise LockError(
                 f"board is locked by another kahnban process ({holder}); "
@@ -623,10 +640,10 @@ def board_lock(config: Config, *, stale_seconds: int = LOCK_STALE_SECONDS):
 # --- projections ------------------------------------------------------------
 
 
-def collect_records(config: Config) -> list[dict[str, str]]:
-    records: list[dict[str, str]] = []
+def collect_records(config: Config) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
     for ticket in iter_tickets(config):
-        record = {
+        record: dict[str, Any] = {
             "id": ticket.ticket_id,
             "title": "",
             "status": config.status_for(ticket.column),
@@ -635,9 +652,13 @@ def collect_records(config: Config) -> list[dict[str, str]]:
             "worktree": "",
             "updated": "",
             "column": ticket.column,
+            "description": "",
+            "depends_on": [],
+            "blocked_on": "",
+            "blast_radius": [],
         }
         try:
-            fields, _ = frontmatter.parse(ticket.text)
+            fields, body = frontmatter.parse(ticket.text)
         except frontmatter.FrontmatterError:
             # Visible, not silent: lint reports the parse failure as BL01.
             record["title"] = "(invalid frontmatter)"
@@ -649,18 +670,34 @@ def collect_records(config: Config) -> list[dict[str, str]]:
                 value = ", ".join(value)
             if value:
                 record[key] = str(value)
+
+        raw_depends = fields.get("depends_on", [])
+        if isinstance(raw_depends, list):
+            record["depends_on"] = [str(d) for d in raw_depends]
+        elif raw_depends:
+            record["depends_on"] = [str(raw_depends)]
+
+        record["blocked_on"] = str(fields.get("blocked_on", "") or "")
+        record["blast_radius"] = parse_blast_radius(body)
+
+        prob = section(body, "Problem") or section(body, "Objective")
+        if prob:
+            paragraphs = [p.strip() for p in prob.split("\n\n") if p.strip()]
+            record["description"] = paragraphs[0].replace("\n", " ") if paragraphs else ""
+
         records.append(record)
     return records
 
 
 def sync(config: Config, *, timestamp: datetime | None = None) -> list[Path]:
-    """Regenerate both projections; returns the paths written."""
+    """Regenerate projections (STATUS.md, status.json, board.json); returns paths written."""
     return status.write(
         config.plans_dir,
         collect_records(config),
         config.columns,
         timestamp=timestamp or datetime.now(),
         project_name=config.project_root.name,
+        wip_limit=config.wip_limit,
     )
 
 
@@ -1423,12 +1460,30 @@ def verify(
                 )
 
         started = datetime.now()
+        exec_cmd: str | list[str] = command
+        use_shell = True
+        if os.name == "nt":
+            trimmed = command.strip()
+            first_token = trimmed.split()[0].lower().strip("'\"") if trimmed else ""
+            if first_token.endswith(".ps1") or (
+                first_token in (".", "&") and ".ps1" in trimmed
+            ):
+                exec_cmd = [
+                    "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-Command",
+                    command,
+                ]
+                use_shell = False
+
         try:
             # The validation block is an author-provided shell command line
             # (documented PowerShell wrapper form), so a shell is required here.
             completed = subprocess.run(
-                command,
-                shell=True,
+                exec_cmd,
+                shell=use_shell,
                 cwd=str(cwd),
                 capture_output=True,
                 text=True,
@@ -1684,6 +1739,7 @@ def init_board(
     wip_limit: int = 3,
     validation_command: str = "",
     use_worktrees: bool = True,
+    agentic: bool = False,
     commit: bool = True,
     timestamp: datetime | None = None,
 ) -> list[Path]:
@@ -1730,6 +1786,63 @@ def init_board(
     template_target = board_root / TEMPLATE_NAME
     shutil.copyfile(template_source, template_target)
     written.append(template_target)
+
+    if agentic:
+        templates_dir = Path(__file__).parent / "templates"
+
+        # 1. .agents/AGENTS.md
+        agents_dir = root / ".agents"
+        agents_dir.mkdir(parents=True, exist_ok=True)
+        agents_md = agents_dir / "AGENTS.md"
+        shutil.copyfile(templates_dir / "agents.md", agents_md)
+        written.append(agents_md)
+
+        # 2. .agents/state/ACTIVE_SESSION.md
+        state_dir = agents_dir / "state"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        active_sess = state_dir / "ACTIVE_SESSION.md"
+        shutil.copyfile(templates_dir / "active_session.md", active_sess)
+        written.append(active_sess)
+
+        # 3. .agents/specs/
+        specs_dir = agents_dir / "specs"
+        specs_dir.mkdir(parents=True, exist_ok=True)
+        specs_keep = specs_dir / ".gitkeep"
+        specs_keep.write_text("", encoding="utf-8")
+        written.append(specs_keep)
+
+        # 4. .agents/templates/
+        agent_templates_dir = agents_dir / "templates"
+        agent_templates_dir.mkdir(parents=True, exist_ok=True)
+        for src_name, dst_name in (
+            ("spec.md", "spec-template.md"),
+            ("ticket.md", "ticket-template.md"),
+            ("active_session.md", "active-session-template.md"),
+            ("glossary.md", "glossary-template.md"),
+            ("adr.md", "adr-template.md"),
+        ):
+            src_f = templates_dir / src_name
+            dst_f = agent_templates_dir / dst_name
+            if src_f.exists():
+                shutil.copyfile(src_f, dst_f)
+                written.append(dst_f)
+
+        # 5. Root GLOSSARY.md
+        glossary_file = root / "GLOSSARY.md"
+        if not glossary_file.exists():
+            shutil.copyfile(templates_dir / "glossary.md", glossary_file)
+            written.append(glossary_file)
+
+        # 6. Root ADR/
+        adr_dir = root / "ADR"
+        adr_dir.mkdir(parents=True, exist_ok=True)
+        adr_keep = adr_dir / ".gitkeep"
+        adr_keep.write_text("", encoding="utf-8")
+        written.append(adr_keep)
+        first_adr = adr_dir / "0001-record-architecture-decisions.md"
+        if not first_adr.exists():
+            shutil.copyfile(templates_dir / "adr.md", first_adr)
+            written.append(first_adr)
 
     gitignore = root / ".gitignore"
     existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""

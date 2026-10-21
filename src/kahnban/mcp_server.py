@@ -21,7 +21,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, TextIO
 
-from kahnban import __version__, core, frontmatter, gitops, ingest, linter, worktree
+from kahnban import __version__, core, frontmatter, gitops, ingest, linter, session, worktree
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "kahnban"
@@ -262,6 +262,54 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "name": "kanban_sync",
         "description": "Regenerate STATUS.md and status.json projections.",
         "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "kanban_session_status",
+        "description": "Inspect live cross-harness session state (ACTIVE_SESSION.md), in-progress tickets, and active worktrees.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "inspect_live": {"type": "boolean", "description": "If true, also inspect live worktree git status."}
+            },
+        },
+    },
+    {
+        "name": "kanban_session_get",
+        "description": "Canonical alias for kanban_session_status. Inspect live cross-harness session state.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "inspect_live": {"type": "boolean", "description": "If true, also inspect live worktree git status."}
+            },
+        },
+    },
+    {
+        "name": "kanban_session_update",
+        "description": "Atomically update .agents/state/ACTIVE_SESSION.md with active context, next commands, and blockers for cross-harness handoff.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ticket_id": _string("Active ticket id being worked on (or active_ticket)"),
+                "active_ticket": _string("Active ticket id being worked on"),
+                "summary": _string("Summary of progress and current context (or context)"),
+                "context": _string("Summary of progress and current context"),
+                "status": _string("Session status (idle, in_progress, review, blocked)"),
+                "harness": _string("Current AI harness name"),
+                "blockers": _string("Failing test traces or blocker explanations"),
+                "next_command": _string("Single immediate shell command to execute"),
+                "next_commands": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Ordered shell commands the incoming agent should execute immediately"
+                },
+                "modified_files": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Explicit list of modified files (overrides worktree auto-detection)"
+                },
+                "flush_from_worktree": {"type": "boolean", "description": "Whether to auto-detect modified files from the active worktree"}
+            },
+        },
     },
 ]
 
@@ -617,6 +665,75 @@ def tool_sync(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any
     return {"ok": True, "written": [path.as_posix() for path in written]}
 
 
+def tool_session_status(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    config = _config(project_root)
+    current = session.read_session(project_root)
+    inspect_live = bool(arguments.get("inspect_live", True))
+    live = session.inspect_session(config) if inspect_live else {}
+
+    return {
+        "ok": True,
+        "session_path": session.get_session_path(project_root).as_posix(),
+        "has_active_session_file": current is not None,
+        "current": {
+            "last_updated": current.last_updated if current else "",
+            "active_ticket": current.active_ticket if current else "",
+            "active_worktree": current.active_worktree if current else "",
+            "branch": current.branch if current else "",
+            "agent_harness": current.agent_harness if current else "",
+            "status": current.status if current else "",
+            "context": current.context if current else "",
+            "modified_files": current.modified_files if current else [],
+            "blockers": current.blockers if current else "",
+            "next_commands": current.next_commands if current else [],
+        } if current else None,
+        "live": live,
+    }
+
+
+def tool_session_update(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    config = _config(project_root)
+
+    ticket_id = arguments.get("ticket_id") or arguments.get("active_ticket")
+    context = arguments.get("summary") or arguments.get("context")
+    blockers = arguments.get("blockers")
+    harness = arguments.get("harness") or arguments.get("agent_harness")
+    status_text = arguments.get("status") or arguments.get("status_text")
+
+    raw_next = arguments.get("next_commands") or arguments.get("next_command")
+    if isinstance(raw_next, str):
+        next_cmds = [raw_next] if raw_next.strip() else []
+    elif isinstance(raw_next, list):
+        next_cmds = [str(c) for c in raw_next]
+    else:
+        next_cmds = None
+
+    raw_mods = arguments.get("modified_files")
+    if isinstance(raw_mods, list):
+        mods = [str(m) for m in raw_mods]
+    elif arguments.get("flush_from_worktree", True) is False:
+        mods = []
+    else:
+        mods = None
+
+    state, written = session.sync_session(
+        config,
+        ticket_id=str(ticket_id) if ticket_id is not None else None,
+        agent_harness=str(harness) if harness is not None else None,
+        status=str(status_text) if status_text is not None else None,
+        context=str(context) if context is not None else None,
+        blockers=str(blockers) if blockers is not None else None,
+        next_commands=next_cmds,
+        modified_files=mods,
+    )
+    return {
+        "ok": True,
+        "written": written.as_posix(),
+        "active_ticket": state.active_ticket,
+        "status": state.status,
+    }
+
+
 TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
     "kanban_board_status": tool_board_status,
     "kanban_ticket_get": tool_ticket_get,
@@ -630,6 +747,9 @@ TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
     "kanban_ticket_move": tool_ticket_move,
     "kanban_cleanup": tool_cleanup,
     "kanban_sync": tool_sync,
+    "kanban_session_status": tool_session_status,
+    "kanban_session_get": tool_session_status,
+    "kanban_session_update": tool_session_update,
 }
 
 

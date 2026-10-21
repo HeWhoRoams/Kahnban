@@ -1,0 +1,72 @@
+"""Tests for agentic board scaffolding (kahnban init --agentic)."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from kahnban import cli, core
+from conftest import git
+
+
+def test_init_board_agentic(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git(repo, "init", "-b", "main")
+    git(repo, "config", "user.email", "agent@example.com")
+    git(repo, "config", "user.name", "Agent")
+
+    written = core.init_board(repo, prefix="HOA", agentic=True)
+
+    # 1. Kanban board files
+    assert (repo / "plans" / "board.config.json").exists()
+    assert (repo / "plans" / "tickets" / "0-backlog").is_dir()
+    assert (repo / "plans" / "board.json").exists()
+    assert (repo / "plans" / "STATUS.md").exists()
+
+    # 2. .agents/ layout
+    assert (repo / ".agents" / "AGENTS.md").exists()
+    assert (repo / ".agents" / "state" / "ACTIVE_SESSION.md").exists()
+    assert (repo / ".agents" / "specs").is_dir()
+    assert (repo / ".agents" / "templates" / "spec-template.md").exists()
+    assert (repo / ".agents" / "templates" / "ticket-template.md").exists()
+    assert (repo / ".agents" / "templates" / "active-session-template.md").exists()
+    assert (repo / ".agents" / "templates" / "glossary-template.md").exists()
+    assert (repo / ".agents" / "templates" / "adr-template.md").exists()
+
+    # 3. Root artifacts
+    assert (repo / "GLOSSARY.md").exists()
+    assert (repo / "ADR").is_dir()
+    assert (repo / "ADR" / "0001-record-architecture-decisions.md").exists()
+
+    # 4. Git history: verify clean commit
+    log = git(repo, "log", "--oneline").stdout.splitlines()
+    assert len(log) == 1
+    assert "initialize board (HOA)" in log[0]
+
+
+def test_cli_init_agentic(tmp_path: Path, capsys) -> None:
+    repo = tmp_path / "cli_repo"
+    repo.mkdir()
+    git(repo, "init", "-b", "main")
+    git(repo, "config", "user.email", "agent@example.com")
+    git(repo, "config", "user.name", "Agent")
+
+    code = cli.main(
+        [
+            "--project-root",
+            str(repo),
+            "init",
+            "--prefix",
+            "CIT",
+            "--agentic",
+        ]
+    )
+    assert code == cli.EXIT_OK
+    out, _ = capsys.readouterr()
+    assert "[OK] initialized board in" in out
+    assert "CIT" in out
+
+    assert (repo / ".agents" / "AGENTS.md").exists()
+    assert (repo / ".agents" / "state" / "ACTIVE_SESSION.md").exists()
+    assert (repo / "GLOSSARY.md").exists()

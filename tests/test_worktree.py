@@ -152,3 +152,21 @@ def test_windows_links_are_junctions_not_symlinks(repo: Path) -> None:
 
     assert os.path.isjunction(link)
     assert not os.path.islink(link)
+
+
+def test_junction_with_spaces_in_path(tmp_path: Path) -> None:
+    if os.name != "nt":
+        pytest.skip("junctions are Windows-only")
+    space_dir = tmp_path / "project dir with spaces"
+    space_dir.mkdir()
+    target = space_dir / "cache target"
+    target.mkdir()
+    (target / "data.bin").write_text("cached-data", encoding="utf-8")
+    link = space_dir / "link destination"
+
+    worktree.create_link(target, link)
+    assert worktree.is_link(link)
+    assert (link / "data.bin").read_text(encoding="utf-8") == "cached-data"
+    worktree.remove_link(link)
+    assert not link.exists()
+    assert (target / "data.bin").exists()

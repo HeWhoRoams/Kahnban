@@ -54,15 +54,13 @@ def create_link(target: Path, link: Path) -> None:
         raise WorktreeError(f"link path already exists: {link}")
     link.parent.mkdir(parents=True, exist_ok=True)
     if os.name == "nt":
-        completed = subprocess.run(
-            ["cmd", "/c", "mklink", "/J", str(link), str(target)],
-            capture_output=True,
-            text=True,
-        )
-        if completed.returncode != 0:
-            detail = (completed.stderr or completed.stdout or "").strip()
-            raise WorktreeError(f"mklink /J failed for {link}: {detail}")
-        return
+        try:
+            import _winapi
+
+            _winapi.CreateJunction(str(target), str(link))
+            return
+        except OSError as error:
+            raise WorktreeError(f"NTFS junction creation failed for {link}: {error}") from error
     os.symlink(target, link, target_is_directory=True)
 
 

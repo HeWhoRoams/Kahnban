@@ -154,3 +154,20 @@ def test_pull_ff_only_and_push_refuse_divergence(tmp_path: Path) -> None:
 
     with pytest.raises(gitops.GitError):
         gitops.push(clone_b, "origin", "main")
+
+
+def test_gitops_utf8_output(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git(repo, "init", "-b", "main")
+    git(repo, "config", "user.email", "agent@example.com")
+    git(repo, "config", "user.name", "Agent 🚀")
+
+    # Commit with non-ASCII characters, curly quotes, and emoji
+    (repo / "file.txt").write_text("hello", encoding="utf-8")
+    gitops.add(repo, ["file.txt"])
+    gitops.commit(repo, "feat: support “curly quotes” & emoji 🚀 in commit message")
+
+    out = gitops._out(repo, ["log", "-n", "1", "--format=%B"])
+    assert "“curly quotes”" in out
+    assert "🚀" in out

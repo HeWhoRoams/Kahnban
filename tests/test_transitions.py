@@ -430,6 +430,34 @@ def test_verify_runs_the_command_and_advances_on_success(board: Path) -> None:
     assert "git version" in result.artifact.read_text(encoding="utf-8")
 
 
+def test_verify_runs_powershell_script_on_windows(board: Path) -> None:
+    if os.name != "nt":
+        pytest.skip("PowerShell script validation test is Windows-specific")
+    script = board / "check.ps1"
+    script.write_text("Write-Output 'ps1 passed'\nexit 0\n", encoding="utf-8")
+    config = claimed_ticket(board, validation="./check.ps1")
+
+    result = core.verify(config, "TST-001")
+
+    assert result.passed
+    assert result.exit_code == 0
+    assert "ps1 passed" in result.output
+
+
+def test_verify_runs_powershell_script_with_quoted_args_on_windows(board: Path) -> None:
+    if os.name != "nt":
+        pytest.skip("PowerShell script validation test is Windows-specific")
+    script = board / "check_args.ps1"
+    script.write_text("param([string]$filter)\nWrite-Output \"arg was: $filter\"\nexit 0\n", encoding="utf-8")
+    config = claimed_ticket(board, validation='./check_args.ps1 -filter "nested space"')
+
+    result = core.verify(config, "TST-001")
+
+    assert result.passed
+    assert result.exit_code == 0
+    assert "arg was: nested space" in result.output
+
+
 def test_verify_blocks_on_a_non_zero_exit_and_still_logs(board: Path) -> None:
     config = claimed_ticket(board, validation="git rev-parse --verify no-such-ref")
 

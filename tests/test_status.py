@@ -202,4 +202,44 @@ def test_render_helpers_are_pure(tmp_path: Path) -> None:
     assert markdown.index("TST-001") < markdown.index("TST-002")
     assert [t["id"] for t in payload["columns"][0]["tickets"]] == ["TST-001", "TST-002"]
     written = status.write(tmp_path, records, ["0-backlog"], timestamp=WHEN)
-    assert [path.name for path in written] == ["STATUS.md", "status.json"]
+    assert [path.name for path in written] == ["STATUS.md", "status.json", "board.json"]
+
+
+def test_board_json_contains_rich_fields(board: Path) -> None:
+    config = core.load_config(board)
+    write_ticket(
+        config.board_path,
+        "0-backlog",
+        "TST-001",
+        "star-clusters",
+        title="Star clusters",
+        depends_on="[TST-000]",
+        blocked_on="Waiting on design approval",
+        blast_radius=(
+            "src/engine/galaxy/map_generator.gd",
+            "tests/test_map_generator.gd",
+        ),
+    )
+    commit_board(board)
+
+    core.sync(config, timestamp=WHEN)
+
+    board_json_path = board / "plans" / "board.json"
+    assert board_json_path.exists()
+    payload = json.loads(board_json_path.read_text(encoding="utf-8"))
+
+    assert payload["generator"] == "kahnban"
+    assert "columns" in payload
+    assert "tickets_by_id" in payload
+
+    ticket = payload["tickets_by_id"]["TST-001"]
+    assert ticket["id"] == "TST-001"
+    assert ticket["title"] == "Star clusters"
+    assert ticket["description"] == "Something needs doing."
+    assert ticket["depends_on"] == ["TST-000"]
+    assert ticket["blocked_on"] == "Waiting on design approval"
+    assert ticket["blast_radius"] == [
+        "src/engine/galaxy/map_generator.gd",
+        "tests/test_map_generator.gd",
+    ]
+

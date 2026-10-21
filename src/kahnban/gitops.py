@@ -38,7 +38,13 @@ def run(
     Raises :class:`GitError` on a non-zero exit unless ``check`` is false.
     """
     cmd = ["git", "-C", str(repo), *args]
-    completed = subprocess.run(cmd, capture_output=True, text=True)
+    completed = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
     if check and completed.returncode != 0:
         raise GitError(cmd, completed.returncode, completed.stderr)
     return completed
@@ -52,6 +58,8 @@ def _out(repo: Path, args: Sequence[str]) -> str:
 
 
 def is_repo(path: Path) -> bool:
+    if not (path / ".git").exists():
+        return False
     completed = run(path, ["rev-parse", "--git-dir"], check=False)
     return completed.returncode == 0
 
@@ -83,6 +91,9 @@ def default_branch(repo: Path) -> str:
 
 def main_worktree(repo: Path) -> Path:
     """The main working tree of ``repo``, even when called from a linked worktree."""
+    git_dir = repo / ".git"
+    if git_dir.is_dir():
+        return repo
     completed = run(
         repo, ["rev-parse", "--path-format=absolute", "--git-common-dir"], check=False
     )

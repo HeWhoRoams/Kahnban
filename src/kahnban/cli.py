@@ -15,7 +15,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from kahnban import __version__, core, gitops, ingest, linter, worktree
+from kahnban import __version__, core, gitops, ingest, linter, session, worktree
 
 EXIT_OK = 0
 EXIT_REFUSED = 1
@@ -228,6 +228,7 @@ def cmd_init(args: argparse.Namespace) -> int:
         wip_limit=args.wip_limit,
         validation_command=args.validation_command or "",
         use_worktrees=not args.no_worktrees,
+        agentic=getattr(args, "agentic", False),
     )
     print(f"[OK] initialized board in {root} with prefix {args.prefix.upper()}")
     for path in written:
@@ -247,6 +248,68 @@ def cmd_status(args: argparse.Namespace) -> int:
         f"Lint: {len(result.violations)} violation(s), {len(result.warnings)} warning(s)"
     )
     return EXIT_OK if result.ok else EXIT_REFUSED
+
+
+
+
+def cmd_session(args: argparse.Namespace) -> int:
+    config = _load(args)
+    root = config.project_root
+
+    flush = getattr(args, "flush", False)
+    ticket_arg = getattr(args, "ticket", None)
+    note_arg = getattr(args, "note", None)
+    cmd_arg = getattr(args, "next_cmd", None)
+    blocker_arg = getattr(args, "blocker", None)
+
+    if flush or ticket_arg or note_arg or cmd_arg or blocker_arg:
+        next_cmds = [cmd_arg] if cmd_arg else None
+        state, written = session.sync_session(
+            config,
+            ticket_id=ticket_arg,
+            branch=getattr(args, "branch", None),
+            worktree=getattr(args, "worktree", None),
+            agent_harness=getattr(args, "harness", None),
+            status=getattr(args, "status", None),
+            context=note_arg,
+            blockers=blocker_arg,
+            next_commands=next_cmds,
+        )
+        print(f"[OK] updated session state in {written}")
+        return EXIT_OK
+
+    current = session.read_session(root)
+    if not current:
+        inspected = session.inspect_session(config)
+        print("Active Session: (no ACTIVE_SESSION.md found)")
+        if inspected["in_progress_tickets"]:
+            print("In-progress tickets from board:")
+            for t in inspected["in_progress_tickets"]:
+                print(f"  - {t['id']} ({t['owner']}) branch: {t['branch']} worktree: {t['worktree']}")
+        else:
+            print("Board is idle (no in-progress tickets).")
+        return EXIT_OK
+
+    print(f"Active Session: {current.active_ticket or '(none)'} [{current.status}]")
+    print(f"  Harness:  {current.agent_harness}")
+    print(f"  Worktree: {current.active_worktree or '-'}")
+    print(f"  Branch:   {current.branch or '-'}")
+    print(f"  Updated:  {current.last_updated}")
+    if current.context:
+        print(f"  Context:  {current.context}")
+    if current.modified_files:
+        print(f"  Modified: {len(current.modified_files)} file(s)")
+        for f in current.modified_files[:5]:
+            print(f"    - {f}")
+        if len(current.modified_files) > 5:
+            print(f"    ... and {len(current.modified_files) - 5} more")
+    if current.blockers:
+        print(f"  Blockers: {current.blockers}")
+    if current.next_commands:
+        print("  Next Command(s):")
+        for cmd in current.next_commands:
+            print(f"    $ {cmd}")
+    return EXIT_OK
 
 
 # --- parser -----------------------------------------------------------------
@@ -447,7 +510,27 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument(
         "--no-worktrees", action="store_true", help="set use_worktrees to false"
     )
+    init.add_argument(
+        "--agentic", action="store_true", help="scaffold .agents/, templates, and ACTIVE_SESSION.md"
+    )
     init.set_defaults(handler=cmd_init)
+
+    for cmd_name in ("session", "handoff"):
+        sp = subparsers.add_parser(
+            cmd_name,
+            parents=[board],
+            help="inspect or update cross-harness session state (ACTIVE_SESSION.md)",
+        )
+        sp.add_argument("--flush", action="store_true", help="flush/resync state from live worktrees")
+        sp.add_argument("--ticket", help="active ticket id")
+        sp.add_argument("--worktree", help="active worktree path")
+        sp.add_argument("--branch", help="active branch name")
+        sp.add_argument("--harness", help="current AI harness (claude-code, chatgpt, antigravity, cursor)")
+        sp.add_argument("--status", help="session status (idle, in_progress, review, blocked)")
+        sp.add_argument("--note", help="context or progress note for handoff")
+        sp.add_argument("--blocker", help="failing test trace or blocker reason")
+        sp.add_argument("--next-cmd", help="immediate shell command for incoming agent")
+        sp.set_defaults(handler=cmd_session)
 
     return parser
 

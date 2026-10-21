@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import threading
+import time
+
 import json
 from pathlib import Path
 
@@ -226,10 +229,30 @@ def test_board_lock_is_exclusive_and_released(board: Path) -> None:
     with core.board_lock(config):
         assert (config.board_path / core.LOCK_NAME).exists()
         with pytest.raises(core.LockError, match="locked by another"):
-            with core.board_lock(config):
+            with core.board_lock(config, max_retries=2, retry_interval=0.01):
                 pass
 
     assert not (config.board_path / core.LOCK_NAME).exists()
+
+
+def test_board_lock_retries_and_succeeds_when_released(board: Path) -> None:
+    config = load(board)
+    lock_path = config.board_path / core.LOCK_NAME
+
+    def release_later():
+        time.sleep(0.05)
+        try:
+            lock_path.unlink()
+        except OSError:
+            pass
+
+    lock_path.write_text("pid=9999 at=test\n", encoding="utf-8")
+    t = threading.Thread(target=release_later)
+    t.start()
+
+    with core.board_lock(config, max_retries=15, retry_interval=0.02):
+        assert lock_path.exists()
+    t.join()
 
 
 def test_board_lock_breaks_a_stale_lock_with_a_warning(board: Path) -> None:

@@ -1,7 +1,7 @@
-"""Board projections: ``plans/STATUS.md`` and ``plans/status.json``.
+"""Board projections: ``plans/STATUS.md``, ``plans/status.json``, and ``plans/board.json``.
 
-Both files are regenerated wholesale on every transition and are never edited
-by hand — the column folders remain the sole ground truth (D8).  Titles come
+All projection files are regenerated wholesale on every transition and are never
+edited by hand — the column folders remain the sole ground truth (D8).  Titles come
 from frontmatter, never from splitting filenames on ``-`` (a v3 defect that
 broke on slugs containing digits).
 """
@@ -12,10 +12,11 @@ import json
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 FIELDS = ("id", "title", "status", "owner", "branch", "worktree", "updated", "column")
 
-Record = Mapping[str, str]
+Record = Mapping[str, Any]
 
 
 def _sort_key(record: Record) -> tuple[str, int, str]:
@@ -121,6 +122,66 @@ def render_json(
     return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
 
 
+def render_board_json(
+    records: Iterable[Record],
+    columns: Sequence[str],
+    *,
+    timestamp: datetime,
+    project_name: str = "",
+    wip_limit: int = 3,
+) -> str:
+    grouped = _grouped(records, columns)
+    tickets_by_id: dict[str, dict[str, Any]] = {}
+    board_columns = []
+
+    for column in columns:
+        col_tickets: list[dict[str, Any]] = []
+        for record in grouped.get(column, []):
+            ticket_id = str(record.get("id", ""))
+            depends_on = record.get("depends_on", [])
+            if isinstance(depends_on, str):
+                depends_on = [d.strip() for d in depends_on.split(",") if d.strip()]
+            blast_radius = record.get("blast_radius", [])
+            if isinstance(blast_radius, str):
+                blast_radius = [b.strip() for b in blast_radius.split(",") if b.strip()]
+
+            entry: dict[str, Any] = {
+                "id": ticket_id,
+                "title": str(record.get("title", "")),
+                "status": str(record.get("status", "")),
+                "column": str(record.get("column", column)),
+                "owner": str(record.get("owner", "")),
+                "branch": str(record.get("branch", "")),
+                "worktree": str(record.get("worktree", "")),
+                "description": str(record.get("description", "")),
+                "depends_on": depends_on,
+                "blocked_on": str(record.get("blocked_on", "")),
+                "blast_radius": blast_radius,
+                "updated": str(record.get("updated", "")),
+            }
+            col_tickets.append(entry)
+            if ticket_id:
+                tickets_by_id[ticket_id] = entry
+
+        board_columns.append(
+            {
+                "name": column,
+                "count": len(col_tickets),
+                "tickets": col_tickets,
+            }
+        )
+
+    payload = {
+        "generated": timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
+        "generator": "kahnban",
+        "project": project_name,
+        "wip_limit": wip_limit,
+        "columns": board_columns,
+        "tickets_by_id": tickets_by_id,
+    }
+    return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+
+
 def write(
     plans_dir: Path,
     records: Iterable[Record],
@@ -128,12 +189,15 @@ def write(
     *,
     timestamp: datetime,
     project_name: str = "",
+    wip_limit: int = 3,
 ) -> list[Path]:
-    """Write both projections; returns the paths written, in commit order."""
+    """Write projections (STATUS.md, status.json, board.json); returns written paths."""
     materialized = list(records)
     plans_dir.mkdir(parents=True, exist_ok=True)
     markdown_path = plans_dir / "STATUS.md"
     json_path = plans_dir / "status.json"
+    board_json_path = plans_dir / "board.json"
+
     markdown_path.write_text(
         render_markdown(
             materialized, columns, timestamp=timestamp, project_name=project_name
@@ -146,4 +210,30 @@ def write(
         encoding="utf-8",
         newline="\n",
     )
-    return [markdown_path, json_path]
+    board_json_payload = render_board_json(
+        materialized,
+        columns,
+        timestamp=timestamp,
+        project_name=project_name,
+        wip_limit=wip_limit,
+    )
+    board_json_path.write_text(
+        board_json_payload,
+        encoding="utf-8",
+        newline="\n",
+    )
+
+    written = [markdown_path, json_path, board_json_path]
+
+    # If an adopter repo maintains a .kanban/ folder, mirror board.json there as well
+    alt_kanban_dir = plans_dir.parent / ".kanban"
+    if alt_kanban_dir.is_dir():
+        alt_board_json = alt_kanban_dir / "board.json"
+        alt_board_json.write_text(
+            board_json_payload,
+            encoding="utf-8",
+            newline="\n",
+        )
+        written.append(alt_board_json)
+
+    return written
