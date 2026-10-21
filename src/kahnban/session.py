@@ -22,6 +22,42 @@ PLANS_SESSION_RELATIVE = Path("plans") / "ACTIVE_SESSION.md"
 
 
 @dataclass(frozen=True)
+class SubagentRecord:
+    id: str
+    owner: str
+    worktree: str
+    branch: str = ""
+    title: str = ""
+
+    def to_dict(self) -> dict[str, str]:
+        res = {
+            "id": self.id,
+            "owner": self.owner,
+            "worktree": self.worktree,
+            "branch": self.branch,
+        }
+        if self.title:
+            res["title"] = self.title
+        return res
+
+    def __getitem__(self, key: str) -> str:
+        return self.get(key)
+
+    def get(self, key: str, default: str = "") -> str:
+        if key == "id":
+            return self.id
+        elif key == "owner":
+            return self.owner
+        elif key == "worktree":
+            return self.worktree
+        elif key == "branch":
+            return self.branch
+        elif key in ("title", "objective"):
+            return self.title or default
+        return default
+
+
+@dataclass(frozen=True)
 class SessionState:
     last_updated: str
     active_ticket: str
@@ -30,7 +66,7 @@ class SessionState:
     agent_harness: str
     status: str
     context: str
-    subagents: list[dict[str, str]] = field(default_factory=list)
+    subagents: list[SubagentRecord] = field(default_factory=list)
     modified_files: list[str] = field(default_factory=list)
     blockers: str = ""
     next_commands: list[str] = field(default_factory=list)
@@ -72,7 +108,16 @@ class SessionUpdate:
             agent_harness=resolved_harness,
             status=resolved_status,
             context=resolved_context,
-            subagents=list(inspected.get("in_progress_tickets", [])),
+            subagents=[
+                t if isinstance(t, SubagentRecord) else SubagentRecord(
+                    id=t.get("id", ""),
+                    owner=t.get("owner", ""),
+                    worktree=t.get("worktree", ""),
+                    branch=t.get("branch", ""),
+                    title=t.get("title", ""),
+                )
+                for t in inspected.get("in_progress_tickets", [])
+            ],
             modified_files=resolved_mods,
             blockers=resolved_blockers,
             next_commands=resolved_cmds,
@@ -142,6 +187,10 @@ def read_session(project_root: Path) -> SessionState | None:
 
     raw_sub = core.section(body, "In-Flight Sub-Agents & Worktrees") or ""
     subagents: list[dict[str, str]] = []
+    has_branch_column = any(
+        line.strip().startswith("|") and "branch" in line.lower()
+        for line in raw_sub.splitlines()
+    )
     for line in raw_sub.splitlines():
         trimmed = line.strip()
         if not trimmed.startswith("|") or trimmed.startswith("| :---"):
@@ -152,13 +201,15 @@ def read_session(project_root: Path) -> SessionState | None:
         t_id = cells[0] if len(cells) > 0 else ""
         owner = cells[1] if len(cells) > 1 else ""
         wt = cells[2] if len(cells) > 2 else ""
-        br = cells[3] if len(cells) > 3 else ""
-        obj = cells[4] if len(cells) > 4 else ""
+        if has_branch_column or len(cells) >= 5:
+            br = cells[3] if len(cells) > 3 else ""
+            obj = cells[4] if len(cells) > 4 else ""
+        else:
+            br = ""
+            obj = cells[3] if len(cells) > 3 else ""
         if t_id and t_id != "-":
-            item = {"id": t_id, "owner": owner, "worktree": wt, "branch": br}
-            if obj and obj != "-":
-                item["title"] = obj
-            subagents.append(item)
+            record = SubagentRecord(id=t_id, owner=owner, worktree=wt, branch=br, title=obj if obj != "-" else "")
+            subagents.append(record)
 
     raw_next = core.section(body, "Immediate Next Shell Commands") or ""
     next_commands: list[str] = []

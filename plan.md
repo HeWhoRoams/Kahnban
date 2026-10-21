@@ -72,6 +72,10 @@ source of truth backed by standard Git storage.
 | D7 | Blast-radius overlap: hard refuse at claim; diff containment at verify | Worktrees isolate filesystems, not merge targets; overlapping in-flight blast radii are the primary merge-conflict source |
 | D8 | JSON is never ground truth; `plans/status.json` added as a read-only projection | Principle 1 — a parallel state file would diverge from the folders |
 | D9 | Observe-only `kahnban watch` daemon deferred to v2; LLM-as-judge verification **rejected** | Auto-transitions destroy the audit trail; LLM verification is non-deterministic and gameable by the agents it audits (contradicts D4) |
+| D10 | Windows Junctions via CPython `_winapi` | Replaces shell `mklink /J`; prevents privilege elevation prompt failures on modern Windows builds |
+| D11 | PowerShell execution policy bypass for `.ps1` | Ensures validation scripts (`.ps1`) run cleanly without requiring system-wide execution policy modifications |
+| D12 | Board lock randomized jitter & exponential backoff | Prevents thundering-herd race conditions across parallel sub-agents competing for board claims |
+| D13 | Programmatic `board.json` and `.kanban/` mirror hook | Provides zero-loss dependency & blast-radius graph queries and third-party visualizer interop |
 
 ---
 

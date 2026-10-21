@@ -108,7 +108,7 @@ def render_json(
     grouped = _grouped(records, columns)
     payload = {
         "generated": timestamp.strftime("%Y-%m-%dT%H:%M:%S"),
-        "generator": f"kahnban-v{__version__}",
+        "generator": "kahnban",
         "columns": [
             {
                 "name": column,
@@ -200,17 +200,17 @@ def write(
     json_path = plans_dir / "status.json"
     board_json_path = plans_dir / "board.json"
 
-    markdown_path.write_text(
+    from kahnban.core import write_text_atomic
+
+    write_text_atomic(
+        markdown_path,
         render_markdown(
             materialized, columns, timestamp=timestamp, project_name=project_name
         ),
-        encoding="utf-8",
-        newline="\n",
     )
-    json_path.write_text(
+    write_text_atomic(
+        json_path,
         render_json(materialized, columns, timestamp=timestamp),
-        encoding="utf-8",
-        newline="\n",
     )
     board_json_payload = render_board_json(
         materialized,
@@ -219,10 +219,9 @@ def write(
         project_name=project_name,
         wip_limit=wip_limit,
     )
-    board_json_path.write_text(
+    write_text_atomic(
+        board_json_path,
         board_json_payload,
-        encoding="utf-8",
-        newline="\n",
     )
 
     written = [markdown_path, json_path, board_json_path]
@@ -231,10 +230,9 @@ def write(
     alt_kanban_dir = plans_dir.parent / ".kanban"
     if alt_kanban_dir.is_dir():
         alt_board_json = alt_kanban_dir / "board.json"
-        alt_board_json.write_text(
+        write_text_atomic(
+            alt_board_json,
             board_json_payload,
-            encoding="utf-8",
-            newline="\n",
         )
         written.append(alt_board_json)
 

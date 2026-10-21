@@ -271,3 +271,77 @@ def test_session_update_apply_value_object(board: Path) -> None:
     assert state.status == "review"
     assert state.context == "Applied via value object"
     assert state.next_commands == ["pytest -q"]
+
+
+def test_read_session_4_column_subagent_table(tmp_path: Path) -> None:
+    session_file = tmp_path / ".agents" / "state" / "ACTIVE_SESSION.md"
+    session_file.parent.mkdir(parents=True, exist_ok=True)
+    raw_md = """---
+last_updated: "2026-10-21T12:00:00"
+active_ticket: "HOA-001"
+active_worktree: ".worktrees/HOA-001"
+branch: "ticket/HOA-001"
+agent_harness: "generic"
+status: "in_progress"
+---
+
+# Active Session State
+
+## Current Context
+Running 4-column test
+
+## In-Flight Sub-Agents & Worktrees
+| Ticket ID | Owner / Agent | Worktree Path | Current Objective |
+| :--- | :--- | :--- | :--- |
+| HOA-002 | subagent-alpha | `.worktrees/HOA-002` | Sector generator seam |
+
+## Modified Files
+_Working tree clean._
+
+## Failing Test Traces / Blockers
+_None._
+
+## Immediate Next Shell Commands
+_No immediate commands queued._
+"""
+    session_file.write_text(raw_md, encoding="utf-8")
+
+    state = session.read_session(tmp_path)
+    assert state is not None
+    assert len(state.subagents) == 1
+    assert state.subagents[0]["id"] == "HOA-002"
+    assert state.subagents[0]["owner"] == "subagent-alpha"
+    assert state.subagents[0]["worktree"] == ".worktrees/HOA-002"
+    assert state.subagents[0]["branch"] == ""
+    assert state.subagents[0]["title"] == "Sector generator seam"
+
+
+def test_cli_session_note_and_blocker_file(board: Path, tmp_path: Path, capsys) -> None:
+    note_file = tmp_path / "my_note.txt"
+    note_file.write_text("Context note from dedicated file", encoding="utf-8")
+
+    blocker_file = tmp_path / "my_blocker.txt"
+    blocker_file.write_text("AssertionError: test failure trace", encoding="utf-8")
+
+    code = cli.main(
+        [
+            "--project-root",
+            str(board),
+            "session",
+            "--flush",
+            "--ticket",
+            "TST-001",
+            "--note-file",
+            str(note_file),
+            "--blocker-file",
+            str(blocker_file),
+        ]
+    )
+    assert code == cli.EXIT_OK
+    out, _ = capsys.readouterr()
+    assert "[OK] updated session state" in out
+
+    state = session.read_session(board)
+    assert state is not None
+    assert state.context == "Context note from dedicated file"
+    assert state.blockers == "AssertionError: test failure trace"

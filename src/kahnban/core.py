@@ -319,8 +319,24 @@ def read_text(path: Path) -> str:
     return frontmatter.normalize_newlines(path.read_text(encoding="utf-8"))
 
 
+def write_text_atomic(path: Path, text: str) -> None:
+    path = Path(path).resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_suffix(f"{path.suffix}.tmp.{os.getpid()}.{time.time_ns()}")
+    try:
+        temp_path.write_text(frontmatter.normalize_newlines(text), encoding="utf-8", newline="\n")
+        temp_path.replace(path)
+    except Exception:
+        if temp_path.exists():
+            try:
+                temp_path.unlink()
+            except OSError:
+                pass
+        raise
+
+
 def write_text(path: Path, text: str) -> None:
-    path.write_text(frontmatter.normalize_newlines(text), encoding="utf-8", newline="\n")
+    write_text_atomic(path, text)
 
 
 ID_PATTERN = re.compile(r"^([A-Za-z][A-Za-z0-9]*)-(\d+)")
@@ -1783,7 +1799,7 @@ def init_board(
         directory = board_root / column
         directory.mkdir(parents=True, exist_ok=True)
         keep = directory / ".gitkeep"
-        keep.write_text("", encoding="utf-8")
+        write_text_atomic(keep, "")
         written.append(keep)
 
     template_source = Path(__file__).parent / "templates" / "ticket.md"
@@ -1812,7 +1828,7 @@ def init_board(
         specs_dir = agents_dir / "specs"
         specs_dir.mkdir(parents=True, exist_ok=True)
         specs_keep = specs_dir / ".gitkeep"
-        specs_keep.write_text("", encoding="utf-8")
+        write_text_atomic(specs_keep, "")
         written.append(specs_keep)
 
         # 4. .agents/templates/
@@ -1841,7 +1857,7 @@ def init_board(
         adr_dir = root / "ADR"
         adr_dir.mkdir(parents=True, exist_ok=True)
         adr_keep = adr_dir / ".gitkeep"
-        adr_keep.write_text("", encoding="utf-8")
+        write_text_atomic(adr_keep, "")
         written.append(adr_keep)
         first_adr = adr_dir / "0001-record-architecture-decisions.md"
         if not first_adr.exists():
@@ -1849,19 +1865,13 @@ def init_board(
             written.append(first_adr)
 
         # 7. .agents/skills/ (Self-contained Matt Pocock engineering pipeline)
-        skills_src = templates_dir / "skills"
-        if skills_src.is_dir():
-            skills_dst = agents_dir / "skills"
-            skills_dst.mkdir(parents=True, exist_ok=True)
-            for skill_dir in sorted(skills_src.iterdir()):
-                if skill_dir.is_dir():
-                    target_skill_dir = skills_dst / skill_dir.name
-                    target_skill_dir.mkdir(parents=True, exist_ok=True)
-                    for f in sorted(skill_dir.iterdir()):
-                        if f.is_file():
-                            target_file = target_skill_dir / f.name
-                            shutil.copyfile(f, target_file)
-                            written.append(target_file)
+        from kahnban import skills
+        skills.install_skills(root, harness="agents", source="bundled")
+        skills_dst = agents_dir / "skills"
+        if skills_dst.is_dir():
+            for p in sorted(skills_dst.rglob("*")):
+                if p.is_file():
+                    written.append(p)
 
     gitignore = root / ".gitignore"
     existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""

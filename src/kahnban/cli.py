@@ -258,9 +258,13 @@ def cmd_session(args: argparse.Namespace) -> int:
 
     flush = getattr(args, "flush", False)
     ticket_arg = getattr(args, "ticket", None)
-    note_arg = getattr(args, "note", None)
+    note_arg = _read_text_argument(
+        getattr(args, "note", None), getattr(args, "note_file", None)
+    )
     cmd_arg = getattr(args, "next_cmd", None)
-    blocker_arg = getattr(args, "blocker", None)
+    blocker_arg = _read_text_argument(
+        getattr(args, "blocker", None), getattr(args, "blocker_file", None)
+    )
 
     if flush or ticket_arg or note_arg or cmd_arg or blocker_arg:
         next_cmds = [cmd_arg] if cmd_arg else None
@@ -312,6 +316,10 @@ def cmd_session(args: argparse.Namespace) -> int:
         print("  Next Command(s):")
         for cmd in current.next_commands:
             print(f"    $ {cmd}")
+    inspected = session.inspect_session(config)
+    dirty_delta = set(inspected.get("modified_files", [])) - set(current.modified_files)
+    if dirty_delta:
+        print(f"  Note: {len(dirty_delta)} unrecorded file change(s) in working tree; run with --flush to synchronize.")
     return EXIT_OK
 
 
@@ -573,7 +581,9 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--harness", help="current AI harness (claude-code, chatgpt, antigravity, cursor)")
         sp.add_argument("--status", help="session status (idle, in_progress, review, blocked)")
         sp.add_argument("--note", help="context or progress note for handoff")
+        sp.add_argument("--note-file", help="path to note file, or - for stdin")
         sp.add_argument("--blocker", help="failing test trace or blocker reason")
+        sp.add_argument("--blocker-file", help="path to blocker file, or - for stdin")
         sp.add_argument("--next-cmd", help="immediate shell command for incoming agent")
         sp.set_defaults(handler=cmd_session)
 

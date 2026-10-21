@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +27,32 @@ class SkillInfo:
     description: str
     path: str
     source: str
+
+
+@dataclass(frozen=True)
+class SkillsResult:
+    ok: bool
+    source: str
+    harness: str
+    installed_skills: list[str]
+    configured_harnesses: list[str]
+    messages: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> SkillsResult:
+        return {
+            "ok": self.ok,
+            "source": self.source,
+            "harness": self.harness,
+            "installed_skills": self.installed_skills,
+            "configured_harnesses": self.configured_harnesses,
+            "messages": self.messages,
+        }
+
+    def __getitem__(self, item: str) -> Any:
+        return getattr(self, item)
+
+    def get(self, item: str, default: Any = None) -> Any:
+        return getattr(self, item, default)
 
 
 def _read_skill_description(skill_md: Path) -> str:
@@ -64,7 +90,7 @@ def list_skills(project_root: Path | None = None) -> list[SkillInfo]:
                         SkillInfo(
                             name=entry.name,
                             description=desc,
-                            path=str(entry / "SKILL.md"),
+                            path=(entry / "SKILL.md").resolve().as_posix(),
                             source="project (.agents/skills)",
                         )
                     )
@@ -78,7 +104,7 @@ def list_skills(project_root: Path | None = None) -> list[SkillInfo]:
                     SkillInfo(
                         name=entry.name,
                         description=desc,
-                        path=str(entry / "SKILL.md"),
+                        path=(entry / "SKILL.md").resolve().as_posix(),
                         source="bundled",
                     )
                 )
@@ -110,7 +136,7 @@ def install_skills(
     harness: str = "auto",
     source: str = "bundled",
     dry_run: bool = False,
-) -> dict[str, Any]:
+) -> SkillsResult:
     """Install and configure skills in the adopter project and chosen harnesses.
 
     Parameters
@@ -197,17 +223,18 @@ def install_skills(
         if not dry_run:
             cursor_rules.mkdir(parents=True, exist_ok=True)
             if not rule_file.exists():
-                rule_file.write_text(CURSOR_MDC_CONTENT, encoding="utf-8", newline="\n")
+                from kahnban.core import write_text_atomic
+                write_text_atomic(rule_file, CURSOR_MDC_CONTENT)
         configured_harnesses.append("cursor (.cursor/rules/kanban.mdc)")
 
-    return {
-        "ok": True,
-        "source": source,
-        "harness": harness,
-        "installed_skills": sorted(set(installed_skills)),
-        "configured_harnesses": configured_harnesses,
-        "messages": messages,
-    }
+    return SkillsResult(
+        ok=True,
+        source=source,
+        harness=harness,
+        installed_skills=sorted(set(installed_skills)),
+        configured_harnesses=configured_harnesses,
+        messages=messages,
+    )
 
 
 def _copy_bundled_skills(target_dir: Path, recorded_names: list[str]) -> None:
