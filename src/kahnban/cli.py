@@ -15,7 +15,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from kahnban import __version__, core, gitops, ingest, linter, session, worktree
+from kahnban import __version__, core, gitops, ingest, linter, session, skills, worktree
 
 EXIT_OK = 0
 EXIT_REFUSED = 1
@@ -315,6 +315,48 @@ def cmd_session(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_skills(args: argparse.Namespace) -> int:
+    try:
+        config = _load(args)
+        root = config.project_root
+    except core.ConfigError:
+        root = Path(args.project_root).resolve() if getattr(args, "project_root", None) else Path.cwd().resolve()
+
+    action = getattr(args, "skills_action", None)
+    if action == "list":
+        available = skills.list_skills(root)
+        if not available:
+            print("No skills found.")
+            return EXIT_OK
+        print("Available Agent Skills:")
+        for sk in available:
+            print(f"  - /{sk.name} [{sk.source}]")
+            if sk.description:
+                print(f"      {sk.description}")
+        return EXIT_OK
+
+    # install action (default)
+    source = getattr(args, "source", "bundled") or "bundled"
+    harness = getattr(args, "harness", "auto") or "auto"
+    dry_run = getattr(args, "dry_run", False)
+
+    res = skills.install_skills(
+        root,
+        harness=harness,
+        source=source,
+        dry_run=dry_run,
+    )
+    for msg in res.get("messages", []):
+        print(f"  {msg}")
+    print(f"[OK] installed {len(res['installed_skills'])} skill(s) from '{res['source']}':")
+    for s in res["installed_skills"]:
+        print(f"  - /{s}")
+    print("Configured harness targets:")
+    for h in res["configured_harnesses"]:
+        print(f"  - {h}")
+    return EXIT_OK
+
+
 # --- parser -----------------------------------------------------------------
 
 
@@ -534,6 +576,47 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--blocker", help="failing test trace or blocker reason")
         sp.add_argument("--next-cmd", help="immediate shell command for incoming agent")
         sp.set_defaults(handler=cmd_session)
+
+    skills_parser = subparsers.add_parser(
+        "skills",
+        parents=[board],
+        help="install, list, and configure Matt Pocock skills across AI harnesses",
+    )
+    skills_parser.add_argument(
+        "--source",
+        choices=["bundled", "mattpocock"],
+        default="bundled",
+        help="skill source: 'bundled' (default: 5 core Matt Pocock skills) or 'mattpocock' (full upstream library)",
+    )
+    skills_parser.add_argument(
+        "--harness",
+        choices=["auto", "agents", "claude", "gemini", "cursor", "all"],
+        default="auto",
+        help="target AI harness: 'auto' (default: .agents/skills + detected harnesses), 'claude', 'gemini', 'cursor', 'all'",
+    )
+    skills_parser.add_argument("--dry-run", action="store_true", help="simulate without writing files")
+    skills_sub = skills_parser.add_subparsers(dest="skills_action")
+
+    inst_parser = skills_sub.add_parser("install", help="install skills into project and harnesses")
+    inst_parser.add_argument(
+        "--source",
+        choices=["bundled", "mattpocock"],
+        default="bundled",
+        help="skill source: 'bundled' (default) or 'mattpocock'",
+    )
+    inst_parser.add_argument(
+        "--harness",
+        choices=["auto", "agents", "claude", "gemini", "cursor", "all"],
+        default="auto",
+        help="target AI harness: 'auto' (default), 'claude', 'gemini', 'cursor', 'all'",
+    )
+    inst_parser.add_argument("--dry-run", action="store_true", help="simulate without writing files")
+    inst_parser.set_defaults(handler=cmd_skills)
+
+    list_parser = skills_sub.add_parser("list", help="list installed and available skills")
+    list_parser.set_defaults(handler=cmd_skills)
+
+    skills_parser.set_defaults(handler=cmd_skills)
 
     return parser
 
