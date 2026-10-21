@@ -38,7 +38,7 @@ class SkillsResult:
     configured_harnesses: list[str]
     messages: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> SkillsResult:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "ok": self.ok,
             "source": self.source,
@@ -266,7 +266,6 @@ def _fetch_pstack_upstream(
         messages.append("Installed curated pstack core skills from bundle.")
         return
 
-    import os
     headers = {"User-Agent": "kahnban-skills"}
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     if token:

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import datetime
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -133,7 +134,7 @@ def parse_learning(file_path: Path) -> LearningRecord:
             header_name = line[4:].strip().lower()
             matched_canonical = None
             for canon_key, canon_val in CANONICAL_SECTIONS.items():
-                if canon_key in header_name or canon_val in header_name:
+                if header_name == canon_key or header_name == canon_val:
                     matched_canonical = canon_val
                     break
             if matched_canonical:
@@ -250,10 +251,23 @@ def list_learnings(project_root: Path, include_archive: bool = False) -> list[Le
     return records
 
 
-def _slugify(text: str) -> str:
-    cleaned = re.sub(r"[^\w\s-]", "", text.lower()).strip()
-    slug = re.sub(r"[-\s]+", "-", cleaned)
-    return slug[:60].rstrip("-")
+def _slugify(text: str, max_len: int | None = 60) -> str:
+    cleaned = re.sub(r"[^a-zA-Z0-9]+", "-", text.strip().lower())
+    slug = cleaned.strip("-")
+    if not slug:
+        return "learning"
+    return slug[:max_len].rstrip("-") if max_len else slug
+
+
+def _slug_matches(slug_a: str, slug_b: str) -> bool:
+    """Check if two slugs match cleanly on exact equality or hyphen prefix boundaries."""
+    if not slug_a or not slug_b:
+        return False
+    if slug_a == slug_b:
+        return True
+    return slug_a.startswith(slug_b + "-") or slug_b.startswith(slug_a + "-")
+
+
 
 
 def _next_learning_id(learnings_dir: Path) -> str:
@@ -278,25 +292,35 @@ def find_matching_learning(
     category: str = "",
 ) -> LearningRecord | None:
     """Find an existing learning record that matches the pattern for clustering."""
-    norm_title = _slugify(title)
+    norm_title = _slugify(title, max_len=None)
     norm_paths = set(str(p).replace("\\", "/").lower() for p in (target_paths or []))
+
+    STOPWORDS = {
+        "the", "and", "for", "with", "from", "when", "that", "this",
+        "file", "error", "fail", "failed", "bug", "issue", "crash",
+        "test", "code", "run", "add", "use", "using", "into", "over"
+    }
 
     for rec in records:
         if rec.status != "pending":
             continue
-        # Check title slug similarity with non-empty slug guard
-        rec_slug = _slugify(rec.title)
-        if norm_title and rec_slug and (norm_title in rec_slug or rec_slug in norm_title):
+        # Check boundary-aware slug matching without 60-character truncation collisions
+        rec_slug = _slugify(rec.title, max_len=None)
+        if _slug_matches(norm_title, rec_slug):
             return rec
 
-        # Check overlapping target paths and same category, requiring word token overlap
+        # Check overlapping target paths and same category with stopword filtering and similarity threshold
         if category and rec.category == category:
             rec_paths = set(str(p).replace("\\", "/").lower() for p in rec.target_paths)
             if norm_paths and rec_paths and (norm_paths & rec_paths):
-                title_words = set(w for w in re.findall(r"\w+", title.lower()) if len(w) >= 3)
-                rec_words = set(w for w in re.findall(r"\w+", rec.title.lower()) if len(w) >= 3)
-                if not title_words or not rec_words or (title_words & rec_words):
-                    return rec
+                title_words = set(w for w in re.findall(r"\w+", title.lower()) if len(w) >= 3 and w not in STOPWORDS)
+                rec_words = set(w for w in re.findall(r"\w+", rec.title.lower()) if len(w) >= 3 and w not in STOPWORDS)
+                if title_words and rec_words:
+                    overlap = title_words & rec_words
+                    union = title_words | rec_words
+                    jaccard = len(overlap) / len(union) if union else 0.0
+                    if len(overlap) >= 2 or jaccard >= 0.4:
+                        return rec
 
     return None
 

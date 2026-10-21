@@ -107,7 +107,8 @@ def test_install_skills_pstack_source(tmp_path: Path) -> None:
 
 
 def test_template_and_adapters_skills_parity() -> None:
-    adapters_dir = Path("adapters/skills")
+    repo_root = Path(__file__).resolve().parents[1]
+    adapters_dir = repo_root / "adapters" / "skills"
     templates_dir = skills.TEMPLATES_SKILLS_DIR
 
     assert adapters_dir.is_dir()

@@ -75,10 +75,10 @@ All work items must move strictly through these sequential stages:
 To prevent recurrence of mistakes and institutionalize knowledge, the workspace maintains a pattern-aggregating feedback queue in `./learnings/`:
 - **Capture Friction**: Run `kahnban learnings capture --title "<pattern>" --problem "<desc>" --ticket <ID>`. If a similar issue was previously recorded, Kahnban clusters the occurrence, increments `occurrences`, escalates `severity`, and logs file locations without creating duplicate files.
 - **Escalation Ladder**:
-  - Level 1: One-off trap -> AGENTS.md / local rule
-  - Level 2: Recurring pattern -> Automated skill / linter rule
-  - Level 3: Structural trap -> Architectural constraint / type system guard
-  - Level 4: Foundational limit -> ADR / boundary refactor
+  - Level 1 — Architecture: Make the mistake physically impossible (boundaries, deprecations, SSOT).
+  - Level 2 — Linters & Types: Static analysis, type invariants, or AST rules rejecting the pattern.
+  - Level 3 — Automated Tests: Regression test fixtures in `tests/` asserting the correct behavior.
+  - Level 4 — Documentation & Rules: Update `AGENTS.md` / rules when static barriers are impossible.
 - **Drain & Institutionalize**: Run `/harvest-learnings` periodically to review accumulated learnings, promote resolved items to `learnings/archive/`, and encode safeguards into structural code or tests.
 
 ---
