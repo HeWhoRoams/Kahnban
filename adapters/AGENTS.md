@@ -12,6 +12,8 @@ Before performing ANY action or writing ANY code, you MUST:
 3. **Verify Git & Worktree Status**:
    - Check `git status` and active worktrees (`.worktrees/`).
    - If resuming work on a claimed ticket, ensure you are operating INSIDE that ticket's isolated worktree (`.worktrees/<TICKET-ID>`).
+4. **Master Conductor**:
+   - For end-to-end autonomous ticket execution, invoke `/factory-mode`.
 
 ---
 
@@ -20,9 +22,9 @@ Before performing ANY action or writing ANY code, you MUST:
 All work items must move strictly through these sequential stages:
 
 ```
-[1. Intake]         -->  [2. Architecture]   -->  [3. Development]  -->  [4. Validation]    -->  [5. Production]
+[1. Intake]         -->  [2. Architecture]   -->  [3. Development]  -->  [4. Validation]    -->  [5. Closure & Learning]
 0-backlog                1-refining/2-ready       3-in-progress          4-verifying             5-done
-/grill-with-docs         /to-spec, /to-tickets    /tdd in worktree       /code-review & verify   PR merge & done
+/grill-with-docs         /to-spec, /to-tickets    /tdd in worktree       /code-review & verify   PR merge, done & /reflect
 ```
 
 ### Stage 1: Clarification & Enrichment (Intake)
@@ -38,7 +40,7 @@ All work items must move strictly through these sequential stages:
 
 ### Stage 3: In Development
 - **Column:** `3-in-progress`
-- **Skill:** `/tdd`
+- **Skills:** `/tdd`, PSTACK principles (`subtract-before-you-add`, `laziness-protocol`, `boundary-discipline`)
 - **Rule:** Always claim before coding:
   ```bash
   kahnban claim <TICKET-ID> --owner <agent-id> --worktree
@@ -47,28 +49,41 @@ All work items must move strictly through these sequential stages:
 - All code changes, edits, and test runs execute inside `.worktrees/<TICKET-ID>` on branch `ticket/<TICKET-ID>`. Never edit the main checkout while a ticket is claimed, and never commit board state on a ticket branch.
 - Drive implementation strictly using Red-Green-Refactor test loops.
 
-### Stage 4: Testing & Validation
+### Stage 4: Testing, Hygiene & Validation
 - **Column:** `4-verifying`
-- **Skills:** `/code-review` -> `kahnban verify`
-- **Rule:** Perform pre-verification review auditing git diff against declared `## Blast radius` and verifying acceptance criteria.
+- **Skills:** `/unslop`, `/no-comments`, `/code-review` -> `kahnban verify`
+- **Rule:** Perform hygiene cleanups and pre-verification review auditing git diff against declared `## Blast radius`.
 - Run machine verification:
   ```bash
   kahnban verify <TICKET-ID>
   ```
   Kahnban executes the fenced `## Validation` command in a clean subprocess. Acceptance checkboxes are only ticked by the engine on exit code 0.
 
-### Stage 5: In Production
+### Stage 5: In Production & Continuous Learning
 - **Column:** `5-done`
-- **Rule:** Human review and PR merge of `ticket/<TICKET-ID>` into the default branch (`main`).
-- Finalize and prune:
-  ```bash
-  kahnban done <TICKET-ID>
-  kahnban cleanup <TICKET-ID>
-  ```
+- **Rule:**
+  1. Return to project root (`cd <project-root>`). Never merge from within `.worktrees/`.
+  2. Merge `ticket/<TICKET-ID>` into the default branch (`main`).
+  3. Finalize: `kahnban done <TICKET-ID>`.
+  4. Run `/reflect` to log friction, mistakes, or environmental traps to `./learnings/`.
+  5. Clean up: `kahnban cleanup <TICKET-ID>`.
 
 ---
 
-## 3. Sub-Agent Orchestration & Isolated Worktrees
+## 3. Continuous Learning Subsystem (`./learnings/`)
+
+To prevent recurrence of mistakes and institutionalize knowledge, the workspace maintains a pattern-aggregating feedback queue in `./learnings/`:
+- **Capture Friction**: Run `kahnban learnings capture --title "<pattern>" --problem "<desc>" --ticket <ID>`. If a similar issue was previously recorded, Kahnban clusters the occurrence, increments `occurrences`, escalates `severity`, and logs file locations without creating duplicate files.
+- **Escalation Ladder**:
+  - Level 1: One-off trap -> AGENTS.md / local rule
+  - Level 2: Recurring pattern -> Automated skill / linter rule
+  - Level 3: Structural trap -> Architectural constraint / type system guard
+  - Level 4: Foundational limit -> ADR / boundary refactor
+- **Drain & Institutionalize**: Run `/harvest-learnings` periodically to review accumulated learnings, promote resolved items to `learnings/archive/`, and encode safeguards into structural code or tests.
+
+---
+
+## 4. Sub-Agent Orchestration & Isolated Worktrees
 
 When spawning parallel sub-agents for concurrent tasks:
 1. **Safety Scan:** Verify `candidate.blast_radius` shares no files or directories with any ticket currently in `3-in-progress`.
@@ -78,7 +93,7 @@ When spawning parallel sub-agents for concurrent tasks:
 
 ---
 
-## 4. Cross-Harness Hand-Off Protocol (Claude <-> ChatGPT <-> Antigravity <-> Cursor)
+## 5. Cross-Harness Hand-Off Protocol (Claude <-> ChatGPT <-> Antigravity <-> Cursor)
 
 When switching AI harnesses or running low on context/credits:
 1. **Flush State:**
@@ -91,7 +106,7 @@ When switching AI harnesses or running low on context/credits:
 
 ---
 
-## 5. Command Quick Reference
+## 6. Command Quick Reference
 
 ```powershell
 kahnban lint                                   # board rules BL01-BL17
@@ -104,7 +119,10 @@ kahnban new "<title>" --problem-file spec.txt  # single ticket creation
 kahnban ready <ID>                             # refinement gate -> 2-ready
 kahnban claim <ID> --owner <name> --worktree   # claim & spawn isolated worktree
 kahnban verify <ID>                            # execute validation command -> 4-verifying
-kahnban done <ID> [--merge-commit <sha>]       # production gate -> 5-done
+kahnban done <ID> [--merge-commit <sha>]       # production gate -> 5-done + learnings advisory
 kahnban cleanup <ID>                           # prune worktree & local branch
+kahnban learnings list                         # view active learning records
+kahnban learnings capture --title "<t>"        # cluster/log pattern in ./learnings/
+kahnban learnings promote <id> --level 1..4    # graduate learning to archive
 kahnban move <ID> <column> --reason "<why>"    # escape hatch; always logged
 ```

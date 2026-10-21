@@ -46,8 +46,16 @@ def test_init_board_agentic(tmp_path: Path) -> None:
     assert (repo / ".agents" / "skills" / "to-tickets" / "SKILL.md").exists()
     assert (repo / ".agents" / "skills" / "tdd" / "SKILL.md").exists()
     assert (repo / ".agents" / "skills" / "code-review" / "SKILL.md").exists()
+    assert (repo / ".agents" / "skills" / "reflect" / "SKILL.md").exists()
+    assert (repo / ".agents" / "skills" / "harvest-learnings" / "SKILL.md").exists()
+    assert (repo / ".agents" / "skills" / "factory-mode" / "SKILL.md").exists()
+    assert (repo / ".agents" / "skills" / "principle-subtract-before-you-add" / "SKILL.md").exists()
 
-    # 5. Git history: verify clean commit
+    # 5. ./learnings/ directory
+    assert (repo / "learnings").is_dir()
+    assert (repo / "learnings" / "archive").is_dir()
+
+    # 6. Git history: verify clean commit
     log = git(repo, "log", "--oneline").stdout.splitlines()
     assert len(log) == 1
     assert "initialize board (HOA)" in log[0]

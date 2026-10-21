@@ -121,12 +121,14 @@ alwaysApply: true
 # Kahnban Engineering Protocols
 
 Always check `.agents/state/ACTIVE_SESSION.md` before starting work and synchronize it before handing off.
-When working on features or bugfixes, strictly follow the 5-stage Matt Pocock skill pipeline:
+For full end-to-end autonomous lifecycle execution, use `/factory-mode` (`.agents/skills/factory-mode/SKILL.md`).
+When working on features or bugfixes, strictly follow the 5-stage engineering pipeline:
 1. Backlog Intake: `.agents/skills/grill-with-docs/SKILL.md` (Domain alignment in GLOSSARY.md & ADR/)
 2. Specification: `.agents/specs/` and `.agents/skills/to-spec/SKILL.md`
 3. Granular Breakdown: `.agents/skills/to-tickets/SKILL.md` (1-3 files touched)
 4. TDD in Worktrees: Work inside `.worktrees/<ID>` and follow `.agents/skills/tdd/SKILL.md`
 5. Defensive Verification: Run `.agents/skills/code-review/SKILL.md` before `kahnban verify <ID>`
+6. Learning & Feedback: Run `/reflect` upon completing tickets and log patterns to `./learnings/`
 """
 
 
@@ -181,6 +183,14 @@ def install_skills(
             else:
                 messages.append("npx not found in PATH; falling back to bundled skills.")
                 _copy_bundled_skills(agents_skills_dir, installed_skills)
+    elif source == "pstack" or source.startswith("pstack:"):
+        messages.append(f"Installing skills from {source}...")
+        if not dry_run:
+            agents_skills_dir.mkdir(parents=True, exist_ok=True)
+            _fetch_pstack_upstream(agents_skills_dir, source, installed_skills, messages)
+        else:
+            if TEMPLATES_SKILLS_DIR.is_dir():
+                installed_skills.extend(d.name for d in TEMPLATES_SKILLS_DIR.iterdir() if d.is_dir())
     else:
         # Default: bundled
         if not dry_run:
@@ -235,6 +245,62 @@ def install_skills(
         configured_harnesses=configured_harnesses,
         messages=messages,
     )
+
+
+def _fetch_pstack_upstream(
+    dest_dir: Path,
+    source: str,
+    installed: list[str],
+    messages: list[str],
+) -> None:
+    """Fetch skills from cursor/plugins/pstack via GitHub API."""
+    import json
+    import urllib.request
+    from kahnban.core import write_text_atomic
+
+    # First copy bundled core so project has the foundations
+    _copy_bundled_skills(dest_dir, installed)
+
+    target = source.split(":", 1)[1].strip() if ":" in source else ""
+    if not target or target in ("core", "curated"):
+        messages.append("Installed curated pstack core skills from bundle.")
+        return
+
+    import os
+    headers = {"User-Agent": "kahnban-skills"}
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    api_url = "https://api.github.com/repos/cursor/plugins/contents/pstack/skills"
+
+    try:
+        req = urllib.request.Request(api_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        available = {item["name"]: item for item in data if item.get("type") == "dir"}
+
+        targets_to_fetch = list(available.keys()) if target == "all" else [target]
+        for t in targets_to_fetch:
+            if t not in available:
+                messages.append(f"Skill '{t}' not found in cursor/plugins/pstack.")
+                continue
+            try:
+                skill_raw_url = f"https://raw.githubusercontent.com/cursor/plugins/main/pstack/skills/{t}/SKILL.md"
+                req_skill = urllib.request.Request(skill_raw_url, headers=headers)
+                with urllib.request.urlopen(req_skill, timeout=15) as sresp:
+                    skill_content = sresp.read().decode("utf-8")
+
+                s_dir = dest_dir / t
+                s_dir.mkdir(parents=True, exist_ok=True)
+                write_text_atomic(s_dir / "SKILL.md", skill_content)
+                if t not in installed:
+                    installed.append(t)
+                messages.append(f"Successfully fetched '{t}' from upstream pstack.")
+            except Exception as item_err:
+                messages.append(f"Failed to fetch '{t}' from pstack ({item_err}); retained bundled version.")
+    except Exception as ex:
+        messages.append(f"Remote fetch from pstack failed ({ex}); retained bundled skills.")
 
 
 def _copy_bundled_skills(target_dir: Path, recorded_names: list[str]) -> None:

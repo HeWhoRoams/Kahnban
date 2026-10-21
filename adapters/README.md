@@ -156,3 +156,65 @@ if ($LASTEXITCODE -ne 0) {
 ```
 
 Lint exit codes: `0` clean, `1` violations, `2` configuration or I/O error.
+
+
+---
+
+## 7. The Self-Improving Learning Loop (`./learnings/`)
+
+Kahnban incorporates the **Lauren Tan Pattern Aggregator Protocol**: session friction, repeated agent mistakes, and architectural surprises are captured into `./learnings/` instead of evaporating when worktrees are pruned.
+
+### The Lauren Tan Clustering Invariant
+> *"Never create duplicative one-off entries for recurring mistakes. Augment existing records with frequency counts, escalated severity, and systemic environmental diagnosis to fix the forest, not just the trees."*
+
+- **Capture & Cluster:** Run `/reflect` at the end of a ticket or session. If a pattern matches an existing pending entry in `./learnings/`, it increments `occurrences`, updates severity, appends a row to the evidence table, and refines the systemic diagnosis.
+- **Harvest & Escalate:** Periodically run `/harvest-learnings` to drain the queue. Patterns with >= 2 occurrences are structurally eliminated using the **4-Tier Escalation Ladder**:
+  1. *Level 1 (Architecture):* Restructure boundaries or delete legacy paths so bad code cannot be written.
+  2. *Level 2 (Linters & Types):* Add a lint or compiler rule naming the alternative.
+  3. *Level 3 (Automated Tests):* Add a regression test fixture in `tests/`.
+  4. *Level 4 (Documentation & Rules):* Update `AGENTS.md` and record the rule in the Rule Enforcement Mapping Table.
+- **CLI Commands:**
+  ```powershell
+  kahnban learnings list [--all]
+  kahnban learnings capture --title "..." --problem "..." --ticket "HOA-002" --path "src/app.py"
+  kahnban learnings show LRN-0001
+  kahnban learnings promote LRN-0001 --level level-2 --notes "Added custom lint rule"
+  ```
+
+---
+
+## 8. PSTACK Steerable Principles & Execution Rigor
+
+Kahnban bundles 10 core engineering principles from PSTACK ([cursor/plugins/pstack](https://github.com/cursor/plugins/tree/main/pstack)) to guide how agents think and code:
+- **`subtract-before-you-add`:** Delete obsolete code and dead abstractions before designing additions.
+- **`prove-it-works`:** Passing a build is not proof. Run live flows and verify against real artifacts.
+- **`fix-root-causes`:** Never patch symptoms or wrap blind try/catches.
+- **`guard-the-context-window`:** Delegate bulk reading to subagents; pass only dense summaries to the root thread.
+- **`laziness-protocol`:** Bias toward deletion and the smallest change that solves the problem completely.
+- **`boundary-discipline`:** Concentrate guards at boundaries (CLI, config, external APIs); keep business logic pure.
+- **`sequence-verifiable-units`:** Stack commits and PRs so every unit ends in a verifiable state.
+- **`never-block-on-the-human`:** If an answer can be obtained by running code or testing, don't ask the human.
+- **`model-the-domain`:** Express business concepts as domain types, avoiding primitive obsession.
+- **`encode-lessons-in-structure`:** The structural fix is the cure; the instruction is the symptom.
+
+To pull additional tools from the extended PSTACK catalog (e.g. `swarm`, `arena`, or all 50+):
+```powershell
+kahnban skills install --source pstack:all
+kahnban skills install --source pstack:swarm
+```
+
+---
+
+## 9. Master Conductor: `/factory-mode`
+
+For fully autonomous or semi-autonomous development, activate the master conductor:
+```powershell
+/factory-mode
+```
+This single skill weaves together the entire software factory:
+1. **Intake & Specification:** `/grill-with-docs` -> `/to-spec` -> `kahnban ready`.
+2. **Worktree Isolation:** `kahnban claim <ID> --worktree` -> `ACTIVE_SESSION.md`.
+3. **Disciplined Build:** PSTACK principles + `/tdd` Red-Green-Refactor test loops.
+4. **Hygiene & Proof:** `/unslop` + `/no-comments` -> `kahnban verify <ID>`.
+5. **Gated Review & Closure:** `/code-review` -> Git merge -> `kahnban done <ID>`.
+6. **Continuous Adaptation:** `/reflect` logs session friction to `./learnings/` -> `/harvest-learnings` hardens repo defenses.

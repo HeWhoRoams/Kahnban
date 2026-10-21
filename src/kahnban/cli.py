@@ -125,7 +125,9 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 
 def cmd_done(args: argparse.Namespace) -> int:
-    _report(core.done(_load(args), args.ticket_id, merge_commit=args.merge_commit))
+    config = _load(args)
+    _report(core.done(config, args.ticket_id, merge_commit=args.merge_commit))
+    print(f"Learnings advisory: Ticket {args.ticket_id} completed. Run '/reflect' before 'kahnban cleanup' to capture patterns.")
     return EXIT_OK
 
 
@@ -320,6 +322,76 @@ def cmd_session(args: argparse.Namespace) -> int:
     dirty_delta = set(inspected.get("modified_files", [])) - set(current.modified_files)
     if dirty_delta:
         print(f"  Note: {len(dirty_delta)} unrecorded file change(s) in working tree; run with --flush to synchronize.")
+    return EXIT_OK
+
+
+def cmd_learnings(args: argparse.Namespace) -> int:
+    from kahnban import learnings
+    try:
+        config = _load(args)
+        root = config.project_root
+    except core.ConfigError:
+        root = Path(args.project_root).resolve() if getattr(args, 'project_root', None) else Path.cwd().resolve()
+    action = getattr(args, "learnings_action", None) or "list"
+
+    if action == "list":
+        records = learnings.list_learnings(root, include_archive=getattr(args, "all", False))
+        if not records:
+            print("No learnings recorded in ./learnings/ (run '/reflect' or 'kahnban learnings capture').")
+            return EXIT_OK
+        label = "All Learnings (Active & Archived)" if getattr(args, "all", False) else "Active Learnings"
+        print(f"{label} ({len(records)}):")
+        for r in records:
+            status_tag = f"[{r.status.upper()}]"
+            occurrences_tag = f"({r.occurrences}x, {r.severity})"
+            print(f"  - {r.id}: {r.title} {status_tag} {occurrences_tag} [cat: {r.category}]")
+        return EXIT_OK
+
+    if action == "show":
+        records = learnings.list_learnings(root, include_archive=True)
+        target = next((r for r in records if r.id.lower() == args.id.lower() or r.title.lower() == args.id.lower()), None)
+        if not target:
+            sys.stderr.write(f"Learning record '{args.id}' not found.\n")
+            return EXIT_REFUSED
+        print(target.render_markdown())
+        return EXIT_OK
+
+    if action == "capture":
+        rec, is_new = learnings.capture_learning(
+            root,
+            title=args.title,
+            problem=args.problem or "",
+            ticket_id=args.ticket or "",
+            location=args.location or "",
+            trigger=args.trigger or "",
+            category=args.category or "convention",
+            severity=args.severity or "medium",
+            target_paths=args.path or [],
+            systemic_diagnosis=args.diagnosis or "",
+            proposed_remediation=args.remediation or "",
+        )
+        if is_new:
+            print(f"[OK] Created new learning {rec.id} ({rec.title}) in ./learnings/")
+        else:
+            print(f"[OK] Augmented existing pattern {rec.id} ({rec.title}) -> occurrences: {rec.occurrences}, severity: {rec.severity}")
+        return EXIT_OK
+
+    if action == "promote":
+        try:
+            raw_lvl = str(args.level).strip().lower()
+            lvl = raw_lvl if raw_lvl.startswith("level-") else f"level-{raw_lvl}"
+            rec = learnings.promote_learning(
+                root,
+                args.id,
+                level=lvl,
+                resolution_notes=args.notes or "",
+            )
+            print(f"[OK] Promoted {rec.id} ({rec.title}) to Level {args.level}. Moved to ./learnings/archive/")
+            return EXIT_OK
+        except Exception as ex:
+            sys.stderr.write(f"Promotion failed: {ex}\n")
+            return EXIT_REFUSED
+
     return EXIT_OK
 
 
@@ -587,16 +659,52 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--next-cmd", help="immediate shell command for incoming agent")
         sp.set_defaults(handler=cmd_session)
 
+    # Learnings parser
+    learnings_parser = subparsers.add_parser(
+        "learnings",
+        parents=[board],
+        help="manage project learnings queue and structural improvements",
+    )
+    learnings_sub = learnings_parser.add_subparsers(dest="learnings_action")
+
+    l_list = learnings_sub.add_parser("list", help="list active learnings in ./learnings/")
+    l_list.add_argument("--all", action="store_true", help="include archived learnings")
+    l_list.set_defaults(handler=cmd_learnings)
+
+    l_show = learnings_sub.add_parser("show", help="show details of a learning record")
+    l_show.add_argument("id", help="learning ID (e.g. LRN-0001)")
+    l_show.set_defaults(handler=cmd_learnings)
+
+    l_capture = learnings_sub.add_parser("capture", help="capture a new learning or augment an existing pattern")
+    l_capture.add_argument("--title", required=True, help="short descriptive pattern title")
+    l_capture.add_argument("--problem", help="problem or friction description")
+    l_capture.add_argument("--ticket", help="associated ticket ID (e.g. HOA-002)")
+    l_capture.add_argument("--location", help="file and line location where observed")
+    l_capture.add_argument("--trigger", help="trigger or symptom observed")
+    l_capture.add_argument("--category", choices=["architecture", "typing-lint", "testing", "convention"], default="convention")
+    l_capture.add_argument("--severity", choices=["low", "medium", "high", "critical"], default="medium")
+    l_capture.add_argument("--path", action="append", help="target path(s) involved")
+    l_capture.add_argument("--diagnosis", help="systemic environmental root cause")
+    l_capture.add_argument("--remediation", help="proposed structural remediation")
+    l_capture.set_defaults(handler=cmd_learnings)
+
+    l_promote = learnings_sub.add_parser("promote", help="promote learning to structural defense and archive")
+    l_promote.add_argument("id", help="learning ID to promote")
+    l_promote.add_argument("--level", required=True, choices=["1", "2", "3", "4", "level-1", "level-2", "level-3", "level-4"], help="enforcement level applied (1-4 or level-1..4)")
+    l_promote.add_argument("--notes", help="resolution and remediation notes")
+    l_promote.set_defaults(handler=cmd_learnings)
+
+    learnings_parser.set_defaults(handler=cmd_learnings)
+
     skills_parser = subparsers.add_parser(
         "skills",
         parents=[board],
-        help="install, list, and configure Matt Pocock skills across AI harnesses",
+        help="install, list, and configure Matt Pocock & PSTACK skills across AI harnesses",
     )
     skills_parser.add_argument(
         "--source",
-        choices=["bundled", "mattpocock"],
         default="bundled",
-        help="skill source: 'bundled' (default: 5 core Matt Pocock skills) or 'mattpocock' (full upstream library)",
+        help="skill source: 'bundled' (default: Matt Pocock + PSTACK core), 'mattpocock', 'pstack', or 'pstack:<skill>'",
     )
     skills_parser.add_argument(
         "--harness",
@@ -610,9 +718,8 @@ def build_parser() -> argparse.ArgumentParser:
     inst_parser = skills_sub.add_parser("install", help="install skills into project and harnesses")
     inst_parser.add_argument(
         "--source",
-        choices=["bundled", "mattpocock"],
         default="bundled",
-        help="skill source: 'bundled' (default) or 'mattpocock'",
+        help="skill source: 'bundled' (default), 'mattpocock', 'pstack', or 'pstack:<skill>'",
     )
     inst_parser.add_argument(
         "--harness",

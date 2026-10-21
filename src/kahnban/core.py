@@ -1873,11 +1873,23 @@ def init_board(
                 if p.is_file():
                     written.append(p)
 
+        # 8. ./learnings/ (Pattern-aggregating self-improvement queue)
+        learnings_dir = root / "learnings"
+        learnings_dir.mkdir(parents=True, exist_ok=True)
+        learnings_archive = learnings_dir / "archive"
+        learnings_archive.mkdir(parents=True, exist_ok=True)
+        learnings_keep = learnings_dir / ".gitkeep"
+        write_text_atomic(learnings_keep, "")
+        written.append(learnings_keep)
+        archive_keep = learnings_archive / ".gitkeep"
+        write_text_atomic(archive_keep, "")
+        written.append(archive_keep)
+
     gitignore = root / ".gitignore"
     existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
     additions = [
         entry
-        for entry in (".worktrees/", "plans/tickets/.artifacts/", "plans/tickets/.claim.lock")
+        for entry in (".worktrees/", "plans/tickets/.artifacts/", "plans/tickets/.claim.lock", "__pycache__/", "*.pyc")
         if entry not in existing
     ]
     if additions:

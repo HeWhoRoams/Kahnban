@@ -85,3 +85,44 @@ def test_cli_skills_list_and_install(tmp_path: Path, capsys) -> None:
     out, _ = capsys.readouterr()
     assert "[OK] installed" in out
     assert (repo / ".agents" / "skills" / "tdd" / "SKILL.md").exists()
+
+
+def test_install_skills_pstack_source(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    # Source 'pstack' installs curated bundle
+    result = skills.install_skills(repo, harness="agents", source="pstack")
+    assert result["ok"] is True
+    assert "principle-subtract-before-you-add" in result["installed_skills"]
+    assert "reflect" in result["installed_skills"]
+    assert "harvest-learnings" in result["installed_skills"]
+    assert "factory-mode" in result["installed_skills"]
+
+    skills_dir = repo / ".agents" / "skills"
+    assert (skills_dir / "principle-subtract-before-you-add" / "SKILL.md").exists()
+    assert (skills_dir / "reflect" / "SKILL.md").exists()
+    assert (skills_dir / "harvest-learnings" / "SKILL.md").exists()
+    assert (skills_dir / "factory-mode" / "SKILL.md").exists()
+
+
+def test_template_and_adapters_skills_parity() -> None:
+    adapters_dir = Path("adapters/skills")
+    templates_dir = skills.TEMPLATES_SKILLS_DIR
+
+    assert adapters_dir.is_dir()
+    assert templates_dir.is_dir()
+
+    adapter_skills = sorted([d.name for d in adapters_dir.iterdir() if d.is_dir()])
+    template_skills = sorted([d.name for d in templates_dir.iterdir() if d.is_dir()])
+
+    assert adapter_skills == template_skills, f"Mismatch: {set(adapter_skills) ^ set(template_skills)}"
+
+    for s_name in adapter_skills:
+        a_file = adapters_dir / s_name / "SKILL.md"
+        t_file = templates_dir / s_name / "SKILL.md"
+        assert a_file.is_file(), f"Missing {a_file}"
+        assert t_file.is_file(), f"Missing {t_file}"
+        assert a_file.read_text(encoding="utf-8") == t_file.read_text(encoding="utf-8"), (
+            f"Content mismatch for skill {s_name}"
+        )

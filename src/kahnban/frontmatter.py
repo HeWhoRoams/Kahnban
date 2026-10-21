@@ -76,7 +76,7 @@ def _parse_inline_list(value: str, line_number: int) -> list[str]:
 
 
 def parse(text: str) -> tuple[Frontmatter, str]:
-    normalized = normalize_newlines(text)
+    normalized = normalize_newlines(text.lstrip("\ufeff"))
     if not normalized.startswith("---\n"):
         raise FrontmatterError("frontmatter must begin with '---'")
 
