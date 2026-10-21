@@ -1,68 +1,121 @@
 # Adapters — Adopting Kahnban & The Software Factory Workflow
 
-Layer 1 (this engine) is installed once per machine. Layer 0 (the board) and
-Layer 2 (client configs and agent guidelines) are committed per repository. Nothing in this directory
-is engine code — these are the files, templates, and skills you copy or scaffold into an adopter repo.
+Layer 1 (the Kahnban engine) is installed once per machine or CI environment. Layer 0 (the board contract) and Layer 2 (client configs, agent guidelines, and skills) are committed directly per repository. Adopter repositories contain **zero copied engine code**.
 
 ---
 
-## 1. Install the Engine
+## 1. 2-Minute Quickstart for Existing Repositories
 
+Adopting Kahnban in an existing repository takes under 2 minutes and is **100% non-destructive**:
+- Leaves all existing application code, git history, and existing commits intact.
+- Safely appends only `.worktrees/`, `.claim.lock`, and `.artifacts/` to your existing `.gitignore`.
+- Creates a clean, isolated commit: `kanban: initialize board (<PREFIX>)`.
+
+### Step A: Install the Engine (Machine-wide / CI)
 ```powershell
-py -3 -m pip install -e C:\github\kahnban          # local development, editable
-py -3 -m pip install git+https://<remote>/Kahnban  # pinned by tag in CI
+# Local development (editable):
+py -3 -m pip install -e C:\github\kahnban
+
+# Production / CI / Docker:
+py -3 -m pip install git+https://github.com/org/kahnban.git@v1.1.2
 ```
 
-Adopter repositories contain **no copied engine code**. `board.config.json`
-carries `engine_min_version`; every entry point refuses to run against an older
-engine and prints the upgrade command.
+### Step B: Initialize into Your Repository
+```powershell
+cd C:\github\your-existing-app
+kahnban init --prefix APP --agentic
+```
+
+This immediately scaffolds:
+1. **The Board Contract:** `plans/board.config.json`, the column directories (`0-backlog` through `5-done`), and SSOT projections (`plans/STATUS.md`, `plans/status.json`, and `plans/board.json`).
+2. **The Universal Agent Harness:** `.agents/AGENTS.md` and live flight recorder `.agents/state/ACTIVE_SESSION.md`.
+3. **Self-Contained Skill Suite:** `.agents/skills/` containing Matt Pocock's 5 core pipeline skills (`grill-with-docs`, `to-spec`, `to-tickets`, `tdd`, `code-review`).
+4. **Specifications & Templates:** `.agents/specs/` and `.agents/templates/` (`spec-template.md`, `ticket-template.md`, `active-session-template.md`, `glossary-template.md`, `adr-template.md`).
+5. **Domain & Decision Roots:** Root `GLOSSARY.md` and `ADR/0001-record-architecture-decisions.md`.
+6. **Git Isolation:** `.gitignore` safely updated for `.worktrees/`, `.claim.lock`, and build artifacts.
+
+### Step C: Configure Test Runner (30 seconds)
+Open `plans/board.config.json` and set your validation command:
+```json
+{
+  "id_prefix": "APP",
+  "wip_limit": 3,
+  "validation_command": "pytest" // or "npm test", "cargo test", "godot --headless"
+}
+```
 
 ---
 
-## 2. Scaffold the Board & Agentic Harness
+## 2. Best Practices for Activating & Discovering Skills
 
-You can scaffold the classic board or the full **Agentic Software Factory**:
+The core 5 pipeline skills are automatically copied into `.agents/skills/` during `kahnban init --agentic`. Here is how different AI harnesses discover and activate them:
 
-### Option A: Complete Agentic Software Factory (Recommended)
+### A. Claude Code
+- **Repository-local skills:** Claude Code automatically discovers skills placed in `.agents/skills/` or `.claude/skills/`.
+  To symlink or mirror them into Claude's default folder:
+  ```powershell
+  New-Item -ItemType SymbolicLink -Path .claude\skills -Target .agents\skills
+  ```
+- **Official Plugin:** Matt Pocock maintains a packaged Claude plugin:
+  ```bash
+  claude plugins install mattpocock-skills
+  ```
 
-```powershell
-cd C:\github\<adopter>
-kahnban init --prefix HOA --agentic
+### B. Gemini CLI / Antigravity
+- Project-level skills in `.agents/skills/` are indexed per project.
+- Global skills live in `~/.gemini/config/skills/`. You can copy or link any skill into this directory for machine-wide availability across all repos:
+  ```powershell
+  Copy-Item -Recurse .agents\skills\* $HOME\.gemini\config\skills\
+  ```
+
+### C. Cursor & Codex / ChatGPT
+- **Cursor:** Referenced in `.cursor/rules/kanban.mdc` or directly read from `.agents/AGENTS.md`.
+- **Generic Agents:** The generated `.agents/AGENTS.md` contains strict procedural directives that instruct the incoming model to inspect `.agents/skills/<skill>/SKILL.md` before executing each corresponding stage.
+
+---
+
+## 3. Pulling Upstream Skills from Matt Pocock's Repo
+
+Matt Pocock actively publishes open-source skills to [`github.com/mattpocock/skills`](https://github.com/mattpocock/skills) ("Skills for Real Engineers"). You can enrich your project with his full extended catalog (`/prototype`, `/domain-modeling`, `/codebase-design`, `/implement-spec`, `/diagnosing-bugs`, `/retro`, `/ask-matt`).
+
+### Option 1: Via the `skills.sh` Package Manager (Recommended)
+You can pull editable skill files directly into your repository using npx:
+```bash
+# Add entire collection into .agents/skills/ or .claude/skills/
+npx skills@latest add mattpocock/skills
 ```
 
-This scaffolds:
-1. **The Board Contract:** `plans/board.config.json`, the column tree (`0-backlog` through `5-done`), and projections (`plans/STATUS.md`, `plans/status.json`, and `plans/board.json`).
-2. **The Universal Agent Harness:** `.agents/AGENTS.md` and `.agents/state/ACTIVE_SESSION.md`.
-3. **Specifications & Templates:** `.agents/specs/` and `.agents/templates/` (`spec-template.md`, `ticket-template.md`, `active-session-template.md`, `glossary-template.md`, `adr-template.md`).
-4. **Domain & Decision Roots:** Root `GLOSSARY.md` and `ADR/0001-record-architecture-decisions.md`.
-5. **Git Isolation:** `.gitignore` configured for `.worktrees/`, `.claim.lock`, and artifacts.
+### Option 2: Pulling Specific Individual Skills
+```bash
+npx skills@latest add mattpocock/skills/domain-modeling
+npx skills@latest add mattpocock/skills/codebase-design
+npx skills@latest add mattpocock/skills/diagnosing-bugs
+```
 
-### Option B: Core Kanban Board Only
-
-```powershell
-cd C:\github\<adopter>
-kahnban init --prefix HOA
+### Option 3: Git Sparse-Checkout (Air-Gapped / CI)
+For locked enterprise networks or CI image baking:
+```bash
+git clone --depth 1 --filter=blob:none --sparse https://github.com/mattpocock/skills.git vendor/matt-skills
+cd vendor/matt-skills
+git sparse-checkout set skills
+cp -r skills/* ../../.agents/skills/
 ```
 
 ---
 
-## 3. The 5-Stage Gated Lifecycle & Matt Pocock Skills
+## 4. The 5-Stage Gated Lifecycle & Matt Pocock Skills
 
-This workflow integrates Matt Pocock's engineering skills located in `adapters/skills/`:
-
-| Stage | Column | Skill | Purpose |
+| Stage | Column | Skill | Purpose & Machine Gate |
 | :---: | :--- | :--- | :--- |
-| **1** | `0-backlog` | `/grill-with-docs` | Socratic intake interrogation, domain alignment (`GLOSSARY.md`), decisions (`ADR/`). |
-| **2** | `1-refining` $\rightarrow$ `2-ready` | `/to-spec`, `/to-tickets` | Formal specification in `.agents/specs/`, decomposition into 1–3 file tickets, `kahnban ready` machine gate. |
-| **3** | `3-in-progress` | `/tdd` | Claim with worktree isolation (`kahnban claim --worktree`), Red-Green-Refactor test loops. |
-| **4** | `4-verifying` | `/code-review` | Diff vs. blast radius containment audit, acceptance criteria verification, machine test run (`kahnban verify`). |
-| **5** | `5-done` | PR Merge | Integration to `main`, `kahnban done`, and worktree pruning (`kahnban cleanup`). |
-
-To make these skills active in your harness, copy or symlink `adapters/skills/*` into your agent configuration directory (e.g. `.claude/skills/`, `.gemini/config/skills/`, or project prompts).
+| **1** | `0-backlog` | `/grill-with-docs` | Socratic intake interrogation, domain alignment (`GLOSSARY.md`), decisions (`ADR/`). Verified by linter rule BL05. |
+| **2** | `1-refining` $\rightarrow$ `2-ready` | `/to-spec`, `/to-tickets` | Formal specification in `.agents/specs/`, decomposition into 1–3 file tickets. Gate: `kahnban ready <ID>` verifies blast radius and design docs. |
+| **3** | `3-in-progress` | `/tdd` | Claim with worktree isolation (`kahnban claim <ID> --worktree`), Red-Green-Refactor test loops in `.worktrees/<ID>`. |
+| **4** | `4-verifying` | `/code-review` | Diff vs. blast radius containment audit, acceptance criteria verification. Gate: `kahnban verify <ID>` runs the fenced validation command in the worktree. |
+| **5** | `5-done` | PR Merge | Integration to `main`. Gate: `kahnban done <ID>` blocks until all `[x]` criteria are checked and git merge is verified. Worktree is pruned via `kahnban cleanup <ID>`. |
 
 ---
 
-## 4. Single Source of Truth & Cross-Harness Continuity
+## 5. Single Source of Truth & Cross-Harness Continuity
 
 - **Programmatic Board Registry (`board.json`):** Automatically projected on every sync alongside `STATUS.md`. Enriched with ticket descriptions, dependencies (`depends_on`), blockers (`blocked_on`), and blast radii (`blast_radius`) for sub-agent orchestration. If your repository maintains a root `.kanban/` folder, `board.json` is automatically mirrored there as well.
 - **Flight Recorder (`ACTIVE_SESSION.md`):** Keeps live context, active worktrees, modified files, blockers, and next shell commands synchronized across AI harnesses:
@@ -71,6 +124,7 @@ To make these skills active in your harness, copy or symlink `adapters/skills/*`
   kahnban session --flush --ticket HOA-001       # flush live worktree status
   kahnban handoff --note "context for next model" # convenient flush alias for harness transitions
   ```
+
   **CLI Session Flags & Agent Overrides:**
   When agents operate in containerized or non-standard environments, auto-detection of branches and worktrees can be explicitly overridden:
   - `--flush`: Force resynchronization of dirty files and in-progress tickets from Git and board.
@@ -88,9 +142,9 @@ To make these skills active in your harness, copy or symlink `adapters/skills/*`
 
 ---
 
-## 5. Gate the Test Runner on Board Lint
+## 6. Gate the Test Runner & CI on Board Lint
 
-Insert at the top of your test runner (e.g. `tools/run_all_tests.ps1`) or CI workflow:
+Insert at the top of your test runner (e.g. `tools/run_all_tests.ps1`), pre-commit hook, or CI workflow:
 
 ```powershell
 Write-Host "=== Validating Kahnban Board ===" -ForegroundColor Cyan

@@ -21,4 +21,4 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 
 [tool.setuptools.package-data]
-kahnban = ["templates/*.md"]
+kahnban = ["templates/*.md", "templates/skills/**/*.md"]

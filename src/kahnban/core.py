@@ -1848,6 +1848,21 @@ def init_board(
             shutil.copyfile(templates_dir / "adr.md", first_adr)
             written.append(first_adr)
 
+        # 7. .agents/skills/ (Self-contained Matt Pocock engineering pipeline)
+        skills_src = templates_dir / "skills"
+        if skills_src.is_dir():
+            skills_dst = agents_dir / "skills"
+            skills_dst.mkdir(parents=True, exist_ok=True)
+            for skill_dir in sorted(skills_src.iterdir()):
+                if skill_dir.is_dir():
+                    target_skill_dir = skills_dst / skill_dir.name
+                    target_skill_dir.mkdir(parents=True, exist_ok=True)
+                    for f in sorted(skill_dir.iterdir()):
+                        if f.is_file():
+                            target_file = target_skill_dir / f.name
+                            shutil.copyfile(f, target_file)
+                            written.append(target_file)
+
     gitignore = root / ".gitignore"
     existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
     additions = [
