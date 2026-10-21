@@ -93,22 +93,3 @@ it into the test runner as a gate.
 
 **Total:** 241 tests passing; ~5,070 lines of engine code, zero runtime
 dependencies.
-
-## Board Rules (BL01–BL17)
-
-`kahnban lint` checks frontmatter validity, ID/filename agreement, ID
-uniqueness across columns and archive, status/folder agreement, required
-headings, acceptance-criteria discipline, ownership, dependency satisfaction,
-extension-field rules, design-doc existence, the WIP limit, column tidiness,
-branch recording, merge verification for done tickets, blast-radius
-disjointness across in-progress tickets, and ingest-provenance uniqueness. Every rule has a negative fixture board
-under `tests/fixtures/violations/`.
-
-## Adopter Repos
-
-- **heirs_ancients** (prefix `HOA`) — first adopter; config template in plan §6.1
-- **citadel** (prefix `CIT`) — portability smoke test
-
-## License & Attribution
-
-Plan created 2026-08-18 by Tim Niles. Engine implemented against plan v4.
