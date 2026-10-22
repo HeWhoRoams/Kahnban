@@ -89,6 +89,7 @@ def cmd_claim(args: argparse.Namespace) -> int:
         force=args.force,
         force_overlap=args.force_overlap,
         strict_wip=args.strict_wip,
+        local=getattr(args, "local", False),
         reason=args.reason or "",
     )
     _report(result)
@@ -104,6 +105,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
         args.ticket_id,
         manual_evidence=Path(args.manual_evidence) if args.manual_evidence else None,
         force_scope=args.force_scope,
+        accept=getattr(args, "accept", False),
         reason=args.reason or "",
     )
     for message in result.messages:
@@ -126,7 +128,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 def cmd_done(args: argparse.Namespace) -> int:
     config = _load(args)
-    _report(core.done(config, args.ticket_id, merge_commit=args.merge_commit))
+    _report(core.done(config, args.ticket_id, merge_commit=args.merge_commit, accept=getattr(args, "accept", False)))
     print(f"Learnings advisory: Ticket {args.ticket_id} completed. Run '/reflect' before 'kahnban cleanup' to capture patterns.")
     return EXIT_OK
 
@@ -424,7 +426,7 @@ def cmd_next(args: argparse.Namespace) -> int:
 
 
 def cmd_feedback(args: argparse.Namespace) -> int:
-    root = _project_root(args)
+    root = _load(args).project_root
     feedback_text = args.message
     ticket_id = args.ticket
     author = getattr(args, "author", "qa_reviewer") or "qa_reviewer"
@@ -550,6 +552,9 @@ def build_parser() -> argparse.ArgumentParser:
     claim.add_argument(
         "--strict-wip", action="store_true", help="fail instead of warn at the WIP limit"
     )
+    claim.add_argument(
+        "--local", action="store_true", help="skip pulling and pushing to origin remote"
+    )
     claim.add_argument("--reason", help="required with any override")
     claim.set_defaults(handler=cmd_claim)
 
@@ -566,6 +571,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--force-scope", action="store_true", help="accept a diff outside the radius"
     )
     verify.add_argument("--reason", help="required with any override")
+    verify.add_argument(
+        "--accept", action="store_true", help="automatically check acceptance criteria on pass"
+    )
     verify.set_defaults(handler=cmd_verify)
 
     done = subparsers.add_parser(
@@ -573,6 +581,9 @@ def build_parser() -> argparse.ArgumentParser:
         parents=[board], help="verifying -> done (requires a merge)")
     done.add_argument("ticket_id")
     done.add_argument("--merge-commit", help="sha of the merge on the default branch")
+    done.add_argument(
+        "--accept", action="store_true", help="automatically check all acceptance criteria checkboxes"
+    )
     done.set_defaults(handler=cmd_done)
 
     move = subparsers.add_parser(

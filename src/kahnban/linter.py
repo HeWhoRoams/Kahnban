@@ -309,7 +309,7 @@ def _check_merged(
     recorded = MERGE_COMMIT_PATTERN.search(core.section(body, "Log"))
 
     if branch and gitops.branch_exists(config.project_root, branch):
-        if not gitops.is_ancestor(config.project_root, branch, default_branch):
+        if not core.is_branch_content_merged(config.project_root, branch, default_branch, config):
             report(
                 "BL15",
                 f"branch '{branch}' is not merged into '{default_branch}'",

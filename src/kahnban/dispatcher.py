@@ -68,7 +68,7 @@ def resolve_next_action(
     in_progress_tickets = [
         t for t in core.iter_tickets(config) if t.column == config.in_progress_column
     ]
-    if in_progress_tickets and (preferred_role in (None, "coder")):
+    if in_progress_tickets and (preferred_role in (None, "coder", "resume")) and (preferred_role != "claim"):
         target = in_progress_tickets[0]
         fields, body = frontmatter.parse(target.text)
         wt = str(fields.get("worktree") or "")
@@ -105,9 +105,18 @@ def resolve_next_action(
     ready_tickets = [
         t for t in core.iter_tickets(config) if t.column == config.ready_column
     ]
-    if ready_tickets and (preferred_role in (None, "coder")):
+    if ready_tickets and (preferred_role in (None, "coder", "claim")):
         # Select first ticket with non-conflicting blast radius against in-progress
-        target = ready_tickets[0]
+        active_radii = core.in_progress_radii(config)
+        active_paths = [p for paths in active_radii.values() for p in paths]
+        available = [
+            t for t in ready_tickets
+            if not core.radius_overlaps(
+                core.parse_blast_radius(frontmatter.parse(t.text)[1]),
+                active_paths
+            )
+        ]
+        target = available[0] if available else ready_tickets[0]
         fields, body = frontmatter.parse(target.text)
         baton = handoff.build_handoff_baton(
             config, target.ticket_id, stage="implementation", assigned_role="coder"

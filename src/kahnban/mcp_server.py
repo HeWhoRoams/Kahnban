@@ -766,7 +766,7 @@ def tool_session_update(project_root: Path, arguments: Mapping[str, Any]) -> dic
 
 def tool_next(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
     from kahnban import dispatcher
-    config = _load_config(project_root)
+    config = _config(project_root)
     pref_role = arguments.get("role")
     rec = dispatcher.resolve_next_action(config, preferred_role=pref_role)
     return {

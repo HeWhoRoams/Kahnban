@@ -10,6 +10,7 @@ link never touches the target directory (§3.4).
 from __future__ import annotations
 
 import os
+import time
 import subprocess
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
@@ -171,11 +172,24 @@ def teardown(
         notes.append(f"removed junction: {relative}")
 
     if destination.exists():
-        try:
-            gitops.worktree_remove(project_root, destination, force=force)
-        except gitops.GitError as error:
-            raise WorktreeError(str(error)) from error
-        notes.append(f"removed worktree: {destination.name}")
+        removed = False
+        last_err: Exception | None = None
+        for attempt in range(3):
+            try:
+                gitops.worktree_remove(project_root, destination, force=force)
+                removed = True
+                break
+            except gitops.GitError as error:
+                last_err = error
+                time.sleep(0.5)
+        if removed:
+            notes.append(f"removed worktree: {destination.name}")
+        else:
+            if force:
+                gitops.worktree_prune(project_root)
+                notes.append(f"worktree removal delayed by file lock; pruned metadata: {destination.name}")
+            else:
+                raise WorktreeError(str(last_err)) from last_err
     else:
         gitops.worktree_prune(project_root)
         notes.append("no worktree to remove")

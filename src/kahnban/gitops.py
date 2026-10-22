@@ -165,10 +165,18 @@ def add(repo: Path, paths: Iterable[Path | str]) -> None:
     run(repo, ["add", "--", *rendered])
 
 
-def commit(repo: Path, message: str, *, allow_empty: bool = False) -> str:
+def commit(
+    repo: Path,
+    message: str,
+    *,
+    paths: Sequence[str | Path] = (),
+    allow_empty: bool = False,
+) -> str:
     args = ["commit", "-m", message]
     if allow_empty:
         args.append("--allow-empty")
+    if paths:
+        args.extend(["--", *[str(p) for p in paths]])
     run(repo, args)
     return rev_parse(repo, "HEAD")
 

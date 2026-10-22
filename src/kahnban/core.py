@@ -93,6 +93,8 @@ class Config:
     design_doc_roots: tuple[str, ...] = ("plans",)
     extensions: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
     ingest: Mapping[str, object] = field(default_factory=dict)
+    allow_any_branch: bool = False
+    sync_remote: bool = True
 
     @property
     def board_path(self) -> Path:
@@ -246,6 +248,8 @@ def load_config(
         design_doc_roots=tuple(raw.get("design_doc_roots") or ("plans",)),
         extensions=dict(raw.get("extensions") or {}),
         ingest=dict(raw.get("ingest") or {}),
+        allow_any_branch=bool(raw.get("allow_any_branch", False)),
+        sync_remote=bool(raw.get("sync_remote", True)),
     )
     if check_version:
         require_engine_version(config)
@@ -774,15 +778,15 @@ def _relative(config: Config, path: Path) -> str:
     return Path(path).resolve().relative_to(config.project_root.resolve()).as_posix()
 
 
-def _require_board_branch(config: Config) -> str:
+def _require_board_branch(config: Config, *, allow_branch: bool = False) -> str:
     """Board commits land on the default branch, never a ticket branch (D2)."""
     default = gitops.default_branch(config.project_root)
     current = gitops.current_branch(config.project_root)
-    if current != default:
+    if current != default and not allow_branch and not config.allow_any_branch:
         raise GateError(
             f"board state must be committed on the default branch '{default}' but "
             f"'{current}' is checked out in {config.project_root}. "
-            "Run kahnban from the main worktree."
+            "Run kahnban from the main worktree or pass --allow-branch."
         )
     return default
 
@@ -845,11 +849,15 @@ def transition(
 
     projections = sync(config, timestamp=now)
     paths = [destination, *projections, *extra_paths]
-    gitops.add(config.project_root, [_relative(config, path) for path in paths])
+    rel_paths = [_relative(config, path) for path in paths]
+    gitops.add(config.project_root, rel_paths)
+    commit_paths = list(rel_paths)
+    if destination.resolve() != ticket.path.resolve():
+        commit_paths.append(_relative(config, ticket.path))
     message = commit_message or (
         f"kanban({ticket.ticket_id}): {ticket.column} -> {target_column}"
     )
-    sha = gitops.commit(config.project_root, message)
+    sha = gitops.commit(config.project_root, message, paths=commit_paths)
 
     return TransitionResult(
         ticket_id=ticket.ticket_id,
@@ -890,6 +898,17 @@ def normalize_acceptance(lines: Iterable[str]) -> list[str]:
         if text:
             rendered.append(f"- [ ] {text}")
     return rendered
+
+
+def _tick_acceptance_criteria(text: str) -> str:
+    """Rewrite unchecked checkboxes to checked in '## Acceptance criteria' (Principle 5)."""
+    fields, body = frontmatter.parse(text)
+    criteria = section(body, 'Acceptance criteria')
+    if not criteria:
+        return text
+    ticked = re.sub(r'^(\s*[-*]\s*)\[\s*\]', r'\1[x]', criteria, flags=re.MULTILINE)
+    new_body = replace_section(body, 'Acceptance criteria', ticked)
+    return frontmatter.serialize(fields, new_body)
 
 
 def render_ticket(
@@ -1016,9 +1035,10 @@ def create_tickets(
         )
 
     projections = sync(config, timestamp=now)
+    commit_paths = [_relative(config, path) for path in (*written, *projections)]
     gitops.add(
         config.project_root,
-        [_relative(config, path) for path in (*written, *projections)],
+        commit_paths,
     )
     if commit_message is None:
         if len(results) == 1:
@@ -1028,7 +1048,7 @@ def create_tickets(
                 f"kanban: create {len(results)} tickets -> {column} "
                 f"({results[0].ticket_id}..{results[-1].ticket_id})"
             )
-    sha = gitops.commit(config.project_root, commit_message)
+    sha = gitops.commit(config.project_root, commit_message, paths=commit_paths)
     for result in results:
         result.commit = sha
     return results
@@ -1179,18 +1199,19 @@ def ready(
         timestamp=timestamp,
     )
     try:
-        from kahnban.hooks import run_hook
-        from kahnban.handoff import build_handoff_baton, write_handoff_baton, get_handoff_path
-        baton = build_handoff_baton(config, ticket.ticket_id, stage="implementation", assigned_role="coder")
-        write_handoff_baton(config.project_root, baton)
-        h_path = get_handoff_path(config.project_root, ticket.ticket_id)
-        run_hook(
-            config.project_root,
-            "post-ready",
-            ticket.ticket_id,
-            column=target,
-            baton_path=str(h_path),
-        )
+        if (config.project_root / ".agents").is_dir():
+            from kahnban.hooks import run_hook
+            from kahnban.handoff import build_handoff_baton, write_handoff_baton, get_handoff_path
+            baton = build_handoff_baton(config, ticket.ticket_id, stage="implementation", assigned_role="coder")
+            write_handoff_baton(config.project_root, baton, write_root=True)
+            h_path = get_handoff_path(config.project_root, ticket.ticket_id)
+            run_hook(
+                config.project_root,
+                "post-ready",
+                ticket.ticket_id,
+                column=target,
+                baton_path=str(h_path),
+            )
     except Exception as hook_err:
         result.messages.append(f"[WARN] post-ready hook error: {hook_err}")
     return result
@@ -1250,6 +1271,7 @@ def claim(
     force: bool = False,
     force_overlap: bool = False,
     strict_wip: bool = False,
+    local: bool = False,
     reason: str = "",
     timestamp: datetime | None = None,
 ) -> TransitionResult:
@@ -1266,7 +1288,7 @@ def claim(
         default_branch = gitops.default_branch(config.project_root)
         remote = gitops.has_remote(config.project_root)
 
-        if remote:
+        if remote and not local and config.sync_remote:
             try:
                 gitops.pull_ff_only(config.project_root, "origin", default_branch)
             except gitops.GitError as error:
@@ -1364,24 +1386,34 @@ def claim(
             )
             result.messages = list(messages)
             try:
-                from kahnban.hooks import run_hook
-                from kahnban.handoff import build_handoff_baton, write_handoff_baton, get_handoff_path
-                wt_path = (config.project_root / worktree_path).resolve() if worktree_path else None
-                baton = build_handoff_baton(config, ticket.ticket_id, stage="implementation", assigned_role="coder")
-                write_handoff_baton(config.project_root, baton, worktree_dir=wt_path)
-                h_path = get_handoff_path(config.project_root, ticket.ticket_id)
-                run_hook(
-                    config.project_root,
-                    "post-claim",
-                    ticket.ticket_id,
-                    column=target,
-                    worktree=worktree_path or "",
-                    baton_path=str(h_path),
-                )
+                wt_dir = info.path if info is not None else None
+                has_agents = (config.project_root / ".agents").is_dir()
+                if has_agents or wt_dir:
+                    from kahnban.handoff import build_handoff_baton, write_handoff_baton, get_handoff_path
+                    baton = build_handoff_baton(config, ticket.ticket_id, stage="implementation", assigned_role="coder")
+                    write_handoff_baton(
+                        config.project_root,
+                        baton,
+                        worktree_dir=wt_dir,
+                        write_root=has_agents,
+                    )
+                if has_agents:
+                    from kahnban.hooks import run_hook
+                    from kahnban.handoff import get_handoff_path
+                    wt_rel = wt_dir.relative_to(config.project_root).as_posix() if wt_dir else ""
+                    h_path = get_handoff_path(config.project_root, ticket.ticket_id)
+                    run_hook(
+                        config.project_root,
+                        "post-claim",
+                        ticket.ticket_id,
+                        column=target,
+                        worktree=wt_rel,
+                        baton_path=str(h_path),
+                    )
             except Exception as hook_err:
                 result.messages.append(f"[WARN] post-claim hook error: {hook_err}")
 
-            if not remote:
+            if not remote or local or not config.sync_remote:
                 return result
             try:
                 gitops.push(config.project_root, "origin", default_branch)
@@ -1457,10 +1489,12 @@ def _diff_scope_problems(
     base = gitops.merge_base(config.project_root, default_branch, branch)
     changed = gitops.diff_names(config.project_root, base, branch)
     board_prefix = normalize_path_entry(config.board_root)
+    exempt_prefixes = ("tests/", "test/", "spec/", "specs/", "docs/", ".agents/", ".github/")
     offenders = [
         path
         for path in changed
         if not normalize_path_entry(path).startswith(board_prefix + "/")
+        and not any(normalize_path_entry(path).startswith(p) for p in exempt_prefixes)
         and not path_within(path, radius)
     ]
     return offenders, []
@@ -1472,6 +1506,7 @@ def verify(
     *,
     manual_evidence: Path | None = None,
     force_scope: bool = False,
+    accept: bool = False,
     reason: str = "",
     timestamp: datetime | None = None,
 ) -> VerifyResult:
@@ -1502,6 +1537,10 @@ def verify(
                 evidence_path.read_text(encoding="utf-8", errors="replace"),
                 config.log_output_max_bytes,
             )
+            ticked_text = _tick_acceptance_criteria(ticket.text)
+            if ticked_text != ticket.text:
+                write_text(ticket.path, ticked_text)
+                ticket = find_ticket(config, ticket.ticket_id)
             entry = (
                 f"MANUAL-EVIDENCE (unverified) from {evidence_path.name} -> {target}\n"
                 + _indent_output(evidence)
@@ -1565,11 +1604,8 @@ def verify(
             exec_c: str | list[str] = cmd_str
             use_sh = True
             if os.name == "nt":
-                trimmed = cmd_str.strip()
-                first_tok = trimmed.split()[0].lower().strip("'\"") if trimmed else ""
-                if first_tok.endswith(".ps1") or (first_tok in (".", "&") and ".ps1" in trimmed):
-                    exec_c = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd_str]
-                    use_sh = False
+                exec_c = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd_str]
+                use_sh = False
             try:
                 comp = subprocess.run(
                     exec_c,
@@ -1619,6 +1655,11 @@ def verify(
             entry_lines.insert(1, "    " + "; ".join(messages))
 
         if exit_code == 0:
+            if accept:
+                ticked_text = _tick_acceptance_criteria(ticket.text)
+                if ticked_text != ticket.text:
+                    write_text(ticket.path, ticked_text)
+                    ticket = find_ticket(config, ticket.ticket_id)
             entry = "\n".join([entry_lines[0] + f" -> {target}", *entry_lines[1:]])
             result = transition(
                 config, ticket.ticket_id, target, log_entry=entry, timestamp=now
@@ -1657,10 +1698,12 @@ def verify(
         )
         text = frontmatter.append_log(text, log_line(entry, timestamp=now))
         write_text(ticket.path, text)
-        gitops.add(config.project_root, [_relative(config, ticket.path)])
+        rel = _relative(config, ticket.path)
+        gitops.add(config.project_root, [rel])
         gitops.commit(
             config.project_root,
             f"kanban({ticket.ticket_id}): verify failed (exit {exit_code})",
+            paths=[rel],
         )
         return VerifyResult(
             ticket_id=ticket.ticket_id,
@@ -1692,11 +1735,36 @@ def _write_artifact(
     return path
 
 
+def is_board_or_meta_path(path: str, config: Config) -> bool:
+    posix_p = path.replace("\\", "/")
+    board_dir = str(config.board_root).replace("\\", "/")
+    plans_dir = str(Path(config.board_root).parent).replace("\\", "/")
+    return (
+        posix_p.startswith(f"{board_dir}/")
+        or (plans_dir != "." and posix_p.startswith(f"{plans_dir}/"))
+        or posix_p.startswith(".agents/")
+        or posix_p.startswith(".worktrees/")
+    )
+
+
+def is_branch_content_merged(repo: Path, branch: str, default_branch: str, config: Config) -> bool:
+    """Return True if branch is merged or content-equivalent (squashed/rebased)."""
+    if gitops.is_ancestor(repo, branch, default_branch):
+        return True
+    changed = gitops.diff_names(repo, default_branch, branch)
+    scoped_changed = [p for p in changed if not is_board_or_meta_path(p, config)]
+    if scoped_changed:
+        diff = gitops.run(repo, ["diff", default_branch, branch, "--", *scoped_changed], check=False)
+        return diff.returncode == 0 and not diff.stdout.strip()
+    return True
+
+
 def done(
     config: Config,
     ticket_id: str,
     *,
     merge_commit: str | None = None,
+    accept: bool = False,
     timestamp: datetime | None = None,
 ) -> TransitionResult:
     """``kahnban done`` — requires the ticket branch to be merged (plan §2.2)."""
@@ -1708,6 +1776,11 @@ def done(
                 f"{ticket.ticket_id} is in {ticket.column}; done applies to "
                 f"{config.verifying_column}"
             )
+        if accept:
+            ticked_text = _tick_acceptance_criteria(ticket.text)
+            if ticked_text != ticket.text:
+                write_text(ticket.path, ticked_text)
+                ticket = find_ticket(config, ticket.ticket_id)
         fields, body = frontmatter.parse(ticket.text)
         problems: list[str] = []
 
@@ -1733,15 +1806,16 @@ def done(
             else:
                 merge_note = f"merge-commit: {gitops.rev_parse(config.project_root, sha)}"
         elif gitops.branch_exists(config.project_root, branch):
-            if not gitops.is_ancestor(config.project_root, branch, default_branch):
+            if not is_branch_content_merged(config.project_root, branch, default_branch, config):
                 problems.append(
                     f"branch '{branch}' is not merged into '{default_branch}'; "
                     "merge it or pass --merge-commit <sha>"
                 )
             else:
-                merge_note = (
-                    f"merge-commit: {gitops.rev_parse(config.project_root, branch)}"
-                )
+                if gitops.is_ancestor(config.project_root, branch, default_branch):
+                    merge_note = f"merge-commit: {gitops.rev_parse(config.project_root, branch)}"
+                else:
+                    merge_note = f"merge-type: squashed/rebased into {default_branch}"
         else:
             recorded = re.search(r"merge-commit:\s*([0-9a-fA-F]{7,40})", section(body, "Log"))
             if not recorded:
@@ -1937,7 +2011,6 @@ def init_board(
         state_dir.mkdir(parents=True, exist_ok=True)
         active_sess = state_dir / "ACTIVE_SESSION.md"
         shutil.copyfile(templates_dir / "active_session.md", active_sess)
-        written.append(active_sess)
 
         # 3. .agents/specs/
         specs_dir = agents_dir / "specs"
@@ -2004,7 +2077,15 @@ def init_board(
     existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
     additions = [
         entry
-        for entry in (".worktrees/", "plans/tickets/.artifacts/", "plans/tickets/.claim.lock", "__pycache__/", "*.pyc")
+        for entry in (
+            ".worktrees/",
+            "plans/tickets/.artifacts/",
+            "plans/tickets/.claim.lock",
+            ".agents/state/",
+            ".agents/handoffs/",
+            "__pycache__/",
+            "*.pyc",
+        )
         if entry not in existing
     ]
     if additions:
@@ -2018,6 +2099,7 @@ def init_board(
     written.extend(sync(config, timestamp=timestamp))
 
     if commit:
-        gitops.add(root, [_relative(config, path) for path in written])
-        gitops.commit(root, f"kanban: initialize board ({prefix.upper()})")
+        rel_paths = [_relative(config, path) for path in written]
+        gitops.add(root, rel_paths)
+        gitops.commit(root, f"kanban: initialize board ({prefix.upper()})", paths=rel_paths)
     return written

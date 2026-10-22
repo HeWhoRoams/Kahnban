@@ -79,7 +79,11 @@ def build_handoff_baton(
     blast_radius = core.parse_blast_radius(body)
 
     # Extract dual test commands
-    feat_cmd, reg_cmd = core.parse_validation_commands(config, body)
+    try:
+        feat_cmd, reg_cmd = core.parse_validation_commands(config, body)
+    except core.GateError:
+        feat_cmd = config.validation_command.strip()
+        reg_cmd = config.regression_command.strip() or feat_cmd
 
     # Determine worktree path
     worktree_field = str(fields.get("worktree") or "").strip()
@@ -152,7 +156,7 @@ def build_handoff_baton(
         verification_results=verification_results,
         context={
             "column": ticket.column,
-            "problem": core.section(body, "Problem") or ticket.title,
+            "problem": core.section(body, "Problem") or str(fields.get("title") or ticket.ticket_id),
             "design_docs": [str(d) for d in fields.get("design_docs", [])]
             if isinstance(fields.get("design_docs"), list)
             else [],
@@ -166,21 +170,26 @@ def write_handoff_baton(
     baton: HandoffBaton,
     *,
     worktree_dir: Path | None = None,
-) -> Path:
+    write_root: bool = True,
+) -> Path | None:
     """Atomically persist baton to .agents/handoffs/<ID>.json and worktree if present."""
     root = Path(project_root).resolve()
-    target = get_handoff_path(root, baton.ticket_id)
-    target.parent.mkdir(parents=True, exist_ok=True)
-
+    target: Path | None = None
     data = baton.to_dict()
     content = json.dumps(data, indent=2, default=str)
-    core.write_text_atomic(target, content)
+
+    if write_root:
+        target = get_handoff_path(root, baton.ticket_id)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        core.write_text_atomic(target, content)
 
     # Mirror into worktree if worktree directory exists
     if worktree_dir and Path(worktree_dir).is_dir():
         wt_target = Path(worktree_dir).resolve() / WORKTREE_HANDOFF_REL
         wt_target.parent.mkdir(parents=True, exist_ok=True)
         core.write_text_atomic(wt_target, content)
+        if target is None:
+            target = wt_target
 
     return target
 
