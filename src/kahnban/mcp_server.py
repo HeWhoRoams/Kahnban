@@ -284,6 +284,33 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "kanban_next",
+        "description": "Resolve the deterministic next action, target ticket, specialized persona, and pre-formatted prompt for autonomous agent relay.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "enum": ["coder", "qa_reviewer", "reviewer", "spec_analyst", "curator"],
+                    "description": "Optional filter for a specific agent role",
+                }
+            },
+        },
+    },
+    {
+        "name": "kanban_feedback",
+        "description": "Record QA or code review rejection feedback into .agents/HANDOFF.json to route the ticket back to the coder agent with specific remediation instructions.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ticket_id": _string("Ticket ID being rejected (e.g. KB-001)"),
+                "feedback": _string("Detailed explanation of rejection reasons and required fixes"),
+                "author": _string("Author role recording feedback (default: qa_reviewer)"),
+            },
+            "required": ["ticket_id", "feedback"],
+        },
+    },
+    {
         "name": "kanban_session_update",
         "description": "Atomically update .agents/state/ACTIVE_SESSION.md with active context, next commands, and blockers for cross-harness handoff.",
         "inputSchema": {
@@ -737,6 +764,36 @@ def tool_session_update(project_root: Path, arguments: Mapping[str, Any]) -> dic
     }
 
 
+def tool_next(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    from kahnban import dispatcher
+    config = _load_config(project_root)
+    pref_role = arguments.get("role")
+    rec = dispatcher.resolve_next_action(config, preferred_role=pref_role)
+    return {
+        "ok": True,
+        "recommendation": rec.to_dict(),
+    }
+
+
+def tool_feedback(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    from kahnban import handoff
+    ticket_id = str(arguments["ticket_id"]).strip().upper()
+    feedback = str(arguments["feedback"]).strip()
+    author = str(arguments.get("author") or "qa_reviewer").strip()
+    baton = handoff.record_rejection_feedback(project_root, ticket_id, feedback, author=author)
+    if not baton:
+        return {
+            "ok": False,
+            "error": f"No active handoff baton found for ticket {ticket_id}",
+        }
+    return {
+        "ok": True,
+        "ticket_id": ticket_id,
+        "assigned_role": baton.assigned_role,
+        "prompt": baton.next_action.get("prompt", ""),
+    }
+
+
 TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
     "kanban_board_status": tool_board_status,
     "kanban_ticket_get": tool_ticket_get,
@@ -753,6 +810,8 @@ TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
     "kanban_session_status": tool_session_status,
     "kanban_session_get": tool_session_status,
     "kanban_session_update": tool_session_update,
+    "kanban_next": tool_next,
+    "kanban_feedback": tool_feedback,
 }
 
 

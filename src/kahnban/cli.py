@@ -15,7 +15,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from kahnban import __version__, core, gitops, ingest, linter, session, skills, worktree
+from kahnban import __version__, core, dispatcher, gitops, handoff, ingest, linter, session, skills, worktree
 
 EXIT_OK = 0
 EXIT_REFUSED = 1
@@ -395,6 +395,46 @@ def cmd_learnings(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+
+
+def cmd_next(args: argparse.Namespace) -> int:
+    config = _load(args)
+    pref_role = getattr(args, "role", None)
+    rec = dispatcher.resolve_next_action(config, preferred_role=pref_role)
+
+    if getattr(args, "json", False):
+        import json
+        print(json.dumps(rec.to_dict(), indent=2, default=str))
+        return EXIT_OK
+
+    print(f"\n=== Kahnban Situational Next Action ===")
+    print(f"Action:         {rec.action.upper()}")
+    print(f"Assigned Role:  {rec.assigned_role}")
+    if rec.ticket_id:
+        print(f"Target Ticket:  {rec.ticket_id} ({rec.ticket_title or ''})")
+    if rec.worktree:
+        print(f"Worktree:       {rec.worktree}")
+    print(f"Summary:        {rec.summary}")
+    if rec.command:
+        print(f"\nRecommended Command:\n  $ {rec.command}")
+    if rec.prompt:
+        print(f"\nAgent Bootstrap Prompt:\n  > {rec.prompt}")
+    print("=======================================\n")
+    return EXIT_OK
+
+
+def cmd_feedback(args: argparse.Namespace) -> int:
+    root = _project_root(args)
+    feedback_text = args.message
+    ticket_id = args.ticket
+    author = getattr(args, "author", "qa_reviewer") or "qa_reviewer"
+    baton = handoff.record_rejection_feedback(root, ticket_id, feedback_text, author=author)
+    if not baton:
+        sys.stderr.write(f"No active handoff baton found for ticket '{ticket_id}'.\n")
+        return EXIT_REFUSED
+    print(f"[OK] Recorded rejection feedback for {ticket_id} into .agents/HANDOFF.json.")
+    return EXIT_OK
+
 def cmd_skills(args: argparse.Namespace) -> int:
     try:
         config = _load(args)
@@ -695,6 +735,31 @@ def build_parser() -> argparse.ArgumentParser:
     l_promote.set_defaults(handler=cmd_learnings)
 
     learnings_parser.set_defaults(handler=cmd_learnings)
+
+    # --- next (situational dispatcher)
+    next_parser = subparsers.add_parser(
+        "next",
+        parents=[board],
+        help="resolve deterministic next step, target ticket, and agent bootstrap prompt",
+    )
+    next_parser.add_argument("--json", action="store_true", help="output structured JSON baton")
+    next_parser.add_argument(
+        "--role",
+        choices=["coder", "qa_reviewer", "reviewer", "spec_analyst", "curator"],
+        help="filter next action for a specific agent role",
+    )
+    next_parser.set_defaults(handler=cmd_next)
+
+    # --- feedback (record review/QA rejection into handoff baton)
+    fb_parser = subparsers.add_parser(
+        "feedback",
+        parents=[board],
+        help="record QA or code review rejection feedback for coder agent",
+    )
+    fb_parser.add_argument("ticket", help="ticket ID (e.g. KB-001)")
+    fb_parser.add_argument("--message", "-m", required=True, help="rejection feedback explanation")
+    fb_parser.add_argument("--author", default="qa_reviewer", help="author role recording feedback")
+    fb_parser.set_defaults(handler=cmd_feedback)
 
     skills_parser = subparsers.add_parser(
         "skills",

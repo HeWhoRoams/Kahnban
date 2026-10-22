@@ -89,6 +89,7 @@ class Config:
     log_output_max_bytes: int = 65536
     required_headings: tuple[str, ...] = DEFAULT_REQUIRED_HEADINGS
     validation_command: str = ""
+    regression_command: str = ""
     design_doc_roots: tuple[str, ...] = ("plans",)
     extensions: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
     ingest: Mapping[str, object] = field(default_factory=dict)
@@ -570,6 +571,51 @@ def extension_problems(
 
 
 FENCE_PATTERN = re.compile(r"^```[^\n]*\n(.*?)^```", re.DOTALL | re.MULTILINE)
+
+
+def parse_validation_commands(config: Config, body: str) -> tuple[str, str]:
+    """Extract (feature_test_command, regression_test_command) from ## Validation."""
+    val_section = section(body, "Validation")
+    
+    feat_cmd = ""
+    reg_cmd = ""
+    
+    # Split by subheadings if present
+    subheadings = re.split(r"(?m)^###\s+", val_section)
+    for part in subheadings:
+        if not part.strip():
+            continue
+        header = part.splitlines()[0].strip().lower()
+        fence_match = FENCE_PATTERN.search(part + "\n")
+        if fence_match:
+            cmd = fence_match.group(1).strip()
+            if "feature" in header:
+                feat_cmd = cmd
+            elif "regression" in header:
+                reg_cmd = cmd
+
+    # Fallback if unsectioned single block: use as feature command
+    if not feat_cmd:
+        match = FENCE_PATTERN.search(val_section + "\n")
+        if match:
+            feat_cmd = match.group(1).strip()
+        elif config.validation_command.strip():
+            feat_cmd = config.validation_command.strip()
+
+    # Fallback for regression command
+    if not reg_cmd:
+        if config.regression_command.strip():
+            reg_cmd = config.regression_command.strip()
+        else:
+            reg_cmd = feat_cmd
+
+    if not feat_cmd:
+        raise GateError(
+            "no validation command found: add a fenced command block under "
+            "'## Validation' or set 'validation_command' in board.config.json"
+        )
+
+    return feat_cmd, reg_cmd
 
 
 def validation_command(config: Config, body: str) -> str:
@@ -1125,13 +1171,29 @@ def ready(
             f"{ticket.ticket_id} is not ready:\n"
             + "\n".join(f"  - {problem}" for problem in problems)
         )
-    return transition(
+    result = transition(
         config,
         ticket.ticket_id,
         target,
         log_entry=f"ready gate passed -> {target}",
         timestamp=timestamp,
     )
+    try:
+        from kahnban.hooks import run_hook
+        from kahnban.handoff import build_handoff_baton, write_handoff_baton, get_handoff_path
+        baton = build_handoff_baton(config, ticket.ticket_id, stage="implementation", assigned_role="coder")
+        write_handoff_baton(config.project_root, baton)
+        h_path = get_handoff_path(config.project_root, ticket.ticket_id)
+        run_hook(
+            config.project_root,
+            "post-ready",
+            ticket.ticket_id,
+            column=target,
+            baton_path=str(h_path),
+        )
+    except Exception as hook_err:
+        result.messages.append(f"[WARN] post-ready hook error: {hook_err}")
+    return result
 
 
 def _dependency_problems(config: Config, fields: Mapping[str, object]) -> list[str]:
@@ -1301,6 +1363,23 @@ def claim(
                 timestamp=timestamp,
             )
             result.messages = list(messages)
+            try:
+                from kahnban.hooks import run_hook
+                from kahnban.handoff import build_handoff_baton, write_handoff_baton, get_handoff_path
+                wt_path = (config.project_root / worktree_path).resolve() if worktree_path else None
+                baton = build_handoff_baton(config, ticket.ticket_id, stage="implementation", assigned_role="coder")
+                write_handoff_baton(config.project_root, baton, worktree_dir=wt_path)
+                h_path = get_handoff_path(config.project_root, ticket.ticket_id)
+                run_hook(
+                    config.project_root,
+                    "post-claim",
+                    ticket.ticket_id,
+                    column=target,
+                    worktree=worktree_path or "",
+                    baton_path=str(h_path),
+                )
+            except Exception as hook_err:
+                result.messages.append(f"[WARN] post-claim hook error: {hook_err}")
 
             if not remote:
                 return result
@@ -1466,7 +1545,7 @@ def verify(
                 + "]"
             )
 
-        command = validation_command(config, body)
+        feat_cmd, reg_cmd = parse_validation_commands(config, body)
         worktree_field = str(fields.get("worktree") or "").strip()
         cwd = config.project_root
         if worktree_field:
@@ -1480,47 +1559,55 @@ def verify(
                 )
 
         started = datetime.now()
-        exec_cmd: str | list[str] = command
-        use_shell = True
-        if os.name == "nt":
-            trimmed = command.strip()
-            first_token = trimmed.split()[0].lower().strip("'\"") if trimmed else ""
-            if first_token.endswith(".ps1") or (
-                first_token in (".", "&") and ".ps1" in trimmed
-            ):
-                exec_cmd = [
-                    "powershell",
-                    "-NoProfile",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-Command",
-                    command,
-                ]
-                use_shell = False
+        
+        # Helper to execute a single shell command
+        def _run_single_command(cmd_str: str) -> tuple[int, str]:
+            exec_c: str | list[str] = cmd_str
+            use_sh = True
+            if os.name == "nt":
+                trimmed = cmd_str.strip()
+                first_tok = trimmed.split()[0].lower().strip("'\"") if trimmed else ""
+                if first_tok.endswith(".ps1") or (first_tok in (".", "&") and ".ps1" in trimmed):
+                    exec_c = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd_str]
+                    use_sh = False
+            try:
+                comp = subprocess.run(
+                    exec_c,
+                    shell=use_sh,
+                    cwd=str(cwd),
+                    capture_output=True,
+                    text=True,
+                    errors="replace",
+                    timeout=config.validation_timeout_sec,
+                )
+                return comp.returncode, (comp.stdout or "") + (comp.stderr or "")
+            except subprocess.TimeoutExpired as expired:
+                return 124, (f"TIMEOUT after {config.validation_timeout_sec}s\n" +
+                             (expired.stdout or "" if isinstance(expired.stdout, str) else "") +
+                             (expired.stderr or "" if isinstance(expired.stderr, str) else ""))
 
-        try:
-            # The validation block is an author-provided shell command line
-            # (documented PowerShell wrapper form), so a shell is required here.
-            completed = subprocess.run(
-                exec_cmd,
-                shell=use_shell,
-                cwd=str(cwd),
-                capture_output=True,
-                text=True,
-                errors="replace",
-                timeout=config.validation_timeout_sec,
+        # Tier 1: Feature Acceptance Tests
+        messages.append(f"Running Tier 1 (Feature Tests): {feat_cmd}")
+        t1_code, t1_output = _run_single_command(feat_cmd)
+        
+        # If Tier 1 passes and reg_cmd is distinct, execute Tier 2: Regression Tests
+        if t1_code == 0 and reg_cmd and reg_cmd != feat_cmd:
+            messages.append(f"Running Tier 2 (Regression Tests): {reg_cmd}")
+            t2_code, t2_output = _run_single_command(reg_cmd)
+            exit_code = t2_code
+            combined_cmd = f"[Tier 1: {feat_cmd}] && [Tier 2: {reg_cmd}]"
+            combined_output = (
+                f"=== TIER 1: FEATURE TESTS ===\n{t1_output}\n\n"
+                f"=== TIER 2: REGRESSION TESTS ===\n{t2_output}"
             )
-            exit_code = completed.returncode
-            output = (completed.stdout or "") + (completed.stderr or "")
-        except subprocess.TimeoutExpired as expired:
-            exit_code = 124
-            output = (
-                f"TIMEOUT after {config.validation_timeout_sec}s\n"
-                + (expired.stdout or "" if isinstance(expired.stdout, str) else "")
-                + (expired.stderr or "" if isinstance(expired.stderr, str) else "")
-            )
+        else:
+            exit_code = t1_code
+            combined_cmd = feat_cmd
+            combined_output = t1_output
+
+        command = combined_cmd
+        output = combined_output
         duration = (datetime.now() - started).total_seconds()
-
         artifact = _write_artifact(config, ticket.ticket_id, command, output, now)
         entry_lines = [
             f"verify exit={exit_code} in {duration:.1f}s (cwd={cwd.name})",
@@ -1536,6 +1623,21 @@ def verify(
             result = transition(
                 config, ticket.ticket_id, target, log_entry=entry, timestamp=now
             )
+            # Trigger post-verify hook
+            try:
+                from kahnban.hooks import run_hook
+                from kahnban.handoff import get_handoff_path
+                h_path = get_handoff_path(config.project_root, ticket.ticket_id)
+                run_hook(
+                    config.project_root,
+                    "post-verify",
+                    ticket.ticket_id,
+                    column=target,
+                    worktree=worktree_field,
+                    baton_path=str(h_path) if h_path.exists() else "",
+                )
+            except Exception as hook_err:
+                messages.append(f"[WARN] post-verify hook error: {hook_err}")
             result.messages = messages
             return VerifyResult(
                 ticket_id=ticket.ticket_id,
@@ -1674,6 +1776,19 @@ def done(
             timestamp=timestamp,
         )
         result.messages = list(lock_warnings)
+        try:
+            from kahnban.hooks import run_hook
+            from kahnban.handoff import get_handoff_path
+            h_path = get_handoff_path(config.project_root, ticket.ticket_id)
+            run_hook(
+                config.project_root,
+                "post-done",
+                ticket.ticket_id,
+                column=config.done_column,
+                baton_path=str(h_path) if h_path.exists() else "",
+            )
+        except Exception as hook_err:
+            result.messages.append(f"[WARN] post-done hook error: {hook_err}")
         return result
 
 

@@ -237,6 +237,38 @@ def install_skills(
                 write_text_atomic(rule_file, CURSOR_MDC_CONTENT)
         configured_harnesses.append("cursor (.cursor/rules/kanban.mdc)")
 
+    should_configure_vscode = harness_norm in ("vscode", "all") or (
+        harness_norm == "auto" and (root / ".vscode").is_dir()
+    )
+    if should_configure_vscode:
+        vscode_dir = root / ".vscode"
+        mcp_config = vscode_dir / "mcp.json"
+        if not dry_run:
+            vscode_dir.mkdir(parents=True, exist_ok=True)
+            if not mcp_config.exists():
+                from kahnban.core import write_text_atomic
+                mcp_data = {
+                    "servers": {
+                        "kahnban": {
+                            "command": "python",
+                            "args": ["-m", "kahnban", "mcp"],
+                            "transport": "stdio"
+                        }
+                    }
+                }
+                write_text_atomic(mcp_config, json.dumps(mcp_data, indent=2))
+        configured_harnesses.append("vscode (.vscode/mcp.json)")
+
+    should_configure_hermes = harness_norm in ("hermes", "all") or (
+        harness_norm == "auto" and (root / ".hermes").is_dir()
+    )
+    if should_configure_hermes:
+        hermes_skills = root / ".hermes" / "skills"
+        if not dry_run:
+            hermes_skills.mkdir(parents=True, exist_ok=True)
+            _copy_tree_contents(agents_skills_dir, hermes_skills)
+        configured_harnesses.append("hermes (.hermes/skills/)")
+
     return SkillsResult(
         ok=True,
         source=source,
