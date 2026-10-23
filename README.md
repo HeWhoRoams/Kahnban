@@ -6,7 +6,7 @@ Kahnban is a zero-dependency, model-agnostic Kanban system and software factory 
 
 ## How It Works
 
-A ticket's column is its status: each column is a folder under `plans/tickets/`, and every move between columns is one commit on the default branch. A ticket moves forward only through a gate, a command that checks the ticket and refuses the move if anything is missing:
+A ticket's column is its status: each column is a folder under `plans/tickets/`, and every move between columns is one commit on the default branch. A ticket moves forward through gates: commands that check the ticket and refuse the move if anything is missing:
 
 ```mermaid
 flowchart TD
@@ -25,6 +25,8 @@ flowchart TD
 | [3-in-progress](docs/how-it-works.md#in-progress) | the coder | Test-first work in the ticket's own worktree, committed on `ticket/<ID>`. | `verify` |
 | [4-verifying](docs/how-it-works.md#verifying) | the qa-reviewer, then the integrator | A different reviewer approves or rejects, then the merge queue tests the merged result. | `approve`, `merge`, `done` (or `reject`) |
 | [5-done](docs/how-it-works.md#done) | — | A learnings reflection, then `cleanup` removes the worktree and branch. | — |
+
+A gate can only be bypassed on purpose: `kahnban move` and the `--force` overrides on `claim` and `verify` each need a `--reason`, which is written to the ticket's Log.
 
 Each stage links to [How Kahnban works](docs/how-it-works.md), which goes one level down (the checks inside each gate) and then into the deeper flows: the factory loop, the merge queue, the architecture and the learnings loop.
 
@@ -91,10 +93,7 @@ When invoked, the agent systematically drives work through 5 strict stages:
 1. **Intake & Refinement**: `/grill-with-docs` $\rightarrow$ `/to-spec` $\rightarrow$ `/to-tickets` $\rightarrow$ `kahnban ready` $\rightarrow$ triggers `post-ready` hook
 2. **Claim & Worktree Isolation**: `kahnban claim <ID> --worktree` $\rightarrow$ emits `.agents/HANDOFF.json` into worktree $\rightarrow$ triggers `post-claim` hook
 3. **Execution Rigor**: Coder Agent reads `HANDOFF.json`, adheres strictly to declared blast radius, and applies PSTACK principles + `/tdd`
-4. **Dual-Tier QA & Verification**:
-   - **Tier 1 (Feature Tests)**, then each acceptance criterion's own test, then **Tier 2 (Regression Tests)**.
-   - With `require_proof`, the feature tests are re-run against the base version of the changed source and must fail there.
-   - `kahnban verify <ID>` moves to `4-verifying` only if all of that holds, and ticks only the boxes whose test passed.
+4. **Dual-Tier QA & Verification**: `kahnban verify <ID>` runs the feature tests, each criterion's test and the regression tests, plus the proof check under `require_proof` ([every check, in order](docs/how-it-works.md#in-progress))
 5. **Review Gate & Closure**:
    - QA Reviewer Agent audits tests and diff. If defective: `kahnban reject <ID> --reviewer <name> -m "..."` moves it back to `3-in-progress` with the reasons in its Log.
    - If sound: `kahnban approve <ID> --reviewer <name>` (never the owner) $\rightarrow$ integrator runs `kahnban merge <ID>` $\rightarrow$ `kahnban done` $\rightarrow$ triggers `post-done` hook $\rightarrow$ `/reflect` $\rightarrow$ `kahnban cleanup`

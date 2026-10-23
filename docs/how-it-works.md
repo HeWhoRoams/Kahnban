@@ -7,7 +7,7 @@ This page is one level down from the [board overview in the README](../README.md
 
 ## Stage by stage
 
-Every gate is one function in `core`, and the CLI, the MCP server and `kahnban run` all call that same function. When a check fails, the ticket stays where it is and the command says why. The diagrams show the checks; the [gate tables in the README](../README.md#what-verify-refuses) have the exact refusal rules.
+Every ticket gate is one function in `core`, and the CLI, the MCP server and `kahnban run` all call that same function. When a check fails, the ticket stays where it is and the command says why. The diagrams show the checks; the [gate tables in the README](../README.md#what-verify-refuses) spell out the verify, review, merge and spec refusals in full.
 
 ### Backlog and refining
 
@@ -29,13 +29,14 @@ flowchart TD
   from["0-backlog or<br/>1-refining"] --> gate
   subgraph gate["kahnban ready"]
     direction TB
-    r1["acceptance criteria are checkboxes"]
-    r2["blast radius lists files, not folders,<br/>at most max_blast_radius_files"]
+    r1["at least one acceptance-criteria checkbox"]
+    r2["a blast radius; with max_blast_radius_files set,<br/>files only, no more than the limit"]
     r3["not blocked, every dependency done"]
     r4["commands match allowed_commands<br/>(when set)"]
     r5["require_proof: each criterion names a test,<br/>the blast radius includes a test file"]
     r6["require_spec: the spec is approved<br/>and covers: names its requirements"]
-    r1 ~~~ r2 ~~~ r3 ~~~ r4 ~~~ r5 ~~~ r6
+    r7["extension fields valid<br/>(when the board defines any)"]
+    r1 ~~~ r2 ~~~ r3 ~~~ r4 ~~~ r5 ~~~ r6 ~~~ r7
   end
   gate --> to["2-ready<br/>contract frozen"]
   gate -.->|any check fails| stay["refused,<br/>every problem listed"]
@@ -61,11 +62,13 @@ flowchart TD
   from["2-ready"] --> gate
   subgraph gate["kahnban claim"]
     direction TB
-    c1["ticket is in 2-ready"]
-    c2["every dependency is done"]
-    c3["under the WIP limit<br/>(a warning unless --strict-wip)"]
-    c4["blast radius overlaps no<br/>3-in-progress ticket"]
-    c1 ~~~ c2 ~~~ c3 ~~~ c4
+    c1["an --owner is given"]
+    c2["with sync_remote: the default branch<br/>fast-forwards from origin"]
+    c3["ticket is in 2-ready"]
+    c4["every dependency is done"]
+    c5["under the WIP limit<br/>(a warning unless --strict-wip)"]
+    c6["blast radius overlaps no<br/>3-in-progress ticket"]
+    c1 ~~~ c2 ~~~ c3 ~~~ c4 ~~~ c5 ~~~ c6
   end
   gate --> to["3-in-progress"]
   gate -.->|any check fails| stay["refused,<br/>stays in 2-ready"]
@@ -77,7 +80,7 @@ Passing records a lease for the owner. With `--worktree` (which `kahnban run` al
 
 **Who:** the coder.
 
-The coder works test-first inside the worktree and commits on `ticket/<ID>`. Board files never change on that branch. Verify tests the committed tip and runs its checks in order, stopping at the first failure:
+The coder works test-first inside the worktree and commits on `ticket/<ID>`. Board files never change on that branch. Verify tests the committed tip and runs its checks in this order, stopping at the first one that fails:
 
 ```mermaid
 ---
@@ -93,18 +96,20 @@ flowchart TD
     direction TB
     v1["contract unchanged since ready"]
     v2["diff stays inside the blast radius"]
-    v3["worktree clean, at the branch tip"]
-    v4["feature tests pass"]
-    v5["each criterion's test passes"]
-    v6["regression tests pass"]
-    v7["require_proof: the feature tests fail<br/>with the changed source reverted"]
-    v1 --> v2 --> v3 --> v4 --> v5 --> v6 --> v7
+    v3["commands match allowed_commands<br/>(when set)"]
+    v4["worktree clean, at the branch tip<br/>(worktree tickets)"]
+    v5["require_proof: the branch changes source,<br/>every criterion names a test"]
+    v6["feature tests pass"]
+    v7["every criterion's test passes<br/>(all of them run)"]
+    v8["regression tests pass"]
+    v9["require_proof: the feature tests fail<br/>with the changed source reverted"]
+    v1 --> v2 --> v3 --> v4 --> v5 --> v6 --> v7 --> v8 --> v9
   end
   gate --> to["4-verifying<br/>passing boxes ticked"]
-  gate -.->|first failure| stay["stays in 3-in-progress,<br/>failure in the Log"]
+  gate -.->|first failure| stay["refused,<br/>stays in 3-in-progress"]
 ```
 
-A pass ticks the box of every criterion whose test passed, records the verified tip, clears any earlier approval and fires the `post-verify` hook. A failure is committed to the ticket's `## Log` with the output, so the next attempt can see what broke.
+A pass ticks the box of every criterion whose test passed, records the verified tip, clears any earlier approval and fires the `post-verify` hook. When a test stage fails, verify commits the result to the ticket's `## Log` with its output, so the next attempt can see what broke. The checks before the tests refuse without writing anything; the command prints the reason.
 
 ### Verifying
 
@@ -123,19 +128,19 @@ config:
 flowchart TD
   verified["4-verifying<br/>verified"] --> approve
   subgraph approve["kahnban approve"]
-    direction LR
+    direction TB
     a1["reviewer is not the owner"] ~~~ a2["branch unchanged<br/>since verify"]
   end
   approve --> approved["4-verifying<br/>approved"] --> merge
   subgraph merge["kahnban merge"]
-    direction LR
-    m1["merges cleanly<br/>onto main"] ~~~ m2["tests pass on<br/>the merged result"]
+    direction TB
+    m1["approved at the<br/>current branch tip"] ~~~ m2["merges cleanly onto<br/>the default branch"] ~~~ m3["tests pass on<br/>the merged result"]
   end
   merge --> integrated["4-verifying<br/>integrated"]
-  verified -.->|kahnban reject| back["3-in-progress"]
+  verified & approved -.->|reject| back["3-in-progress"]
 ```
 
-A reviewer who finds a problem runs `reject` instead of `approve`. That sends the ticket back to `3-in-progress`, unticks every box, clears the verify, approval and integration records, and puts the reasons in the Log for the coder. A refused merge lands nothing; under `kahnban run` it is rejected back automatically. [The merge queue](#the-merge-queue) shows what `merge` does in git.
+A reviewer who finds a problem runs `reject` instead of `approve`, and a ticket can be rejected at any point in `4-verifying`. Rejecting sends the ticket back to `3-in-progress`, unticks every box, clears the verify, approval and integration records, and puts the reasons in the Log for the coder. Merge runs both the feature and the regression tests on the merged result. A refused merge lands nothing; under `kahnban run` it is rejected back automatically. [The merge queue](#the-merge-queue) shows what `merge` does in git.
 
 ### Done
 
@@ -157,7 +162,7 @@ flowchart TD
     direction TB
     d1["every acceptance box is ticked"]
     d2["approved by someone other than<br/>the owner, at the current tip"]
-    d3["the merge commit is on main<br/>and contains the tip"]
+    d3["the merge commit is on the default branch<br/>and contains the tip"]
     d1 ~~~ d2 ~~~ d3
   end
   gate --> to["5-done"]
@@ -171,7 +176,7 @@ The approval and merge checks apply under `require_review` and `require_integrat
 
 ### The factory loop
 
-`kahnban run` drives the board without a human in the loop. Each step it asks the dispatcher for the most urgent action, runs the gates itself, and starts an agent worker only for judgment work. When the action moves the board, the loop asks again:
+`kahnban run` drives the board without a human in the loop. Each step it asks the dispatcher for the most urgent action, runs the gates itself, and starts an agent worker only for judgment work. A step can land several commits (a claim and a verify, say) or none, when a gate refuses. Either way the loop asks again, until nothing is left to do or `--max-steps` is reached. When it stops it reports the tickets parked for a human:
 
 ```mermaid
 ---
@@ -181,11 +186,13 @@ config:
 ---
 flowchart TD
   pick["dispatcher picks<br/>the next action"]
-  pick -->|nothing to do| idle(["stop: report<br/>parked tickets"])
-  pick -->|an action| act["runner runs the gates,<br/>and a worker if needed"]
-  act -->|"no progress after<br/>max_attempts"| esc(["escalate<br/>to a human"])
-  act -->|progress| commit["board changes<br/>(one commit)"]
-  commit -->|next step| pick
+  pick -->|nothing left| idle(["stop"])
+  pick -->|an action| tries{"over<br/>max_attempts?"}
+  tries -->|yes| esc["escalate<br/>to a human"]
+  tries -->|no| act["run the gates,<br/>and a worker"]
+  act --> step["step done"]
+  esc --> step
+  step -->|next step| pick
 ```
 
 The dispatcher takes the first row that matches, so finishing work comes before starting new work:
@@ -199,17 +206,18 @@ The dispatcher takes the first row that matches, so finishing work comes before 
 | 4 | a `2-ready` ticket whose blast radius is free | claims it into a worktree, then implements and verifies it | coder |
 | 5 | a ticket in `0-backlog` or `1-refining` | starts refinement, then runs the ready gate | spec-analyst |
 
-Escalating sets `blocked_on: human: <reason>` and fires the `on-escalate` hook; the dispatcher skips the ticket until someone runs `kahnban unblock`. Workers run with `KAHNBAN_ROLE` set, so [`kahnban guard`](../README.md#running-the-factory-kahnban-run) and the CLI refuse anything outside their role.
+Escalating sets `blocked_on: human: <reason>` and fires the `on-escalate` hook. The dispatcher skips the ticket until someone runs `kahnban unblock`, and the run carries on with the rest of the board. Workers run with `KAHNBAN_ROLE` set, so [`kahnban guard`](../README.md#running-the-factory-kahnban-run) and the CLI refuse anything outside their role.
 
 ### The merge queue
 
-The board and the code meet only here. `merge` merges the ticket branch onto the default branch in a scratch worktree, runs the feature and regression tests on that result, and fast-forwards the default branch only if they pass. It holds the board lock while the tests run, so each merge is tested against everything merged before it:
+The board and the code meet only here. `merge` merges the ticket branch onto the default branch in a scratch worktree, runs the feature and regression tests on that result, and fast-forwards the default branch only if they pass. It holds the board lock while the tests run, so each merge is tested against everything merged before it. Claim creates the ticket branch just before it commits the claim. In the graph, `main` stands for your default branch:
 
 ```mermaid
 gitGraph
   commit id: "ready KB-001"
-  commit id: "claim KB-001"
   branch ticket/KB-001
+  checkout main
+  commit id: "claim KB-001"
   checkout ticket/KB-001
   commit id: "failing test"
   commit id: "make it pass"
@@ -232,15 +240,15 @@ config:
     useMaxWidth: false
 ---
 flowchart TD
-  ways["Ways in<br/>capture · new · ingest a plan or spec · spec approve"]
+  ways["Ways in<br/>capture · new · ingest a plan or spec"]
   clients["Clients<br/>kahnban CLI (including kahnban run) · MCP server"]
-  core["core<br/>every gate and the one transition() writer"]
+  core["core<br/>the ticket gates and the one transition() writer"]
   ways --> clients --> core
   core -->|"git mv + commit"| board[("board<br/>plans/tickets/, on the default branch")]
   core -->|"claim · merge · cleanup"| code[("code<br/>.worktrees/ID, on ticket/ID")]
 ```
 
-Agent workers go through the same clients as a human, with `KAHNBAN_ROLE` set. `spec approve` is blocked for every factory role: only a human approves intent.
+Agent workers go through the same clients as a human, with `KAHNBAN_ROLE` set. Spec approval lives in the `specs` module rather than `core`, and `spec approve` is blocked for every factory role: only a human approves intent.
 
 ### The learnings loop
 
