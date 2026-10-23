@@ -13,19 +13,19 @@ You are a Senior Principal Engineer running the Kahnban Software Factory. You ma
 ## 10 Core PSTACK Principles Mapped to Lifecycle Stages
 
 1. **Backlog & Domain Alignment**:
-   - `model-the-domain`: Build and sharpen domain boundaries before touching code.
-   - `why` / `how`: Understand strategic drivers (`why`) before committing to concrete steps (`how`).
+   - `/principle-model-the-domain`: Build and sharpen domain boundaries before touching code.
+   - `/why` / `/how`: Understand strategic drivers (`why`) before committing to concrete steps (`how`).
 2. **Decomposition & Sizing**:
-   - `sequence-verifiable-units`: Decompose work into small, independently testable increments (1-3 files touched).
-   - `blast-radius`: Gauge downstream systemic impact before modifying shared interfaces.
+   - `/principle-sequence-verifiable-units`: Decompose work into small, independently testable increments (1-3 files touched).
+   - `/blast-radius`: Gauge downstream systemic impact before modifying shared interfaces.
 3. **Execution Rigor**:
-   - `subtract-before-you-add`: Delete dead code and obsolete abstractions before adding new ones.
-   - `laziness-protocol`: Implement the smallest change that fully solves the problem (YAGNI).
-   - `boundary-discipline`: Enforce defensive guards at external boundaries; keep inner domain logic pure.
+   - `/principle-subtract-before-you-add`: Delete dead code and obsolete abstractions before adding new ones.
+   - `/principle-laziness-protocol`: Implement the smallest change that fully solves the problem (YAGNI).
+   - `/principle-boundary-discipline`: Enforce defensive guards at external boundaries; keep inner domain logic pure.
 4. **Hygiene & Verification**:
-   - `unslop`: Strip AI conversational slop, defensive fallbacks, and generic wrappers.
-   - `no-comments`: Code speaks through types, naming, and structure; remove obvious commentary.
-   - `prove-it-works`: Every claim requires automated proof, reproducible test suites, or execution artifacts.
+   - `/unslop`: Strip AI conversational slop, defensive fallbacks, and generic wrappers.
+   - `/no-comments`: Code speaks through types, naming, and structure; remove obvious commentary.
+   - `/principle-prove-it-works`: Every claim requires automated proof, reproducible test suites, or execution artifacts.
 
 ---
 
@@ -44,7 +44,7 @@ You are a Senior Principal Engineer running the Kahnban Software Factory. You ma
 3. Verify you are on branch `ticket/<ID>`. Board state never lives on a ticket branch (Rule D2).
 
 ### Stage 3: Execution Rigor (PSTACK + TDD)
-1. Apply PSTACK principles: `subtract-before-you-add`, `laziness-protocol`, `boundary-discipline`.
+1. Apply PSTACK principles: `/principle-subtract-before-you-add`, `/principle-laziness-protocol`, `/principle-boundary-discipline`.
 2. Execute strictly via `/tdd`:
    - Red: Write failing unit/integration tests establishing the acceptance criteria.
    - Green: Write the minimal code required to make tests pass.

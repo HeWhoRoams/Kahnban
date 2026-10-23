@@ -1,7 +1,6 @@
 ---
 name: reflect
 description: "Mine the completed ticket or active session for friction, mistakes, and architectural insights, then capture or augment deduplicated patterns in ./learnings/."
-disable-model-invocation: true
 ---
 
 # Reflect: Closed-Loop Session Learning

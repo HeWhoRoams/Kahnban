@@ -947,7 +947,7 @@ TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
 }
 
 
-# The CLI command each tool stands for, for the role check (see guard.ROLE_COMMANDS).
+# The CLI command each tool stands for, for the role check (see templates/roles.json).
 TOOL_COMMANDS: dict[str, str] = {
     "kanban_board_status": "status",
     "kanban_ticket_get": "status",

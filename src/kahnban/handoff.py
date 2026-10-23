@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from kahnban import core, frontmatter
+from kahnban import core, frontmatter, roles
 
 HANDOFFS_DIR_NAME = ".agents/handoffs"
 WORKTREE_HANDOFF_REL = core.HANDOFF_IN_WORKTREE
@@ -106,52 +106,25 @@ def build_handoff_baton(
         blast_radius_files=blast_radius,
     )
 
-    # Generate role-tailored prompt and next command
-    prompt = ""
-    cmd = ""
     title = str(fields.get("title") or ticket.ticket_id)
-    if assigned_role == "coder":
-        cmd = f"kahnban claim {ticket_id} --worktree --owner coder-agent"
-        prompt = (
-            f"You are a specialized Coder Agent working on {ticket_id}: '{title}'. "
-            f"Operate inside isolated worktree '{worktree_field or f'.worktrees/{ticket_id}'}'. "
-            f"Follow TDD (Red -> Green -> Refactor). "
-            f"Touch ONLY files in blast radius: {', '.join(blast_radius) or 'none declared'}. "
-            f"Run feature tests: `{feat_cmd}`. "
-            f"Ensure global regression tests pass: `{reg_cmd}`. "
-            f"Commit everything, then run 'kahnban verify {ticket_id}'."
-        )
-    elif assigned_role == "qa_reviewer":
-        cmd = f"kahnban approve {ticket_id} --reviewer qa-reviewer"
-        prompt = (
-            f"You are a QA Reviewer Agent auditing {ticket_id}: '{title}'. "
-            f"Inspect the diff of branch 'ticket/{ticket_id}' against the default branch. "
-            f"Verify all acceptance criteria are proven by high-fidelity tests. "
-            f"Run `/unslop` and `/no-comments`. "
-            f"If defects exist, run 'kahnban reject {ticket_id} --reviewer qa-reviewer -m \"<what to fix>\"'. "
-            f"If it is sound, run '{cmd}'. Never merge or mark it done yourself."
-        )
-    elif assigned_role == "integrator":
-        cmd = f"kahnban merge {ticket_id} && kahnban done {ticket_id}"
-        prompt = (
-            f"You are the Integrator for {ticket_id}: '{title}', which a reviewer approved. "
-            f"Run 'kahnban merge {ticket_id}' from the project root: it merges onto the "
-            f"current default branch, runs the tests on the result, and lands it only if "
-            f"they pass. Then run 'kahnban done {ticket_id}'. If the merge is refused, run "
-            f"'kahnban reject {ticket_id} --reviewer integrator -m \"<the failure>\"'."
-        )
-    elif assigned_role == "curator":
-        cmd = f"kahnban done {ticket_id}"
-        prompt = (
-            f"You are a Continuous Learning Curator. Ticket {ticket_id} has been merged. "
-            f"Run `/reflect` to mine session friction, cluster recurring patterns into ./learnings/, "
-            f"and clean up the worktree via 'kahnban cleanup {ticket_id}'."
-        )
+    cmd = {
+        "coder": f"kahnban claim {ticket_id} --worktree --owner coder-agent",
+        "qa_reviewer": f"kahnban approve {ticket_id} --reviewer qa-reviewer",
+        "integrator": f"kahnban merge {ticket_id} && kahnban done {ticket_id}",
+    }.get(assigned_role, "")
 
     # Check existing baton for historical rejection records
     existing = read_handoff_baton(config.project_root, ticket_id)
     verification_results = (
         existing.verification_results if existing else VerificationResults()
+    )
+    prompt = _prompt(
+        assigned_role,
+        ticket_id,
+        title,
+        worktree_field or f".worktrees/{ticket_id}",
+        qa,
+        verification_results.rejection_history,
     )
 
     return HandoffBaton(
@@ -174,6 +147,31 @@ def build_handoff_baton(
         },
         next_action={"command": cmd, "prompt": prompt},
     )
+
+
+def _prompt(
+    role: str,
+    ticket_id: str,
+    title: str,
+    worktree: str,
+    qa: QAContract,
+    rejections: list[dict[str, Any]],
+) -> str:
+    """The role's instructions from the manifest, plus this ticket's facts."""
+    if role not in roles.manifest()["roles"]:
+        return ""
+    facts = [f"Rejected by {entry.get('author')}: {entry.get('feedback')}" for entry in rejections]
+    if role == "coder":
+        facts.append(f"Worktree: {worktree}")
+    if role in ("coder", "qa_reviewer"):
+        facts += [
+            f"Blast radius: {', '.join(qa.blast_radius_files) or 'none declared'}",
+            f"Feature tests: `{qa.feature_test_command}`",
+            f"Regression tests: `{qa.regression_test_command}`",
+        ]
+    if role in ("qa_reviewer", "integrator"):
+        facts.append(f"Branch: ticket/{ticket_id}")
+    return roles.prompt(role, ticket=ticket_id, title=title, facts=facts)
 
 
 def write_handoff_baton(
@@ -263,13 +261,15 @@ def record_rejection_feedback(
     baton.verification_results.rejection_history.append(entry)
     baton.stage = "implementation"
     baton.assigned_role = "coder"
-
-    # Update prompt to explicitly address rejection feedback
-    baton.next_action["prompt"] = (
-        f"QA / Review REJECTED ticket {ticket_id}. "
-        f"Rejection Feedback: {feedback}. "
-        f"Address the feedback inside your worktree, re-run feature tests, and verify."
+    worktree = baton.paths.get("worktree_root", "")
+    baton.next_action["prompt"] = _prompt(
+        "coder",
+        ticket_id,
+        baton.title,
+        worktree or f".worktrees/{ticket_id}",
+        baton.qa_contract,
+        baton.verification_results.rejection_history,
     )
-    wt_path = Path(baton.paths.get("worktree_root", "")) if baton.paths.get("worktree_root") else None
+    wt_path = Path(worktree) if worktree else None
     write_handoff_baton(project_root, baton, worktree_dir=wt_path)
     return baton

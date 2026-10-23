@@ -15,7 +15,7 @@ Use this skill once per repository or when switching/adding new AI coding harnes
    - Inspects existing configuration directories (`.claude/`, `.gemini/`, `.cursor/`, `.agents/`).
 2. **Presents Installation Options (Default = Bundled)**:
    - **Option 1 (Default - Zero External Network)**: Installs Kahnban's bundled Matt Pocock 5-stage pipeline skills (`/grill-with-docs`, `/to-spec`, `/to-tickets`, `/tdd`, `/code-review`) directly into `.agents/skills/`.
-   - **Option 2 (Upstream Extended)**: Pulls Matt Pocock's complete library (`mattpocock/skills`) including `/domain-modeling`, `/codebase-design`, `/diagnosing-bugs`, `/prototype`, `/retro` via `npx skills add mattpocock/skills`.
+   - **Option 2 (Upstream Extended)**: Pulls Matt Pocock's complete library (`mattpocock/skills`) including `domain-modeling`, `codebase-design`, `diagnosing-bugs`, `prototype` and `retro` via `npx skills add mattpocock/skills`.
 3. **Configures Harness Links**:
    - **Claude Code**: Links `.claude/skills` to `.agents/skills`.
    - **Gemini CLI / Antigravity**: Populates `.gemini/skills/` or mirrors to `~/.gemini/config/skills/`.
@@ -45,5 +45,6 @@ py -3 -m kahnban skills install --source mattpocock
 After installation, verify with:
 ```powershell
 py -3 -m kahnban skills list
+py -3 -m kahnban skills check    # exit 1 if skills, roles and agent files disagree
 py -3 -m kahnban lint
 ```

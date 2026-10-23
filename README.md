@@ -188,10 +188,11 @@ A spec lists one observable outcome per line under `## Requirements` (`- R1: ...
 
 ```powershell
 kahnban skills install --harness claude   # .claude/agents/kahnban-*.md + the guard hook; commit .claude/
+kahnban skills check                      # exit 1 if skills, roles and agent files disagree
 kahnban run --max-steps 20                # until the board is idle or every open ticket is parked
 ```
 
-Workers are commands in `plans/board.config.json`. The prompt arrives on stdin, `{role}` expands to `coder`, `qa-reviewer` or `spec-analyst`, and `KAHNBAN_ROLE`, `KAHNBAN_TICKET`, `KAHNBAN_PROJECT_ROOT` and `KAHNBAN_WORKTREE` are set:
+Workers are commands in `plans/board.config.json`. The prompt arrives on stdin, `{role}` expands to `coder`, `qa-reviewer`, `spec-analyst` or `curator`, and `KAHNBAN_ROLE`, `KAHNBAN_TICKET`, `KAHNBAN_PROJECT_ROOT` and `KAHNBAN_WORKTREE` are set:
 
 ```json
 "workers": {"default": "claude -p --agent kahnban-{role} --permission-mode acceptEdits"},
@@ -208,6 +209,7 @@ Choose the permission mode deliberately: a coder needs to run tests and `git com
 | Leases | `claim` (and `kahnban lease`) record who is working a ticket; `next` skips tickets with a live lease, and `run` renews the lease while its worker runs. An expired lease can be taken over, and the takeover is logged. |
 | Escalation | A ticket that comes back to the same action more than `max_attempts` times in one run is escalated: `blocked_on: human: <reason>`, the `on-escalate` hook fires, and `next` skips it until `kahnban unblock <ID> --reason "..."`. Workers can run `kahnban escalate` themselves instead of guessing. |
 | Timeouts | A worker that outlives `worker_timeout_sec` is killed along with every process it started, and nothing else. |
+| Role manifest | `templates/roles.json` defines each role once: the `kahnban` commands it may run, the files it may edit, the skills its agent preloads, and what it is told to do. The guard, the prompts `run` and `next` hand out, the handoff baton and `.claude/agents/kahnban-*.md` are all rendered from it. `kahnban skills check` fails when a skill or role names a missing skill, a skill no agent may invoke, or a command its role can't run, and when a project's agent files or harness skill copies have drifted. |
 | `kahnban guard` | A PreToolUse hook (installed by `skills install --harness claude`) that is a no-op unless `KAHNBAN_ROLE` is set. Inside a worker it blocks edits outside the role's remit (a coder: its worktree and blast radius; a reviewer: nothing) and blocks override flags, `git merge/push/rebase/reset --hard`, and `kahnban` commands outside the role. The CLI and the MCP server apply the same role table themselves whenever `KAHNBAN_ROLE` is set, so a harness without hooks is covered too. It's a tripwire against mistakes, not a sandbox. |
 | `allowed_commands` | When set, `ready`, `verify` and `merge` refuse any ticket-supplied validation or criterion command that doesn't start with an allowed prefix. Tickets can come from ingested AI plans, and their commands run with your privileges. |
 | Metrics | `plans/status.json` → `metrics`: verify attempts, rejections, escalations and cycle hours per ticket, read from its Log, plus first-pass yield and median cycle time for done work. |
@@ -278,6 +280,7 @@ Zero runtime dependencies. Test and line counts are left out on purpose: run `py
 | `core` | config, the single `transition()` writer, every gate (ready, claim, verify, approve, reject, merge, done), leases, escalation |
 | `specs` | spec drafts, the approval gate, requirement coverage |
 | `runner` | `kahnban run`: the factory loop and its workers |
+| `roles` | the role manifest (`templates/roles.json`) and everything rendered from it: role prompts, agent files, the guard's tables |
 | `guard` | the PreToolUse role guard for factory workers |
 | `dispatcher` / `handoff` | `kahnban next` and the relay baton each role receives |
 | `ingest` | plans, specs and ideas into ticket drafts |

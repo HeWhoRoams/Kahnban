@@ -24,4 +24,4 @@ testpaths = ["tests"]
 version = { attr = "kahnban.__version__" }
 
 [tool.setuptools.package-data]
-kahnban = ["templates/*.md", "templates/skills/**/*.md", "templates/agents/*.md"]
+kahnban = ["templates/*.md", "templates/*.json", "templates/skills/**/*.md"]

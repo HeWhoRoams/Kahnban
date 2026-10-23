@@ -25,28 +25,6 @@ CODER = "coder-agent"
 INTEGRATOR = "integrator"
 HEARTBEAT_SEC = 60
 
-FOOTERS = {
-    "coder": (
-        "Commit all of your work on the ticket branch before you exit. Do not run "
-        "kahnban verify, merge or done: the factory runner does that after you exit. "
-        "If the fix needs a file outside the blast radius, or a test or check you were "
-        "not given to change, do not touch it: run 'kahnban escalate {ticket} --reason "
-        "\"<what has to change and why>\"' and exit."
-    ),
-    "qa_reviewer": (
-        "Finish by running exactly one of 'kahnban approve {ticket} --reviewer qa-reviewer' "
-        "or 'kahnban reject {ticket} --reviewer qa-reviewer -m \"<what to fix>\"', then exit."
-    ),
-    "spec_analyst": (
-        "Edit only the ticket file and its spec, then exit. The runner runs "
-        "'kahnban ready {ticket}' and sends it back to you if the gate refuses."
-    ),
-    "curator": (
-        "Change no code yourself: capture each fix as a ticket, promote the learning "
-        "with that ticket as its artifact, edit only learnings/, then exit."
-    ),
-}
-
 
 _NO_WORKER = (
     "no worker command for {role}: set 'workers' in board.config.json, e.g. "
@@ -239,13 +217,16 @@ def _work(
     *,
     heartbeat: Callable[[], None] | None = None,
 ) -> tuple[int, str]:
-    """Run the configured worker for ``role`` with the prompt on stdin."""
+    """Run the configured worker for ``role`` with the prompt on stdin.
+
+    The prompt comes whole from :mod:`kahnban.roles` (via the dispatcher), so a
+    worker is told exactly what its agent file and the guard hold it to.
+    """
     template = config.workers.get(role) or config.workers.get("default")
     if not template:
         raise RunStop(_NO_WORKER.format(role=f"role '{role}'"))
     ticket = rec.ticket_id or ""
     command = template.replace("{role}", role.replace("_", "-")).replace("{ticket}", ticket)
-    prompt = rec.prompt + "\n\n" + FOOTERS.get(role, "").replace("{ticket}", ticket)
     env = {
         **os.environ,
         "KAHNBAN_ROLE": role,
@@ -269,7 +250,7 @@ def _work(
         start_new_session=os.name != "nt",
     )
     deadline = time.monotonic() + config.worker_timeout_sec
-    pending: str | None = prompt
+    pending: str | None = rec.prompt
     while True:
         try:
             output, _ = process.communicate(

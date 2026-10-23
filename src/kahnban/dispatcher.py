@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from kahnban import core, frontmatter, handoff
+from kahnban import core, frontmatter, handoff, roles
 
 
 @dataclass
@@ -143,11 +143,12 @@ def resolve_next_action(
             assigned_role="curator",
             summary=f"{count} recurring learning pattern(s) in ./learnings/ need a structural fix.",
             command="kahnban learnings list && /harvest-learnings",
-            prompt=(
-                f"You are a Continuous Learning Curator. {count} learning pattern(s) recurred: "
-                + ", ".join(f"{r.id} ({r.occurrences}x, {r.severity})" for r in recurring)
-                + ". For each, capture the structural fix as a ticket and promote the learning "
-                "with 'kahnban learnings promote <id> --level <n> --artifact <ticket id>'."
+            prompt=roles.prompt(
+                "curator",
+                facts=[
+                    "Recurring patterns: "
+                    + ", ".join(f"{r.id} ({r.occurrences}x, {r.severity})" for r in recurring)
+                ],
             ),
         )
 
@@ -198,12 +199,11 @@ def resolve_next_action(
             column=target.column,
             summary=f"Ticket {target.ticket_id} requires refinement and acceptance criteria.",
             command=f"kahnban ready {target.ticket_id}",
-            prompt=(
-                f"You are a Spec Analyst Agent. Refine {target.ticket_id}: '{t_title}'. "
-                f"Define explicit ## Acceptance criteria (checkboxes, each ending '(test: `cmd`)'), "
-                f"## Blast radius (source and test files), "
-                f"and ## Validation commands (### Feature Tests and ### Regression Tests). "
-                f"Run 'kahnban ready {target.ticket_id}' once complete."
+            prompt=roles.prompt(
+                "spec_analyst",
+                ticket=target.ticket_id,
+                title=t_title,
+                facts=[f"Ticket file: {core._relative(config, target.path)}"],
             ),
         )
 

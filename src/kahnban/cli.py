@@ -541,6 +541,15 @@ def cmd_skills(args: argparse.Namespace) -> int:
         root = Path(args.project_root).resolve() if getattr(args, "project_root", None) else Path.cwd().resolve()
 
     action = getattr(args, "skills_action", None)
+    if action == "check":
+        problems = skills.check(root)
+        for problem in problems:
+            print(f"  - {problem}", file=sys.stderr)
+        if problems:
+            print(f"[FAIL] {len(problems)} problem(s) break skill or role handoffs", file=sys.stderr)
+            return EXIT_REFUSED
+        print("[OK] skills, roles and generated agent files agree")
+        return EXIT_OK
     if action == "list":
         available = skills.list_skills(root)
         if not available:
@@ -983,6 +992,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     list_parser = skills_sub.add_parser("list", help="list installed and available skills")
     list_parser.set_defaults(handler=cmd_skills)
+
+    check_parser = skills_sub.add_parser(
+        "check",
+        help="check that skills, the role manifest and generated agent files agree (exit 1 if not)",
+    )
+    check_parser.set_defaults(handler=cmd_skills)
 
     skills_parser.set_defaults(handler=cmd_skills)
 

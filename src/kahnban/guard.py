@@ -21,21 +21,10 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from kahnban import core, frontmatter
+from kahnban import core, frontmatter, roles
 
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
-# Commands that belong to the runner or a human, never to a worker. Approving a
-# spec is the one human gate in the whole flow.
-RUNNER_ONLY = {"move", "merge", "done", "cleanup", "lease", "unblock", "run", "init", "spec approve"}
-READ_ONLY = {
-    "status", "lint", "next", "session", "handoff", "escalate", "spec", "spec list", "spec coverage",
-}
-ROLE_COMMANDS = {
-    "coder": READ_ONLY | {"verify", "learnings"},
-    "qa_reviewer": READ_ONLY | {"approve", "reject", "learnings"},
-    "spec_analyst": READ_ONLY | {"ready", "new", "capture", "ingest", "spec new"},
-    "curator": READ_ONLY | {"learnings", "capture", "new"},
-}
+# Which commands and files each role gets lives in templates/roles.json.
 OVERRIDE_FLAGS = {"--force", "--force-scope", "--force-overlap", "--abandon", "--no-verify"}
 GIT_FORBIDDEN = re.compile(
     r"\bgit\b(?:\s+-C\s+\S+)?\s+(merge|push|rebase|reset\s+--hard|filter-branch|update-ref)\b"
@@ -71,10 +60,12 @@ def _kahnban_subcommands(command: str) -> list[str]:
 
 def _edit_problem(role: str, path: Path, env: Mapping[str, str]) -> str | None:
     root = Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve()
-    if role == "qa_reviewer":
-        return "a reviewer does not edit files: approve, or reject with what to fix"
+    scope = roles.edits(role)
+    if not scope:
+        hint = f" {roles.finish(role, env.get('KAHNBAN_TICKET', ''))}" if role in roles.workers() else ""
+        return f"a {role} does not edit files.{hint}"
     config = core.load_config(root)
-    if role == "coder":
+    if scope == "blast_radius":
         tree = Path(env.get("KAHNBAN_WORKTREE", "")).resolve()
         try:
             relative = path.relative_to(tree).as_posix()
@@ -94,10 +85,7 @@ def _edit_problem(role: str, path: Path, env: Mapping[str, str]) -> str | None:
         relative = path.relative_to(root).as_posix()
     except ValueError:
         return f"{path} is outside the project"
-    allowed = {
-        "spec_analyst": (config.board_root, ".agents/specs", "GLOSSARY.md", "ADR"),
-        "curator": ("learnings",),
-    }.get(role, ())
+    allowed = tuple(config.board_root if entry == "{board}" else entry for entry in scope)
     if not core.path_within(relative, allowed):
         return f"a {role} may only edit {', '.join(allowed) or 'nothing'}, not {relative}"
     return None
@@ -110,8 +98,8 @@ def _bash_problem(role: str, command: str) -> str | None:
         return f"override flags are for humans: {', '.join(flags)}"
     if GIT_FORBIDDEN.search(command):
         return "merging, pushing and rewriting history is the runner's job"
-    if role == "qa_reviewer" and GIT_COMMIT.search(command):
-        return "a reviewer does not commit"
+    if not roles.edits(role) and GIT_COMMIT.search(command):
+        return f"a {role} does not commit"
     for subcommand in _kahnban_subcommands(command):
         problem = command_problem(role, subcommand)
         if problem:
@@ -125,7 +113,7 @@ def command_problem(role: str, command: str) -> str | None:
     Shared by this hook, the CLI and the MCP server, so a worker is held to its
     role whichever harness or surface it uses.
     """
-    if command in RUNNER_ONLY or command not in ROLE_COMMANDS.get(role, set()):
+    if command in roles.runner_only() or command not in roles.commands(role):
         return f"'kahnban {command}' is not a {role}'s to run"
     return None
 

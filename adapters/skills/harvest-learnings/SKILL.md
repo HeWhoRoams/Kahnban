@@ -1,7 +1,6 @@
 ---
 name: harvest-learnings
 description: "Investigate and drain the ./learnings/ queue, escalating recurring patterns up the 4-tier structural ladder (Architecture -> Linter/Types -> Tests -> Rules) into repo defenses."
-disable-model-invocation: true
 ---
 
 # Harvest Learnings: Structural Defect Elimination
