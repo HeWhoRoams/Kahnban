@@ -246,7 +246,7 @@ def test_json_mode_reports_violations_and_warnings(tmp_path: Path) -> None:
 
 
 def test_every_documented_rule_has_a_description() -> None:
-    assert set(linter.RULES) == {f"BL{index:02d}" for index in range(1, 18)}
+    assert set(linter.RULES) == {f"BL{index:02d}" for index in range(1, 19)}
 
 
 def test_fixture_line_endings_are_preserved_on_disk() -> None:

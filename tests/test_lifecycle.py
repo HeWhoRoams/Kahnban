@@ -151,7 +151,7 @@ def test_two_agents_work_disjoint_domains_concurrently(tmp_path: Path) -> None:
         refine_ticket(
             config,
             ticket_id,
-            blast_radius=(owned,),
+            blast_radius=(owned, f"tests/{owned[4:]}"),
             acceptance=ACCEPTANCE,
             validation=VALIDATION,
         )
@@ -168,7 +168,7 @@ def test_two_agents_work_disjoint_domains_concurrently(tmp_path: Path) -> None:
     refine_ticket(
         config,
         "E2E-003",
-        blast_radius=("src/ui/panel.py",),
+        blast_radius=("src/ui/panel.py", "tests/ui/test_panel.py"),
         acceptance=ACCEPTANCE,
         validation=VALIDATION,
     )

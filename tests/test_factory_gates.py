@@ -204,7 +204,12 @@ def test_editing_validation_after_claim_is_refused(repo: Path) -> None:
 def test_editing_criteria_in_ready_is_refused_at_claim(repo: Path) -> None:
     config = strict_board(repo)
     write_ticket(
-        config.board_path, "1-refining", "TST-001", "fix-f", acceptance=(CRITERION,)
+        config.board_path,
+        "1-refining",
+        "TST-001",
+        "fix-f",
+        acceptance=(CRITERION,),
+        blast_radius=("src/app.py", "tests/check_app.py"),
     )
     git(repo, "add", "-A")
     git(repo, "commit", "-m", "refine")
@@ -236,7 +241,8 @@ def test_uncommitted_work_is_refused(repo: Path) -> None:
 
 def test_undeclared_test_and_ci_changes_are_out_of_scope(repo: Path) -> None:
     config = strict_board(repo)
-    tree = claimed(config, radius=("src/app.py",))
+    # The radius declares a test file, but not the one the commit changes.
+    tree = claimed(config, radius=("src/app.py", "tests/test_other.py"))
     commit_work(tree, {**FIX, ".github/workflows/ci.yml": "on: push\n"})
 
     with pytest.raises(core.GateError, match="outside its blast radius") as error:

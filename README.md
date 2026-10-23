@@ -132,6 +132,31 @@ A criterion without a test is left for a reviewer to tick. Under `require_proof`
 
 ---
 
+## From an Idea to Ready Tickets (specs)
+
+The one human gate is approving the spec. Everything after it runs on checks.
+
+```powershell
+# /grill-with-docs interviews you in rounds and drafts the spec
+kahnban spec new "Bounds checking"                    # .agents/specs/SPEC-001-bounds-checking.md (draft)
+kahnban spec approve SPEC-001 --by tim                # you: freezes '## Requirements' (R1, R2, ...)
+kahnban ingest .agents/specs/SPEC-001-bounds-checking.md --ready   # its '## Tickets' items -> tickets
+kahnban spec coverage SPEC-001                        # exit 1 until every requirement has a ticket
+```
+
+A spec lists one observable outcome per line under `## Requirements` (`- R1: ...`). Each item under `## Tickets` names the files it touches and the requirements it satisfies (`Covers: R1`). Ingest gives every ticket `spec: SPEC-001` and `covers: [R1]`, and `Blocked on: none` stays empty.
+
+| Gate | Refuses when |
+| :--- | :--- |
+| `require_spec` (opt-in) | `ready` for a ticket with no `spec:`, a spec that isn't approved or whose requirements changed since approval, or a `covers:` id the spec doesn't have |
+| `max_blast_radius_files` (`init` writes 3) | `ready` for a ticket listing more paths than that, or naming a directory instead of files |
+| `require_proof` | `ready` for a ticket whose blast radius names no test file |
+| BL18 (lint) | a ticket citing a missing spec or requirement, or an approved spec edited since approval; an uncovered requirement is a warning |
+
+`kahnban spec approve` is blocked for every factory role by `kahnban guard`: only a human approves intent.
+
+---
+
 ## Running the Factory (`kahnban run`)
 
 `kahnban run` is the loop: it asks the dispatcher for the next action, runs every gate itself (`ready`, `claim`, `verify`, `merge`, `done`), and starts a worker only for the judgment work: refining, implementing, reviewing. A worker cannot skip a gate or report a success it did not earn.

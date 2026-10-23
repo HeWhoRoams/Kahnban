@@ -27,7 +27,7 @@ import hashlib
 import re
 import sys
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
 
@@ -107,7 +107,12 @@ DEFAULT_ALIASES: dict[str, tuple[str, ...]] = {
         "on hold",
         "waiting on",
     ),
+    # Requirement ids from the spec (``R1, R3``) this work item satisfies.
+    "covers": ("covers", "satisfies"),
 }
+#: Written in a plan to mean "nothing": never a real blocker or reference.
+EMPTY_VALUES = {"none", "n/a", "na", "-", "no", "nothing", "nil"}
+REQUIREMENT_REF = re.compile(r"\bR\d+\b", re.IGNORECASE)
 
 
 class IngestError(core.KahnbanError):
@@ -514,11 +519,11 @@ def _extract_refs(lines: Iterable[str]) -> list[str]:
         bullet = BULLET_LINE.match(line)
         if bullet:
             stripped = bullet.group(1).strip()
-        if not stripped or stripped.lower() in {"none", "n/a", "-"}:
+        if not stripped or stripped.lower().rstrip(".") in EMPTY_VALUES:
             continue
         for candidate in re.split(r"[,;]| and ", stripped):
             token = candidate.strip().strip("`\"'").rstrip(".,;:")
-            if token and token.lower() not in {"none", "n/a"}:
+            if token and token.lower() not in EMPTY_VALUES:
                 refs.append(token)
     return refs
 
@@ -588,10 +593,14 @@ def draft_from_section(
             draft.design_docs.extend(paths)
         elif field_name == "blocked_on":
             reason = " ".join(line.strip() for line in lines if line.strip())
-            if reason:
+            if reason and reason.lower().rstrip(".") not in EMPTY_VALUES:
                 draft.blocked_on = (
                     f"{draft.blocked_on} | {reason}" if draft.blocked_on else reason
                 )
+        elif field_name == "covers":
+            found = [ref.upper() for ref in REQUIREMENT_REF.findall(" ".join(lines))]
+            existing = list(draft.extra_frontmatter.get("covers", []))  # type: ignore[arg-type]
+            draft.extra_frontmatter["covers"] = list(dict.fromkeys([*existing, *found]))
 
     # Checkbox lines written directly under the section (no label) are criteria.
     if not draft.acceptance and problem_parts:
@@ -773,6 +782,19 @@ def resolve_dependencies(
 # --- orchestration ----------------------------------------------------------
 
 
+def _spec_id(text: str) -> str:
+    """``SPEC-NNN`` when the document is a spec (its frontmatter id), else ''."""
+    body = frontmatter.normalize_newlines(text)
+    if not body.startswith("---\n"):
+        return ""
+    try:
+        fields, _ = frontmatter.parse(body)
+    except frontmatter.FrontmatterError:
+        return ""
+    spec_id = str(fields.get("id") or "").strip().upper()
+    return spec_id if re.fullmatch(r"SPEC-\d+", spec_id) else ""
+
+
 def ingest_document(
     config: core.Config,
     path: Path,
@@ -796,7 +818,16 @@ def ingest_document(
         source_doc = document.as_posix()
 
     text = document.read_text(encoding="utf-8", errors="replace")
+    spec_id = _spec_id(text)
+    has_tickets = re.search(r"(?mi)^#{1,6}\s+tickets\s*$", text)
+    if spec_id and has_tickets and settings.section is None and not settings.per_file:
+        # A spec's work items live under its "## Tickets" section; the rest of the
+        # document (requirements, decisions) is context, not tickets.
+        settings = replace(settings, section="Tickets")
     drafts, warnings = parse_document(text, source_doc=source_doc, options=settings)
+    for draft in drafts:
+        if spec_id:
+            draft.extra_frontmatter.setdefault("spec", spec_id)
     report = IngestReport(source=source_doc, warnings=list(warnings), dry_run=dry_run)
     if not drafts:
         report.warnings.append("nothing to ingest")

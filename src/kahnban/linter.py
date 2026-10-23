@@ -33,6 +33,7 @@ RULES: dict[str, str] = {
     "BL15": "done: ticket branch merged into the default branch",
     "BL16": "no two in-progress tickets have overlapping blast radii",
     "BL17": "ingest provenance is unique and its source document exists",
+    "BL18": "spec traceability: cited specs and requirements exist, approved specs are covered",
 }
 
 VIOLATION = "violation"
@@ -160,6 +161,7 @@ def lint(config: core.Config, *, strict: bool = False) -> LintResult:
     _check_wip(config, result, strict=strict)
     _check_blast_radius_overlap(config, result, parsed)
     _check_provenance(config, result, tickets, parsed)
+    _check_traceability(config, result, tickets, parsed)
     return result
 
 
@@ -451,6 +453,39 @@ def _check_provenance(
                 f"{len(owners)} tickets claim {document}#{anchor}: "
                 + ", ".join(sorted(owners)),
                 ticket=sorted(owners)[0],
+            )
+
+
+def _check_traceability(
+    config: core.Config,
+    result: LintResult,
+    tickets: Sequence[core.Ticket],
+    parsed: Mapping[Path, tuple[Mapping[str, object], str]],
+) -> None:
+    """BL18 — tickets trace to real requirements of an approved, unchanged spec."""
+    from kahnban import specs
+
+    for ticket in tickets:
+        if ticket.path not in parsed or ticket.column == "archive":
+            continue
+        fields, _ = parsed[ticket.path]
+        gated = _at_or_after(config, ticket.column, config.ready_column)
+        if not str(fields.get("spec") or "").strip() and not (config.require_spec and gated):
+            continue
+        for problem in specs.ticket_problems(config, dict(fields), require_approved=gated):
+            result.add("BL18", problem, ticket=ticket.ticket_id, path=_relative(config, ticket.path))
+    for spec in specs.iter_specs(config):
+        if not spec.approved:
+            continue
+        location = spec.path.relative_to(config.project_root).as_posix()
+        if not spec.frozen:
+            result.add("BL18", f"{spec.spec_id}'s requirements changed after approval", path=location)
+        for requirement in specs.coverage(config, spec.spec_id).uncovered:
+            result.add(
+                "BL18",
+                f"{spec.spec_id} {requirement} is covered by no ticket",
+                severity=WARNING,
+                path=location,
             )
 
 

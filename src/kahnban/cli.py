@@ -198,6 +198,36 @@ def cmd_unblock(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_spec(args: argparse.Namespace) -> int:
+    from kahnban import specs
+
+    config = _load(args)
+    action = args.spec_action or "list"
+    if action == "new":
+        print(f"[OK] drafted {specs.new_spec(config, args.title)}")
+        return EXIT_OK
+    if action == "approve":
+        spec = specs.approve_spec(config, args.spec_id, args.by)
+        print(f"[OK] {spec.spec_id} approved by {args.by}: {len(spec.requirements)} requirement(s) frozen")
+        return EXIT_OK
+    if action == "coverage":
+        report = specs.coverage(config, args.spec_id)
+        for requirement, tickets in report.covered.items():
+            marker = "[OK]  " if tickets else "[FAIL]"
+            print(f"{marker} {requirement}: {', '.join(tickets) or 'no ticket'}")
+        for ticket_id, requirement in report.unknown:
+            print(f"[FAIL] {ticket_id} covers {requirement}, which {report.spec.spec_id} does not have")
+        if not report.spec.approved:
+            print(f"[WARN] {report.spec.spec_id} is not approved yet")
+        return EXIT_OK if report.complete else EXIT_REFUSED
+    for spec in specs.iter_specs(config):
+        status = "approved" if spec.frozen else str(spec.fields.get("status") or "draft")
+        if spec.approved and not spec.frozen:
+            status = "approved, requirements changed since"
+        print(f"  {spec.spec_id} [{status}] {spec.fields.get('title', '')} ({len(spec.requirements)} requirement(s))")
+    return EXIT_OK
+
+
 def cmd_guard(args: argparse.Namespace) -> int:
     from kahnban import guard
 
@@ -700,6 +730,24 @@ def build_parser() -> argparse.ArgumentParser:
     unblock_parser.add_argument("ticket_id")
     unblock_parser.add_argument("--reason", required=True, help="what was decided")
     unblock_parser.set_defaults(handler=cmd_unblock)
+
+    spec_parser = subparsers.add_parser(
+        "spec", parents=[board], help="specs: draft, approve (the human gate), check coverage"
+    )
+    spec_sub = spec_parser.add_subparsers(dest="spec_action")
+    spec_new = spec_sub.add_parser("new", help="draft the next SPEC-NNN in .agents/specs/")
+    spec_new.add_argument("title")
+    spec_approve = spec_sub.add_parser(
+        "approve", help="approve a spec and freeze its requirements (a human decision)"
+    )
+    spec_approve.add_argument("spec_id")
+    spec_approve.add_argument("--by", required=True, help="who approves it")
+    spec_coverage = spec_sub.add_parser(
+        "coverage", help="exit 1 unless every requirement is covered by a ticket"
+    )
+    spec_coverage.add_argument("spec_id")
+    spec_sub.add_parser("list", help="list specs and their status")
+    spec_parser.set_defaults(handler=cmd_spec)
 
     guard_parser = subparsers.add_parser(
         "guard", help="PreToolUse hook: keep a factory worker inside its role (reads stdin)"

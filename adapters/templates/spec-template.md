@@ -1,69 +1,45 @@
-# Spec: [SPEC-ID] — [Feature or Component Title]
-
-**Status:** Draft | Aligned | Ready for Decomposition | Implemented  
-**Date:** [YYYY-MM-DD]  
-**Author/Agent:** [Name or Model]  
-**Source Alignment:** Output of `/grill-with-docs` (ADR references, Glossary terms)
-
+---
+id: SPEC-000
+title: Replace with the feature's name
+status: draft
+approved_by: ""
+approved: ""
+requirements_hash: ""
+created: 1970-01-01
 ---
 
-## 1. Problem Statement & Objective
-- **Problem:** [What behavioral gap, bug, or missing capability exists today? Why does it matter?]
-- **Objective:** [Clear, measurable outcome of this implementation. What will be true when this is done?]
-- **Non-Goals:** [What will NOT be changed or addressed in this scope?]
+# SPEC-000: Replace with the feature's name
 
----
+## Problem
+What is wrong or missing today, for whom, and why it matters now.
 
-## 2. Domain Model & Glossary Alignments
-- Cites terms defined in `GLOSSARY.md`:
-  - `[Term 1]`: [Brief note on how this spec interacts with Term 1]
-  - `[Term 2]`: [Brief note on how this spec interacts with Term 2]
-- Architectural Decisions:
-  - References `ADR/[NNNN-title.md]`
+## Requirements
+One observable outcome per line, each with a stable id that tickets cite in
+`covers:`. Approving the spec freezes this list; changing it later means
+approving it again.
+- R1: Replace with the first observable outcome
+- R2: Replace with the second observable outcome
 
----
+## Non-goals
+- What this spec deliberately does not change.
 
-## 3. Technical Architecture & Type Contracts
-Define explicit inputs, outputs, schemas, and interface boundaries.
+## Decisions
+- Terms used here are defined in `GLOSSARY.md`; choices between real options are
+  recorded in `ADR/NNNN-<slug>.md`. Link them here.
 
-```typescript
-// or GDScript / Python / Language Contract
-interface FeatureInput {
-  id: string;
-  payload: Record<string, unknown>;
-}
-
-interface FeatureResult {
-  success: boolean;
-  error?: string;
-}
-```
-
-- **Invariant Guarantees:**
-  - 1. [Invariant that must never be broken by any change]
-  - 2. [State boundary or isolation guarantee]
-
----
-
-## 4. Edge Cases & Failure Modes
-| Scenario / Edge Case | Expected System Behavior | Test Strategy |
+## Edge cases
+| Scenario | Expected behaviour | Test that proves it |
 | :--- | :--- | :--- |
-| Empty or malformed input | Graceful error, non-zero return / validation fail | Unit test |
-| Concurrent execution / race | Idempotent or lock acquisition | Concurrency test |
-| Unhandled exception / timeout | Clean rollback, state preserved | Integration test |
+| Empty or malformed input | Refused with a clear error | Unit test |
 
----
+## Tickets
+One `###` item per ticket: 1-3 files, the requirements it covers, and a test
+for every criterion. `kahnban ingest <this file> --ready` turns them into tickets
+and `kahnban spec coverage SPEC-000` checks every requirement is covered.
 
-## 5. Granular Task Decomposition Blueprint
-Every item below will be ingested or converted via `/to-tickets` into a Kahnban card.
-Granularity rule: 1–3 files touched per ticket maximum.
-
-### [ID-PREFIX-001]: [Atomic Ticket 1 Title]
-- **Target Files:** `path/to/file1.ext`, `path/to/test_file1.ext`
-- **Depends On:** None
-- **Validation:** `pytest tests/test_file1.py`
-
-### [ID-PREFIX-002]: [Atomic Ticket 2 Title]
-- **Target Files:** `path/to/file2.ext`, `path/to/test_file2.ext`
-- **Depends On:** [ID-PREFIX-001]
-- **Validation:** `pytest tests/test_file2.py`
+### Replace with the first ticket's title
+- Files: `path/to/source.ext`, `path/to/test_source.ext`
+- Covers: R1
+- Acceptance:
+  - [ ] The observable condition (test: `command that proves it`)
+- Validation: `command that runs the feature tests`

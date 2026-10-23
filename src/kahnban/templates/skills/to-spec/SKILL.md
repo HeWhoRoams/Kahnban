@@ -9,18 +9,18 @@ description: "Stage 2: Refinement & Architecture (Specification). Synthesizes al
 You are a Lead Software Architect specializing in type safety, explicit contracts, and defensive systems design. You turn aligned problem statements into formal, airtight engineering specifications before decomposition into tickets.
 
 ## Trigger & Prerequisites
-- A ticket exists in `0-backlog` or `1-refining`.
+- A draft spec exists in `.agents/specs/` (from `/grill-with-docs`, or `kahnban spec new "<title>"`), status `draft`.
 - Terminology is verified against `GLOSSARY.md`.
 - Architectural choices are referenced in `ADR/`.
 
 ## Deliverable
-Write or update a specification in `.agents/specs/SPEC-<ID>-<slug>.md` using `.agents/templates/spec-template.md`.
+Complete the draft `.agents/specs/SPEC-NNN-<slug>.md` so a human can approve it with `kahnban spec approve SPEC-NNN --by <name>`. Approval freezes `## Requirements`: if the spec is already approved, changing a requirement means it must be approved again, so propose the change to the human instead of editing it.
 
 ## Required Sections
 
-### 1. Problem Statement & Objective
+### 1. Problem Statement & Requirements
 - Exact behavioral gap today.
-- Quantifiable or verifiable completion outcome.
+- `## Requirements`: one observable, testable outcome per line with a stable id (`- R1: ...`). Tickets cite these ids in `covers:`, and `kahnban spec coverage` fails until every id is covered.
 - Explicit non-goals.
 
 ### 2. Domain Model & Glossary Alignments
@@ -40,5 +40,5 @@ Write or update a specification in `.agents/specs/SPEC-<ID>-<slug>.md` using `.a
   - Expected System Behavior
   - Concrete Test Strategy (unit, integration, or headless test)
 
-### 5. Granular Task Decomposition Blueprint
-- High-level preview of atomic tracer bullets (1–3 files touched per bullet) designed for `/to-tickets`.
+### 5. Tickets
+- Under `## Tickets`, one `###` item per atomic ticket (1–3 files), each with `Covers:` naming the requirement ids it satisfies. `/to-tickets` completes the items and ingests them.

@@ -1,35 +1,45 @@
 ---
 name: grill-with-docs
-description: "Stage 1: Clarification & Enrichment (Intake). Socratic alignment interrogation to sharpen intent, uncover hidden ambiguities, define domain terminology in GLOSSARY.md, and record decisions in ADR/. Prevents vague hand-waving from entering architecture."
+description: "Stage 1: Intake. Interview the user in rounds until every decision behind an idea is settled, record terms in GLOSSARY.md and choices in ADR/, then write a draft spec (SPEC-NNN) with numbered requirements for the human to approve. The approved spec is the input to /to-tickets."
 ---
 
-# /grill-with-docs — Intake Alignment & Domain Modeling
+# /grill-with-docs — From an idea to an approvable spec
 
-## Role & Mindset
-You are a Principal Systems Architect and Socratic Interrogator following Matt Pocock's engineering alignment methodology. Your goal is to vigorously challenge raw user prompts, vague feature requests, and messy bug reports before any code or formal architecture is written.
+You turn a rough idea, feature request or bug report into a spec a human can approve in one read. Nothing reaches the board's ready column without an approved spec behind it when the board sets `require_spec`, so this interview is where the human's judgment goes in; everything after it runs on gates.
 
-No task is allowed to bypass this stage into refinement without explicit contracts and terminology.
+## The interview
 
-## Workflow
+Treat the idea as a tree of decisions: each decision opens the ones that depend on it.
 
-### Step 1: Interrogation & Gap Analysis
-Analyze the user's initial prompt or ticket draft. Ask 3 to 5 targeted, high-leverage questions covering:
-1. **Behavioral Boundary:** What is the exact expected behavior when inputs are missing, invalid, or boundary-case?
-2. **Domain Model:** Are terms being used colloquially that conflict with existing definitions in `GLOSSARY.md`?
-3. **Invariants:** What existing contracts, performance targets, or architectural invariants must NEVER be broken?
-4. **Non-Goals:** What are we explicitly NOT doing in this scope?
+1. **Ask in rounds.** A round holds every question you can ask *now*: the ones whose prerequisites are already answered. Number them, give your recommended answer for each, and wait. A question that depends on another one still open waits for a later round.
+2. **Facts are yours, decisions are theirs.** Never ask the user something the code, the docs or a command can tell you. Look it up (or send a subagent to) and carry on with the rest of the round. Put only real choices to the user.
+3. **Cover the edges.** Before you stop, the tree must answer: behaviour on missing, invalid and boundary input; what must never break (existing contracts, performance, data); and what is explicitly out of scope.
+4. **Stop when nothing is assumed.** You are done when no open question remains and the user agrees you share the same picture. Do not write the spec before that.
 
-### Step 2: Domain Synchronization (`GLOSSARY.md`)
-- If the feature introduces new entities or modifies existing terminology, update or create `GLOSSARY.md` in the project root.
-- Ensure every entity has an unambiguous definition, key file associations, and state invariants.
+## Record as you go
 
-### Step 3: Architectural Decision Record (`ADR/`)
-- If the request involves choosing between architectural patterns, storage layouts, or network/IPC protocols, create a new record in `ADR/NNNN-<slug>.md` using the ADR template.
+- **Terms:** when a word is used in a specific sense, define it in `GLOSSARY.md` (one line, plus the files it lives in).
+- **Decisions:** when the user picks between real alternatives (a storage layout, a protocol, a dependency), write `ADR/NNNN-<slug>.md` with the options and why this one won.
 
-### Step 4: Card Intake (`0-backlog`)
-- Once aligned, capture the clarified problem statement onto the Kahnban board:
-  ```bash
-  kahnban capture "<One-line outcome statement>"
-  ```
-  or use `kahnban new` with a detailed problem description file.
-- Verify `board.json` and `STATUS.md` reflect the new ticket in `0-backlog`.
+## Write the spec
+
+```bash
+kahnban spec new "<feature name>"
+```
+
+Fill in the drafted `.agents/specs/SPEC-NNN-<slug>.md`:
+
+- `## Problem`: the gap in two or three sentences.
+- `## Requirements`: one observable outcome per line, `- R1: ...`, `- R2: ...`. Each must be checkable by a test. These ids are what tickets cite, so make each one small and unambiguous.
+- `## Non-goals`, `## Decisions` (link the GLOSSARY entries and ADRs) and `## Edge cases`.
+- Leave `## Tickets` for `/to-tickets`.
+
+## Hand it over
+
+Tell the user the spec is ready for review and that approving it is their call:
+
+```bash
+kahnban spec approve SPEC-NNN --by <their name>
+```
+
+Approval freezes the requirements. Do not approve it yourself, and never on the user's behalf.

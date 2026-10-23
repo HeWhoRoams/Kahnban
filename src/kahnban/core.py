@@ -119,6 +119,8 @@ class Config:
     require_proof: bool = False
     require_review: bool = False
     require_integration: bool = False
+    require_spec: bool = False
+    max_blast_radius_files: int = 0
     test_patterns: tuple[str, ...] = DEFAULT_TEST_PATTERNS
     allowed_commands: tuple[str, ...] = ()
     lease_minutes: int = 30
@@ -284,6 +286,8 @@ def load_config(
         require_proof=bool(raw.get("require_proof", False)),
         require_review=bool(raw.get("require_review", False)),
         require_integration=bool(raw.get("require_integration", False)),
+        require_spec=bool(raw.get("require_spec", False)),
+        max_blast_radius_files=int(raw.get("max_blast_radius_files", 0)),
         test_patterns=tuple(raw.get("test_patterns") or DEFAULT_TEST_PATTERNS),
         allowed_commands=tuple(str(item) for item in raw.get("allowed_commands") or ()),
         lease_minutes=int(raw.get("lease_minutes", 30)),
@@ -736,6 +740,26 @@ def untested_criteria_problem(
         "require_proof: these criteria name no test (append (test: `cmd`)):\n"
         + "\n".join(f"    - {text}" for text in untested)
     )
+
+
+def decomposition_problems(config: Config, body: str) -> list[str]:
+    """Ticket-size rules: a few named files, one of them a test when proof is required."""
+    radius = parse_blast_radius(body)
+    problems: list[str] = []
+    if config.max_blast_radius_files:
+        if len(radius) > config.max_blast_radius_files:
+            problems.append(
+                f"blast radius lists {len(radius)} paths; the limit is "
+                f"{config.max_blast_radius_files}: split the ticket"
+            )
+        folders = [path for path in radius if (config.project_root / path).is_dir()]
+        if folders:
+            problems.append(
+                "blast radius names directories, not files: " + ", ".join(folders)
+            )
+    if config.require_proof and radius and not any(is_test_path(config, p) for p in radius):
+        problems.append("blast radius names no test file, so the change cannot be proven")
+    return problems
 
 
 def disallowed_commands(config: Config, body: str) -> list[str]:
@@ -1428,6 +1452,11 @@ def ready(
         f"command outside 'allowed_commands': {command}"
         for command in disallowed_commands(config, body)
     )
+    problems.extend(decomposition_problems(config, body))
+    if config.require_spec:
+        from kahnban import specs
+
+        problems.extend(specs.ticket_problems(config, fields, require_approved=True))
 
     if problems:
         raise GateError(
@@ -2755,6 +2784,8 @@ def init_board(
         "require_proof": True,
         "require_review": True,
         "require_integration": True,
+        "require_spec": False,
+        "max_blast_radius_files": 3,
         "allowed_commands": [],
         "design_doc_roots": ["plans"],
         "extensions": {},

@@ -24,13 +24,14 @@ from typing import Any
 from kahnban import core, frontmatter
 
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
-# Commands that belong to the runner or a human, never to a worker.
-RUNNER_ONLY = {"move", "merge", "done", "cleanup", "lease", "unblock", "run", "init"}
-READ_ONLY = {"status", "lint", "next", "session", "escalate"}  # escalating is always allowed
+# Commands that belong to the runner or a human, never to a worker. Approving a
+# spec is the one human gate in the whole flow.
+RUNNER_ONLY = {"move", "merge", "done", "cleanup", "lease", "unblock", "run", "init", "spec approve"}
+READ_ONLY = {"status", "lint", "next", "session", "escalate", "spec", "spec list", "spec coverage"}
 ROLE_COMMANDS = {
     "coder": READ_ONLY | {"verify", "learnings"},
     "qa_reviewer": READ_ONLY | {"approve", "reject", "learnings"},
-    "spec_analyst": READ_ONLY | {"ready", "new", "capture", "ingest"},
+    "spec_analyst": READ_ONLY | {"ready", "new", "capture", "ingest", "spec new"},
     "curator": READ_ONLY | {"learnings", "capture", "new"},
 }
 OVERRIDE_FLAGS = {"--force", "--force-scope", "--force-overlap", "--abandon", "--no-verify"}
@@ -57,7 +58,11 @@ def _kahnban_subcommands(command: str) -> list[str]:
             if item in KAHNBAN_GLOBAL_OPTIONS:
                 next(rest, None)
             elif not item.startswith("-"):
-                found.append(item.lower())
+                command = item.lower()
+                if command == "spec":  # its action decides: drafting is fine, approving is not
+                    action = next((t for t in rest if not t.startswith("-")), "")
+                    command = f"spec {action.lower()}".strip()
+                found.append(command)
                 break
     return found
 

@@ -14,14 +14,16 @@ You are an Agile Technical Program Manager and Senior Lead Engineer. You break d
 3. **Acceptance Criteria Discipline:** Every acceptance criterion must be an actionable, verifiable checkbox that names the test proving it: ``- [ ] rejects x (test: `cmd`)``. `kahnban verify` ticks a box only when that test exits 0, and a `require_proof` board refuses `ready` for a criterion with no test. No subjective claims ("is clean", "works well").
 4. **Validation Command:** Every ticket must include a fenced code block under `## Validation` with one command per line, each exiting non-zero on failure. List the test files in `## Blast radius` too: verify refuses undeclared test changes.
 5. **Dependency Discipline:** Map prerequisite tickets explicitly in `depends_on: [TICKET-XXX]`.
+6. **Traceability:** Every ticket covers at least one requirement of its spec (`Covers: R1`), and every requirement is covered by at least one ticket. The engine checks both.
 
 ## Execution Methods
 
-### Method A: Using `kahnban ingest` (Recommended for Batch Breakdown)
-Format the breakdown section in your spec according to `adapters/PLAN-INGESTION.md`:
+### Method A: Ingest the approved spec (recommended)
+Write one item per ticket under the spec's `## Tickets` section (the engine allocates ticket ids, so titles carry none):
 ```markdown
-### HOA-001: Implement Galaxy Seam Bounds
+### Validate galaxy seam bounds
 - Files: `src/engine/galaxy/map_generator.py`, `tests/test_map_generator.py`
+- Covers: R1, R2
 - Depends on: none
 - Acceptance:
   - [ ] Validates galaxy coordinates within [0, 1000] (test: `pytest tests/test_map_generator.py::test_bounds`)
@@ -30,20 +32,21 @@ Format the breakdown section in your spec according to `adapters/PLAN-INGESTION.
 ```
 Then run:
 ```bash
-kahnban ingest .agents/specs/SPEC-001.md --ready
+kahnban ingest .agents/specs/SPEC-001-<slug>.md --ready
 ```
+A spec document is read from its `## Tickets` section only, and every ticket gets `spec: SPEC-001` and `covers:` from its `Covers:` line. Re-running the ingest is idempotent.
 
 ### Method B: Single Ticket Generation
 Use `kahnban new`:
 ```bash
-kahnban new "Implement Galaxy Seam Bounds" --problem-file problem.txt
+kahnban new "Validate galaxy seam bounds" --problem-file problem.txt
 ```
-Then fill the generated card in `plans/tickets/0-backlog/` or `1-refining/`.
+Then fill the generated card in `plans/tickets/0-backlog/` or `1-refining/`, including `spec: SPEC-NNN` and `covers: [R1]` in its frontmatter when the board sets `require_spec`.
 
 ## Exit Gate: Moving to Ready
 Execute:
 ```bash
 kahnban ready <TICKET-ID>
+kahnban spec coverage SPEC-NNN
 ```
-The machine gate validates headings, non-empty blast radius, unchecked criteria, dependencies, and moves the ticket to `plans/tickets/2-ready/`.
-Verify that `board.json` shows the ticket in `2-ready`.
+The ready gate checks headings, criteria with tests, a blast radius of at most `max_blast_radius_files` named files including a test, dependencies and, under `require_spec`, an approved spec whose requirements the ticket really covers. `spec coverage` exits 1 until every requirement is covered by a ticket.

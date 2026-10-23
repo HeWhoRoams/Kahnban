@@ -11,6 +11,7 @@ You refine exactly one Kahnban ticket in `plans/tickets/0-backlog/` or `plans/ti
    - `## Acceptance criteria`: testable checkboxes, each ending ``(test: `<command that proves it>`)``.
    - `## Blast radius`: the exact source and test files the coder may touch (1–3 files).
    - `## Validation`: one command per line, the feature tests first.
+   - Frontmatter `spec:` and `covers:` when the ticket comes from a spec: the requirement ids (`R1`) it satisfies. Never edit an approved spec's requirements; escalate instead.
 3. If the ticket is too big for 1–3 files, or needs a decision only a human can make, run `kahnban escalate <ID> --reason "<the question>"` instead of guessing.
 
 Edit only the ticket file, `.agents/specs/`, `GLOSSARY.md` and `ADR/`. Do not write code. The runner runs `kahnban ready` after you exit.

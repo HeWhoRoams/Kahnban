@@ -28,12 +28,12 @@ All work items must move strictly through these sequential stages:
 ### Stage 1: Clarification & Enrichment (Intake)
 - **Column:** `0-backlog`
 - **Skill:** `/grill-with-docs`
-- **Rule:** No raw user prompt or feature request may bypass intake. Interrogate intent, clarify jargon in `GLOSSARY.md`, log structural choices in `ADR/`, and capture the ticket using `kahnban capture` or `kahnban new`.
+- **Rule:** No raw user prompt or feature request may bypass intake. Interview in rounds until nothing is assumed, record terms in `GLOSSARY.md` and choices in `ADR/`, and draft the spec with `kahnban spec new`. A human approves it (`kahnban spec approve SPEC-NNN --by <name>`): that is the one human gate.
 
 ### Stage 2: Refinement & Architecture
 - **Columns:** `1-refining` -> `2-ready`
 - **Skills:** `/to-spec` -> `/to-tickets`
-- **Rule:** Synthesize a formal specification in `.agents/specs/` with explicit type contracts. Decompose the spec into atomic tracer-bullet tickets touching 1-3 files max.
+- **Rule:** Complete the spec in `.agents/specs/` with numbered requirements (`- R1: ...`) and type contracts. Decompose it under `## Tickets` into tickets touching 1-3 files, each with `Covers: R1`, then `kahnban ingest <spec> --ready` and `kahnban spec coverage SPEC-NNN`.
 - **Machine Gate:** Run `kahnban ready <ID>` to validate required headings, non-empty blast radius, testable acceptance criteria, and valid dependencies before claiming.
 
 ### Stage 3: In Development
@@ -96,7 +96,7 @@ When switching AI harnesses or running low on context/credits:
 ## 5. Command Quick Reference
 
 ```powershell
-kahnban lint                                   # board rules BL01-BL17
+kahnban lint                                   # board rules BL01-BL18
 kahnban status                                 # counts + lint summary
 kahnban session                                # inspect cross-harness state
 kahnban session --flush --ticket <ID>          # update ACTIVE_SESSION.md
@@ -104,6 +104,9 @@ kahnban capture "<idea>" ["<idea>" ...]        # ideation -> backlog, one commit
 kahnban ingest <spec.md> [--dry-run] [--ready] # spec -> backlog/ready, idempotent
 kahnban new "<title>" --problem-file spec.txt  # single ticket creation
 kahnban ready <ID>                             # refinement gate -> 2-ready
+kahnban spec new "<title>"                     # draft SPEC-NNN in .agents/specs/
+kahnban spec approve <SPEC> --by <name>        # humans only: freeze the requirements
+kahnban spec coverage <SPEC>                   # exit 1 until every requirement has a ticket
 kahnban claim <ID> --owner <name> --worktree   # claim & spawn isolated worktree
 kahnban verify <ID>                            # execute validation command -> 4-verifying
 kahnban approve <ID> --reviewer <name>         # sign off the verified tip (never the owner)
