@@ -132,6 +132,37 @@ A criterion without a test is left for a reviewer to tick. Under `require_proof`
 
 ---
 
+## Running the Factory (`kahnban run`)
+
+`kahnban run` is the loop: it asks the dispatcher for the next action, runs every gate itself (`ready`, `claim`, `verify`, `merge`, `done`), and starts a worker only for the judgment work: refining, implementing, reviewing. A worker cannot skip a gate or report a success it did not earn.
+
+```powershell
+kahnban skills install --harness claude   # .claude/agents/kahnban-*.md + the guard hook; commit .claude/
+kahnban run --max-steps 20                # until the board is idle or every open ticket is parked
+```
+
+Workers are commands in `plans/board.config.json`. The prompt arrives on stdin, `{role}` expands to `coder`, `qa-reviewer` or `spec-analyst`, and `KAHNBAN_ROLE`, `KAHNBAN_TICKET`, `KAHNBAN_PROJECT_ROOT` and `KAHNBAN_WORKTREE` are set:
+
+```json
+"workers": {"default": "claude -p --agent kahnban-{role} --permission-mode acceptEdits"},
+"worker_timeout_sec": 3600,
+"max_attempts": 3,
+"lease_minutes": 30,
+"allowed_commands": ["pytest", "python -m pytest"]
+```
+
+Choose the permission mode deliberately: a coder needs to run tests and `git commit`, and `--permission-mode` / `--allowedTools` decide what it may do without asking.
+
+| Mechanism | What it does |
+| :--- | :--- |
+| Leases | `claim` (and `kahnban lease`) record who is working a ticket; `next` skips tickets with a live lease, and `run` renews the lease while its worker runs. An expired lease can be taken over, and the takeover is logged. |
+| Escalation | A ticket that comes back to the same action more than `max_attempts` times in one run is escalated: `blocked_on: human: <reason>`, the `on-escalate` hook fires, and `next` skips it until `kahnban unblock <ID> --reason "..."`. Workers can run `kahnban escalate` themselves instead of guessing. |
+| Timeouts | A worker that outlives `worker_timeout_sec` is killed along with every process it started, and nothing else. |
+| `kahnban guard` | A PreToolUse hook (installed by `skills install --harness claude`) that is a no-op unless `KAHNBAN_ROLE` is set. Inside a worker it blocks edits outside the role's remit (a coder: its worktree and blast radius; a reviewer: nothing) and blocks override flags, `git merge/push/rebase/reset --hard`, and `kahnban` commands outside the role. It's a tripwire against mistakes, not a sandbox. |
+| `allowed_commands` | When set, `ready`, `verify` and `merge` refuse any ticket-supplied validation or criterion command that doesn't start with an allowed prefix. Tickets can come from ingested AI plans, and their commands run with your privileges. |
+
+---
+
 ## Continuous Learning Subsystem (`./learnings/`)
 
 Kahnban incorporates a pattern-aggregating self-improvement queue based on continuous learning principles. Instead of logging one-off noise, it clusters environmental recurrences, escalates severity, and tracks affected file locations:

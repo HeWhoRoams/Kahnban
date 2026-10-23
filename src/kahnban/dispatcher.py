@@ -31,6 +31,15 @@ class DispatchRecommendation:
         return asdict(self)
 
 
+def _is_open(ticket: core.Ticket) -> bool:
+    """Not parked for a human (blocked_on) and parseable (lint reports the rest)."""
+    try:
+        fields, _ = frontmatter.parse(ticket.text)
+    except frontmatter.FrontmatterError:
+        return False
+    return not str(fields.get("blocked_on") or "").strip()
+
+
 def resolve_next_action(
     config: core.Config,
     *,
@@ -38,12 +47,11 @@ def resolve_next_action(
 ) -> DispatchRecommendation:
     """Analyze current board state and return the prioritized next operational handoff."""
     root = config.project_root
+    open_tickets = [t for t in core.iter_tickets(config) if _is_open(t)]
 
     # Priority 1: 4-verifying. Unapproved tickets go to a reviewer; approved ones
     # go to the integrator, who lands them through the merge queue.
-    verifying_tickets = [
-        t for t in core.iter_tickets(config) if t.column == config.verifying_column
-    ]
+    verifying_tickets = [t for t in open_tickets if t.column == config.verifying_column]
     for target in verifying_tickets:
         fields, body = frontmatter.parse(target.text)
         approved = bool(str(fields.get("reviewer") or "").strip())
@@ -75,9 +83,11 @@ def resolve_next_action(
             baton=baton.to_dict(),
         )
 
-    # Priority 2: Check 3-in-progress (In-flight implementation or revision)
+    # Priority 2: 3-in-progress tickets nobody holds a live lease on: their worker
+    # finished, crashed or was rejected, so another coder can pick them up.
     in_progress_tickets = [
-        t for t in core.iter_tickets(config) if t.column == config.in_progress_column
+        t for t in open_tickets
+        if t.column == config.in_progress_column and not core.live_lease(config, t.ticket_id)
     ]
     if in_progress_tickets and (preferred_role in (None, "coder", "resume")) and (preferred_role != "claim"):
         target = in_progress_tickets[0]
@@ -107,27 +117,25 @@ def resolve_next_action(
             column=target.column,
             worktree=wt,
             summary=summary_text,
-            command=f"kahnban verify {target.ticket_id}",
+            command=f"kahnban lease {target.ticket_id} --owner coder-agent",
             prompt=baton.next_action.get("prompt", ""),
             baton=baton.to_dict(),
         )
 
     # Priority 3: Check 2-ready (Claim & Implement)
-    ready_tickets = [
-        t for t in core.iter_tickets(config) if t.column == config.ready_column
+    ready_tickets = [t for t in open_tickets if t.column == config.ready_column]
+    # Only tickets whose blast radius is free: an overlapping claim would be refused.
+    active_radii = core.in_progress_radii(config)
+    active_paths = [p for paths in active_radii.values() for p in paths]
+    available = [
+        t for t in ready_tickets
+        if not core.radius_overlaps(
+            core.parse_blast_radius(frontmatter.parse(t.text)[1]),
+            active_paths
+        )
     ]
-    if ready_tickets and (preferred_role in (None, "coder", "claim")):
-        # Select first ticket with non-conflicting blast radius against in-progress
-        active_radii = core.in_progress_radii(config)
-        active_paths = [p for paths in active_radii.values() for p in paths]
-        available = [
-            t for t in ready_tickets
-            if not core.radius_overlaps(
-                core.parse_blast_radius(frontmatter.parse(t.text)[1]),
-                active_paths
-            )
-        ]
-        target = available[0] if available else ready_tickets[0]
+    if available and (preferred_role in (None, "coder", "claim")):
+        target = available[0]
         fields, body = frontmatter.parse(target.text)
         baton = handoff.build_handoff_baton(
             config, target.ticket_id, stage="implementation", assigned_role="coder"
@@ -146,12 +154,8 @@ def resolve_next_action(
         )
 
     # Priority 4: Check 1-refining or 0-backlog (Spec & Refine)
-    refining_tickets = [
-        t for t in core.iter_tickets(config) if t.column == config.refining_column
-    ]
-    backlog_tickets = [
-        t for t in core.iter_tickets(config) if t.column == config.backlog_column
-    ]
+    refining_tickets = [t for t in open_tickets if t.column == config.refining_column]
+    backlog_tickets = [t for t in open_tickets if t.column == config.backlog_column]
     intake_candidates = refining_tickets or backlog_tickets
     if intake_candidates and (preferred_role in (None, "spec_analyst")):
         target = intake_candidates[0]

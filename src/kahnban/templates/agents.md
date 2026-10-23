@@ -111,5 +111,7 @@ kahnban reject <ID> --reviewer <name> -m "..." # back to in-progress with reason
 kahnban merge <ID>                             # merge queue: test main+branch, land only if green
 kahnban done <ID> [--merge-commit <sha>]       # production gate -> 5-done
 kahnban cleanup <ID>                           # prune worktree & local branch
+kahnban escalate <ID> --reason "<question>"    # park for a human instead of guessing
+kahnban run --max-steps 20                     # the factory loop (configure 'workers' first)
 kahnban move <ID> <column> --reason "<why>"    # escape hatch; always logged
 ```

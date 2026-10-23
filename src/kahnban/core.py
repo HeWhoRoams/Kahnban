@@ -120,6 +120,11 @@ class Config:
     require_review: bool = False
     require_integration: bool = False
     test_patterns: tuple[str, ...] = DEFAULT_TEST_PATTERNS
+    allowed_commands: tuple[str, ...] = ()
+    lease_minutes: int = 30
+    workers: Mapping[str, str] = field(default_factory=dict)
+    worker_timeout_sec: int = 3600
+    max_attempts: int = 3
 
     @property
     def board_path(self) -> Path:
@@ -280,6 +285,11 @@ def load_config(
         require_review=bool(raw.get("require_review", False)),
         require_integration=bool(raw.get("require_integration", False)),
         test_patterns=tuple(raw.get("test_patterns") or DEFAULT_TEST_PATTERNS),
+        allowed_commands=tuple(str(item) for item in raw.get("allowed_commands") or ()),
+        lease_minutes=int(raw.get("lease_minutes", 30)),
+        workers={str(k): str(v) for k, v in dict(raw.get("workers") or {}).items()},
+        worker_timeout_sec=int(raw.get("worker_timeout_sec", 3600)),
+        max_attempts=int(raw.get("max_attempts", 3)),
     )
     if check_version:
         require_engine_version(config)
@@ -726,6 +736,39 @@ def untested_criteria_problem(
         "require_proof: these criteria name no test (append (test: `cmd`)):\n"
         + "\n".join(f"    - {text}" for text in untested)
     )
+
+
+def disallowed_commands(config: Config, body: str) -> list[str]:
+    """Ticket-supplied commands outside ``allowed_commands`` (empty list: no limit).
+
+    Tickets can come from ingested AI plans, and verify runs their commands with
+    your privileges; config-level commands are the adopter's own and exempt.
+    """
+    if not config.allowed_commands:
+        return []
+    commands = [
+        line
+        for block in FENCE_PATTERN.findall(section(body, "Validation") + "\n")
+        for line in command_lines(block)
+    ]
+    commands += [command for _, command in criterion_tests(body) if command]
+    return [
+        command
+        for command in dict.fromkeys(commands)
+        if not any(
+            command == prefix or command.startswith(prefix + " ")
+            for prefix in config.allowed_commands
+        )
+    ]
+
+
+def _require_allowed_commands(config: Config, ticket_id: str, body: str) -> None:
+    refused = disallowed_commands(config, body)
+    if refused:
+        raise GateError(
+            f"{ticket_id} runs commands outside 'allowed_commands':\n"
+            + "\n".join(f"  - {command}" for command in refused)
+        )
 
 
 def _tick_passed_criteria(text: str, passed: set[str]) -> str:
@@ -1381,6 +1424,10 @@ def ready(
         untested = untested_criteria_problem(fields, body)
         if untested:
             problems.append(untested)
+    problems.extend(
+        f"command outside 'allowed_commands': {command}"
+        for command in disallowed_commands(config, body)
+    )
 
     if problems:
         raise GateError(
@@ -1587,6 +1634,7 @@ def claim(
                 timestamp=timestamp,
             )
             result.messages = list(messages)
+            write_lease(config, ticket.ticket_id, owner.strip())
             try:
                 wt_dir = info.path if info is not None else None
                 has_agents = (config.project_root / ".agents").is_dir()
@@ -1622,6 +1670,7 @@ def claim(
                 return result
             except gitops.GitError as error:
                 _rollback_commit(config, result.commit)
+                drop_lease(config, ticket.ticket_id)
                 if info is not None:
                     worktree.teardown(
                         config.project_root,
@@ -1698,6 +1747,141 @@ def _diff_scope_problems(
         if not path_within(path, exempt) and not path_within(path, radius)
     ]
     return offenders, []
+
+
+# --- leases: who is working an in-progress ticket right now -------------------
+#
+# ponytail: leases are local files (like the board lock), so they arbitrate
+# workers on one machine; cross-clone claims are still arbitrated by the push.
+
+
+def _lease_path(config: Config, ticket_id: str) -> Path:
+    return config.board_path / ".leases" / f"{ticket_id}.json"
+
+
+def live_lease(config: Config, ticket_id: str) -> str:
+    """Holder of an unexpired lease on ``ticket_id``, or ''."""
+    path = _lease_path(config, ticket_id)
+    if not path.is_file():
+        return ""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        holder, until = str(data["owner"]), float(data["until"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return ""
+    return holder if until > time.time() else ""
+
+
+def write_lease(config: Config, ticket_id: str, owner: str, minutes: int | None = None) -> None:
+    path = _lease_path(config, ticket_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ignore = path.parent / ".gitignore"
+    if not ignore.exists():
+        ignore.write_text("*\n", encoding="utf-8", newline="\n")
+    until = time.time() + 60 * (minutes or config.lease_minutes)
+    write_text_atomic(path, json.dumps({"owner": owner, "until": until}))
+
+
+def drop_lease(config: Config, ticket_id: str) -> None:
+    _lease_path(config, ticket_id).unlink(missing_ok=True)
+
+
+def lease(
+    config: Config,
+    ticket_id: str,
+    owner: str,
+    *,
+    minutes: int | None = None,
+    timestamp: datetime | None = None,
+) -> TransitionResult | None:
+    """``kahnban lease`` — renew your hold on an in-progress ticket, or take over
+    one whose holder's lease expired (the takeover is committed and logged)."""
+    owner = owner.strip()
+    if not owner:
+        raise GateError("--owner is required to lease a ticket")
+    with board_lock(config):
+        _require_board_branch(config)
+        ticket = find_ticket(config, ticket_id)
+        if ticket.column != config.in_progress_column:
+            raise GateError(
+                f"{ticket.ticket_id} is in {ticket.column}; leases apply to "
+                f"{config.in_progress_column}"
+            )
+        holder = live_lease(config, ticket.ticket_id)
+        if holder and holder.lower() != owner.lower():
+            raise GateError(f"{ticket.ticket_id} is leased by '{holder}'; wait for it to expire")
+        fields, _ = frontmatter.parse(ticket.text)
+        previous = str(fields.get("owner") or "").strip()
+        result = None
+        if previous.lower() != owner.lower():
+            result = transition(
+                config,
+                ticket.ticket_id,
+                ticket.column,
+                log_entry=f"taken over by {owner} from {previous or 'nobody'} (no live lease)",
+                fm_updates={"owner": owner},
+                commit_message=f"kanban({ticket.ticket_id}): taken over by {owner}",
+                timestamp=timestamp,
+            )
+        write_lease(config, ticket.ticket_id, owner, minutes)
+        return result
+
+
+def escalate(
+    config: Config, ticket_id: str, reason: str, *, timestamp: datetime | None = None
+) -> TransitionResult:
+    """``kahnban escalate`` — park a ticket for a human; the dispatcher skips it."""
+    if not reason.strip():
+        raise GateError("--reason is required to escalate a ticket")
+    with board_lock(config) as lock_warnings:
+        _require_board_branch(config)
+        ticket = find_ticket(config, ticket_id)
+        result = transition(
+            config,
+            ticket.ticket_id,
+            ticket.column,
+            log_entry=f"escalated to a human: {reason.strip()}",
+            fm_updates={"blocked_on": f"human: {reason.strip()}"},
+            commit_message=f"kanban({ticket.ticket_id}): escalated",
+            timestamp=timestamp,
+        )
+        result.messages = list(lock_warnings)
+    drop_lease(config, ticket.ticket_id)
+    try:
+        from kahnban.hooks import run_hook
+
+        run_hook(
+            config.project_root,
+            "on-escalate",
+            ticket.ticket_id,
+            column=ticket.column,
+            payload={"reason": reason.strip()},
+        )
+    except Exception as hook_err:
+        result.messages.append(f"[WARN] on-escalate hook error: {hook_err}")
+    return result
+
+
+def unblock(
+    config: Config, ticket_id: str, reason: str, *, timestamp: datetime | None = None
+) -> TransitionResult:
+    """``kahnban unblock`` — a human clears ``blocked_on`` so work can resume."""
+    if not reason.strip():
+        raise GateError("--reason is required to unblock a ticket")
+    with board_lock(config) as lock_warnings:
+        _require_board_branch(config)
+        ticket = find_ticket(config, ticket_id)
+        result = transition(
+            config,
+            ticket.ticket_id,
+            ticket.column,
+            log_entry=f"unblocked: {reason.strip()}",
+            fm_updates={"blocked_on": ""},
+            commit_message=f"kanban({ticket.ticket_id}): unblocked",
+            timestamp=timestamp,
+        )
+        result.messages = list(lock_warnings)
+        return result
 
 
 def ticket_branch(fields: Mapping[str, object], ticket_id: str) -> str:
@@ -1913,6 +2097,7 @@ def verify(
                 + "]"
             )
 
+        _require_allowed_commands(config, ticket.ticket_id, body)
         feat_cmd, reg_cmd = parse_validation_commands(config, body)
         worktree_field = str(fields.get("worktree") or "").strip()
         cwd = config.project_root
@@ -2013,6 +2198,7 @@ def verify(
                 },
                 timestamp=now,
             )
+            drop_lease(config, ticket.ticket_id)
             # Trigger post-verify hook
             try:
                 from kahnban.hooks import run_hook
@@ -2309,6 +2495,7 @@ def reject(
         result.messages = list(lock_warnings)
     from kahnban import handoff
 
+    drop_lease(config, ticket.ticket_id)  # the old holder's session is over
     # The baton is a local mirror for the coder's prompt; the Log is the record.
     handoff.record_rejection_feedback(
         config.project_root, ticket.ticket_id, message.strip(), author=reviewer
@@ -2356,6 +2543,7 @@ def merge(
                 f"{ticket.ticket_id} is not approved at {tip[:12]}; a reviewer runs "
                 f"'kahnban approve {ticket.ticket_id} --reviewer <name>' first"
             )
+        _require_allowed_commands(config, ticket.ticket_id, body)
         feat_cmd, reg_cmd = parse_validation_commands(config, body)
         messages = list(lock_warnings)
         now = timestamp or datetime.now()
@@ -2499,6 +2687,7 @@ def cleanup(
 
         fields, _ = frontmatter.parse(ticket.text)
         junctions = _as_list(fields.get("junctions"))
+        drop_lease(config, ticket.ticket_id)
         notes = worktree.teardown(
             config.project_root,
             ticket.ticket_id,
@@ -2560,6 +2749,7 @@ def init_board(
         "require_proof": True,
         "require_review": True,
         "require_integration": True,
+        "allowed_commands": [],
         "design_doc_roots": ["plans"],
         "extensions": {},
         "ingest": {"heading_level": None, "section_aliases": {}},

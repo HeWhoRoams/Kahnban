@@ -1,0 +1,295 @@
+"""``kahnban run`` — the factory loop.
+
+The board decides what happens next (:mod:`kahnban.dispatcher`). Workers — any
+command configured under ``workers`` in board.config.json, typically a headless
+coding agent — only do the judgment work: refine a ticket, implement it, review
+it. Every gate (ready, claim, verify, merge, done) is run by this loop itself, so
+a worker can neither skip one nor report success it did not earn.
+"""
+
+from __future__ import annotations
+
+import os
+import signal
+import subprocess
+import time
+from collections import Counter
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+
+from kahnban import core, dispatcher, frontmatter, gitops, worktree
+
+CODER = "coder-agent"
+INTEGRATOR = "integrator"
+HEARTBEAT_SEC = 60
+
+FOOTERS = {
+    "coder": (
+        "Commit all of your work on the ticket branch before you exit. Do not run "
+        "kahnban verify, merge or done: the factory runner does that after you exit."
+    ),
+    "qa_reviewer": (
+        "Finish by running exactly one of 'kahnban approve {ticket} --reviewer qa-reviewer' "
+        "or 'kahnban reject {ticket} --reviewer qa-reviewer -m \"<what to fix>\"', then exit."
+    ),
+    "spec_analyst": (
+        "Edit only the ticket file and its spec, then exit. The runner runs "
+        "'kahnban ready {ticket}' and sends it back to you if the gate refuses."
+    ),
+}
+
+
+_NO_WORKER = (
+    "no worker command for {role}: set 'workers' in board.config.json, e.g. "
+    '{{"default": "claude -p --agent kahnban-{{role}} --permission-mode acceptEdits"}}'
+)
+
+
+class RunStop(core.KahnbanError):
+    """The loop cannot continue (for example, no worker is configured)."""
+
+
+@dataclass
+class Step:
+    number: int
+    action: str
+    ticket_id: str | None
+    outcome: str
+
+
+@dataclass
+class RunResult:
+    steps: list[Step] = field(default_factory=list)
+    stopped: str = ""
+    log_path: Path | None = None
+    parked: list[str] = field(default_factory=list)  # tickets waiting for a human
+
+
+def _parked(config: core.Config) -> list[str]:
+    parked: list[str] = []
+    for ticket in core.iter_tickets(config):
+        if ticket.column == config.done_column:
+            continue
+        try:
+            blocked = str(frontmatter.parse(ticket.text)[0].get("blocked_on") or "").strip()
+        except frontmatter.FrontmatterError:
+            continue
+        if blocked:
+            parked.append(f"{ticket.ticket_id} ({blocked})")
+    return parked
+
+
+def run(
+    config: core.Config,
+    *,
+    max_steps: int = 20,
+    echo: Callable[[str], None] = print,
+) -> RunResult:
+    """Drive the board until it is idle, every open ticket is parked, or
+    ``max_steps`` is reached. A ticket that comes back to the same action more
+    than ``max_attempts`` times is escalated to a human and skipped."""
+    if not config.workers:
+        raise RunStop(_NO_WORKER.format(role="any role"))
+    result = RunResult(log_path=_log_path(config))
+    attempts: Counter[tuple[str, str]] = Counter()
+    for number in range(1, max_steps + 1):
+        rec = dispatcher.resolve_next_action(config)
+        if rec.action in ("idle", "harvest_learnings"):
+            result.parked = _parked(config)
+            result.stopped = (
+                f"nothing left the runner can do; {len(result.parked)} ticket(s) "
+                "wait for a human"
+                if result.parked
+                else rec.summary
+            )
+            return result
+        ticket = rec.ticket_id or ""
+        # ponytail: attempts are counted per run; persist them if runs are short cron jobs
+        attempts[(rec.action, ticket)] += 1
+        if attempts[(rec.action, ticket)] > config.max_attempts:
+            reason = f"'{rec.action}' made no progress after {config.max_attempts} attempts"
+            core.escalate(config, ticket, reason)
+            outcome = f"escalated: {reason}"
+        else:
+            try:
+                outcome = _step(config, rec, result.log_path)
+            except RunStop:
+                raise
+            except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
+                outcome = f"refused: {error}"
+        result.steps.append(Step(number, rec.action, rec.ticket_id, outcome))
+        echo(f"[{number}] {rec.action} {ticket}: {(outcome.splitlines() or [''])[0]}")
+    result.stopped = f"stopped after {max_steps} steps"
+    result.parked = _parked(config)
+    return result
+
+
+def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path) -> str:
+    ticket = rec.ticket_id or ""
+    if rec.action == "merge_and_close":
+        return _merge_and_close(config, ticket)
+    if rec.action == "claim_and_implement":
+        core.claim(config, ticket, CODER, create_worktree=True)
+        return _implement(config, rec, log)
+    if rec.action in ("resume_worktree", "revise_implementation"):
+        core.lease(config, ticket, CODER)
+        return _implement(config, rec, log)
+    if rec.action == "review_and_gate":
+        code, _ = _work(config, "qa_reviewer", rec, config.project_root, log)
+        reviewed = core.find_ticket(config, ticket)
+        fields, _ = frontmatter.parse(reviewed.text)
+        if reviewed.column == config.in_progress_column:
+            return "rejected by the reviewer"
+        if str(fields.get("reviewer") or "").strip():
+            return f"approved by {fields.get('reviewer')}"
+        return f"reviewer exited {code} without approving or rejecting"
+    if rec.action == "spec_and_refine":
+        code, _ = _work(config, "spec_analyst", rec, config.project_root, log)
+        core.ready(config, ticket)
+        return f"refined (worker exit {code}) and passed the ready gate"
+    raise RunStop(f"runner has no handler for action '{rec.action}'")
+
+
+def _implement(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path) -> str:
+    ticket = rec.ticket_id or ""
+    tree = config.project_root / ".worktrees" / ticket
+    if not tree.is_dir():
+        core.drop_lease(config, ticket)
+        raise core.GateError(f"{ticket} has no worktree; the runner only drives worktree tickets")
+    try:
+        code, _ = _work(
+            config,
+            "coder",
+            rec,
+            tree,
+            log,
+            heartbeat=lambda: core.write_lease(config, ticket, CODER),
+        )
+    finally:
+        core.drop_lease(config, ticket)
+    if core.find_ticket(config, ticket).column != config.in_progress_column:
+        return f"worker exit {code}; ticket already moved on"
+    result = core.verify(config, ticket)
+    if result.passed:
+        return f"worker exit {code}; verified"
+    return f"worker exit {code}; verify failed (exit {result.exit_code})"
+
+
+def _merge_and_close(config: core.Config, ticket: str) -> str:
+    try:
+        merged = core.merge(config, ticket)
+    except core.GateError as error:
+        core.reject(config, ticket, INTEGRATOR, f"merge refused: {error}")
+        return f"merge refused and sent back: {error}"
+    if not merged.passed:
+        core.reject(
+            config,
+            ticket,
+            INTEGRATOR,
+            f"integration tests failed on the merged result (exit {merged.exit_code}); "
+            f"see {merged.artifact}",
+        )
+        return f"integration tests failed (exit {merged.exit_code}); sent back"
+    core.done(config, ticket)
+    core.cleanup(config, ticket)
+    return "merged, integration-tested, done and cleaned up"
+
+
+def _work(
+    config: core.Config,
+    role: str,
+    rec: dispatcher.DispatchRecommendation,
+    cwd: Path,
+    log: Path,
+    *,
+    heartbeat: Callable[[], None] | None = None,
+) -> tuple[int, str]:
+    """Run the configured worker for ``role`` with the prompt on stdin."""
+    template = config.workers.get(role) or config.workers.get("default")
+    if not template:
+        raise RunStop(_NO_WORKER.format(role=f"role '{role}'"))
+    ticket = rec.ticket_id or ""
+    command = template.replace("{role}", role.replace("_", "-")).replace("{ticket}", ticket)
+    prompt = rec.prompt + "\n\n" + FOOTERS.get(role, "").replace("{ticket}", ticket)
+    env = {
+        **os.environ,
+        "KAHNBAN_ROLE": role,
+        "KAHNBAN_TICKET": ticket,
+        "KAHNBAN_PROJECT_ROOT": str(config.project_root),
+        "KAHNBAN_WORKTREE": str(cwd),
+    }
+    # The command comes from board.config.json (the adopter's own config), so a
+    # shell is fine; the prompt goes over stdin, never argv.
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        cwd=str(cwd),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+        start_new_session=os.name != "nt",
+    )
+    deadline = time.monotonic() + config.worker_timeout_sec
+    pending: str | None = prompt
+    while True:
+        try:
+            output, _ = process.communicate(
+                input=pending, timeout=min(HEARTBEAT_SEC, max(deadline - time.monotonic(), 0.1))
+            )
+            code = process.returncode
+            break
+        except subprocess.TimeoutExpired:
+            pending = None
+            if time.monotonic() >= deadline:
+                _kill_tree(process)
+                output, _ = process.communicate()
+                output = (output or "") + f"\nTIMEOUT after {config.worker_timeout_sec}s"
+                code = 124
+                break
+            if heartbeat:
+                heartbeat()
+    with log.open("a", encoding="utf-8", errors="replace") as handle:
+        handle.write(
+            f"\n=== {datetime.now().isoformat(timespec='seconds')} {role} {ticket} "
+            f"exit={code} ===\n$ {command}\n{output or ''}\n"
+        )
+    if code == 124:
+        raise core.KahnbanError(f"{role} worker timed out after {config.worker_timeout_sec}s")
+    if code != 0:
+        # A worker that ends its turn exits 0 even when the task went badly; a
+        # non-zero exit is the command itself failing (auth, missing binary, bad
+        # flag). That is not the ticket's fault, so stop instead of escalating it.
+        tail = "\n".join(line for line in (output or "").splitlines() if line.strip())[-800:]
+        raise RunStop(
+            f"{role} worker command exited {code}; fix the worker setup and re-run "
+            f"(full output in {log}):\n{tail}"
+        )
+    return code, output or ""
+
+
+def _kill_tree(process: subprocess.Popen[str]) -> None:
+    """Kill the worker and everything it started, and nothing else."""
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True
+        )
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+def _log_path(config: core.Config) -> Path:
+    directory = config.board_path / core.ARTIFACT_DIR
+    directory.mkdir(parents=True, exist_ok=True)
+    gitignore = directory / ".gitignore"
+    if not gitignore.exists():
+        gitignore.write_text("*\n", encoding="utf-8", newline="\n")
+    return directory / f"run-{datetime.now().strftime('%Y%m%d-%H%M%S')}.log"

@@ -1,0 +1,238 @@
+"""The factory loop: leases, escalation, `kahnban run`, the role guard, the allowlist."""
+
+from __future__ import annotations
+
+import json
+import time
+from pathlib import Path
+
+import pytest
+
+from kahnban import core, dispatcher, frontmatter, guard, runner, skills
+from conftest import git, write_ticket
+from test_factory_gates import CHECK, CHECK_APP, CRITERION, PY, claimed, factory_board, strict_board
+
+WORKER = """\
+import os, subprocess, sys
+role = os.environ["KAHNBAN_ROLE"]
+ticket = os.environ["KAHNBAN_TICKET"]
+root = os.environ["KAHNBAN_PROJECT_ROOT"]
+sys.stdin.read()
+if role == "coder":
+    with open("src/app.py", "w") as handle:
+        handle.write("def f():\\n    return 2\\n")
+    os.makedirs("tests", exist_ok=True)
+    with open("tests/check_app.py", "w") as handle:
+        handle.write({check_app!r})
+    subprocess.run(["git", "add", "-A"], check=True)
+    subprocess.run(["git", "commit", "-qm", "fix f"], check=True)
+elif role == "qa_reviewer":
+    subprocess.run(
+        [sys.executable, "-m", "kahnban", "--project-root", root,
+         "approve", ticket, "--reviewer", "qa-bot"],
+        check=True,
+    )
+print(role, "finished")
+"""
+
+
+def ready_ticket(config: core.Config) -> None:
+    write_ticket(config.board_path, "1-refining", "TST-001", "fix", acceptance=(CRITERION,),
+                 blast_radius=("src/app.py", "tests/check_app.py"), validation=CHECK)
+    git(config.project_root, "add", "-A")
+    git(config.project_root, "commit", "-m", "refine TST-001")
+    core.ready(config, "TST-001")
+
+
+def fields_of(config: core.Config, ticket_id: str = "TST-001") -> dict:
+    return frontmatter.parse(core.find_ticket(config, ticket_id).text)[0]
+
+
+# --- leases (probe I) ----------------------------------------------------------
+
+
+def test_a_leased_ticket_is_not_handed_to_a_second_coder(repo: Path) -> None:
+    config = strict_board(repo)
+    claimed(config)
+
+    assert core.live_lease(config, "TST-001") == "coder"
+    assert dispatcher.resolve_next_action(config).action == "idle"
+    with pytest.raises(core.GateError, match="leased by 'coder'"):
+        core.lease(config, "TST-001", "other")
+
+    core.write_lease(config, "TST-001", "coder", minutes=-1)  # the holder went quiet
+
+    assert dispatcher.resolve_next_action(config).ticket_id == "TST-001"
+    core.lease(config, "TST-001", "other")
+    assert fields_of(config)["owner"] == "other"
+    assert "taken over by other from coder" in core.section(
+        frontmatter.parse(core.find_ticket(config, "TST-001").text)[1], "Log"
+    )
+
+
+# --- escalation ------------------------------------------------------------------
+
+
+def test_an_escalated_ticket_waits_for_a_human(repo: Path) -> None:
+    config = strict_board(repo)
+    ready_ticket(config)
+
+    core.escalate(config, "TST-001", "which currency?")
+
+    assert fields_of(config)["blocked_on"] == "human: which currency?"
+    assert dispatcher.resolve_next_action(config).action == "idle"
+    core.unblock(config, "TST-001", "use EUR")
+    assert dispatcher.resolve_next_action(config).action == "claim_and_implement"
+
+
+# --- kahnban run -------------------------------------------------------------------
+
+
+def test_run_takes_a_ready_ticket_all_the_way_to_done(repo: Path, tmp_path: Path) -> None:
+    worker = tmp_path / "worker.py"
+    worker.write_text(WORKER.format(check_app=CHECK_APP), encoding="utf-8")
+    config = factory_board(repo, workers={"default": f"{PY} {worker}"})
+    ready_ticket(config)
+
+    result = runner.run(config, max_steps=10, echo=lambda line: None)
+
+    assert [step.action for step in result.steps] == [
+        "claim_and_implement",
+        "review_and_gate",
+        "merge_and_close",
+    ], [step.outcome for step in result.steps]
+    assert core.find_ticket(config, "TST-001").column == "5-done"
+    assert fields_of(config)["reviewer"] == "qa-bot"
+    log = core.section(frontmatter.parse(core.find_ticket(config, "TST-001").text)[1], "Log")
+    assert f"done gate passed -> 5-done | merge-commit: {fields_of(config)['integrated_sha']}" in log
+    assert not (repo / ".worktrees" / "TST-001").exists()
+    assert not core.branch_tip(config, "ticket/TST-001")
+    assert (repo / "src" / "app.py").read_text(encoding="utf-8").strip().endswith("return 2")
+    assert "coder finished" in result.log_path.read_text(encoding="utf-8")
+
+
+def test_run_escalates_a_ticket_that_makes_no_progress(repo: Path) -> None:
+    idle_worker = f'{PY} -c "import sys; sys.stdin.read()"'
+    config = strict_board(repo, workers={"default": idle_worker}, max_attempts=2)
+    ready_ticket(config)
+
+    result = runner.run(config, max_steps=10, echo=lambda line: None)
+
+    assert result.steps[-1].outcome.startswith("escalated")
+    assert str(fields_of(config)["blocked_on"]).startswith("human:")
+    assert "wait for a human" in result.stopped
+    assert result.parked and result.parked[0].startswith("TST-001")
+
+
+def test_run_kills_a_worker_that_overruns_its_timeout(repo: Path) -> None:
+    config = strict_board(
+        repo, workers={"default": f'{PY} -c "import time; time.sleep(60)"'}, worker_timeout_sec=2
+    )
+    ready_ticket(config)
+    started = time.monotonic()
+
+    result = runner.run(config, max_steps=1, echo=lambda line: None)
+
+    assert "timed out" in result.steps[0].outcome
+    assert time.monotonic() - started < 30
+    assert core.live_lease(config, "TST-001") == ""
+
+
+def test_a_failing_worker_command_stops_the_run_without_blaming_the_ticket(repo: Path) -> None:
+    # What the live smoke test hit: the CLI's login had expired, every worker exited 1.
+    broken = f"{PY} -c \"import sys; sys.stdin.read(); print('Failed to authenticate'); sys.exit(1)\""
+    config = strict_board(repo, workers={"default": broken})
+    ready_ticket(config)
+
+    with pytest.raises(runner.RunStop, match="exited 1") as error:
+        runner.run(config, echo=lambda line: None)
+
+    assert "Failed to authenticate" in str(error.value)
+    assert not str(fields_of(config).get("blocked_on") or "")
+    assert core.live_lease(config, "TST-001") == ""
+
+
+def test_run_refuses_to_start_without_a_worker(repo: Path) -> None:
+    config = strict_board(repo)
+    ready_ticket(config)
+
+    with pytest.raises(runner.RunStop, match="no worker command"):
+        runner.run(config, echo=lambda line: None)
+
+    assert core.find_ticket(config, "TST-001").column == "2-ready"
+
+
+# --- kahnban guard -------------------------------------------------------------
+
+
+def test_guard_keeps_a_coder_inside_its_worktree_and_blast_radius(repo: Path) -> None:
+    config = strict_board(repo)
+    tree = claimed(config)
+    env = {
+        "KAHNBAN_ROLE": "coder",
+        "KAHNBAN_TICKET": "TST-001",
+        "KAHNBAN_PROJECT_ROOT": str(repo),
+        "KAHNBAN_WORKTREE": str(tree),
+    }
+
+    def edit(path: Path) -> str | None:
+        return guard.decide({"tool_name": "Write", "tool_input": {"file_path": str(path)}}, env)
+
+    def bash(command: str, role: str = "coder") -> str | None:
+        return guard.decide(
+            {"tool_name": "Bash", "tool_input": {"command": command}}, {**env, "KAHNBAN_ROLE": role}
+        )
+
+    assert edit(tree / "src" / "app.py") is None
+    assert "blast radius" in edit(tree / "README.md")
+    assert "board files" in edit(tree / "plans" / "tickets" / "x.md")
+    assert "outside your worktree" in edit(repo / "src" / "app.py")
+    assert bash(f"{PY} -m pytest -q") is None
+    assert "not a coder's" in bash("kahnban --project-root . done TST-001")
+    assert "not a coder's" in bash(f"{PY} -m kahnban approve TST-001 --reviewer x")
+    assert "runner's job" in bash("git push origin main")
+    assert "override" in bash("kahnban verify TST-001 --force-scope --reason x")
+    assert bash("kahnban escalate TST-001 --reason 'needs a decision'") is None
+    assert bash("kahnban approve TST-001 --reviewer q", "qa_reviewer") is None
+    assert "does not commit" in bash("git commit -m x", "qa_reviewer")
+    assert "does not edit" in guard.decide(
+        {"tool_name": "Edit", "tool_input": {"file_path": str(tree / "src" / "app.py")}},
+        {**env, "KAHNBAN_ROLE": "qa_reviewer"},
+    )
+    assert guard.decide({"tool_name": "Bash", "tool_input": {"command": "git push"}}, {}) is None
+
+
+def test_skills_install_adds_agents_and_one_guard_hook(tmp_path: Path) -> None:
+    (tmp_path / ".claude").mkdir()
+    settings = tmp_path / ".claude" / "settings.json"
+    settings.write_text(json.dumps({"permissions": {"allow": ["Bash(ls)"]}}), encoding="utf-8")
+
+    skills.install_skills(tmp_path, harness="claude")
+    skills.install_skills(tmp_path, harness="claude")
+
+    data = json.loads(settings.read_text(encoding="utf-8"))
+    assert data["permissions"] == {"allow": ["Bash(ls)"]}
+    commands = [h["command"] for e in data["hooks"]["PreToolUse"] for h in e["hooks"]]
+    assert commands == ["kahnban guard"]
+    for role in ("coder", "qa-reviewer", "spec-analyst", "curator"):
+        assert (tmp_path / ".claude" / "agents" / f"kahnban-{role}.md").is_file()
+
+
+# --- allowlist for ticket-supplied commands ------------------------------------
+
+
+def test_ready_refuses_a_command_outside_the_allowlist(repo: Path) -> None:
+    config = strict_board(repo, allowed_commands=[PY])
+    write_ticket(
+        config.board_path,
+        "1-refining",
+        "TST-001",
+        "fix",
+        acceptance=(CRITERION, "- [ ] cleans up (test: `rm -rf build`)"),
+        validation=CHECK,
+    )
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "refine")
+
+    with pytest.raises(core.GateError, match="outside 'allowed_commands': rm -rf build"):
+        core.ready(config, "TST-001")

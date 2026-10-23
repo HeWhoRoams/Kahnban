@@ -21,6 +21,38 @@ from typing import Any
 from kahnban import frontmatter
 
 TEMPLATES_SKILLS_DIR = Path(__file__).parent / "templates" / "skills"
+TEMPLATES_AGENTS_DIR = Path(__file__).parent / "templates" / "agents"
+GUARD_COMMAND = "kahnban guard"
+GUARD_HOOK = {
+    "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+    "hooks": [{"type": "command", "command": GUARD_COMMAND}],
+}
+
+
+def _install_guard_hook(settings_path: Path, messages: list[str]) -> None:
+    """Add the role guard as a PreToolUse hook, keeping every existing setting."""
+    data: dict[str, Any] = {}
+    if settings_path.is_file():
+        try:
+            data = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            messages.append(
+                f"{settings_path} is not valid JSON; add the '{GUARD_COMMAND}' "
+                "PreToolUse hook by hand."
+            )
+            return
+    entries = data.setdefault("hooks", {}).setdefault("PreToolUse", [])
+    if any(
+        hook.get("command") == GUARD_COMMAND
+        for entry in entries
+        for hook in entry.get("hooks", [])
+    ):
+        return
+    entries.append(GUARD_HOOK)
+    from kahnban.core import write_text_atomic
+
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    write_text_atomic(settings_path, json.dumps(data, indent=2) + "\n")
 
 
 @dataclass(frozen=True)
@@ -220,7 +252,14 @@ def install_skills(
         if not dry_run:
             claude_skills.mkdir(parents=True, exist_ok=True)
             _copy_tree_contents(agents_skills_dir, claude_skills)
-        configured_harnesses.append("claude (.claude/skills/)")
+            claude_agents = root / ".claude" / "agents"
+            claude_agents.mkdir(parents=True, exist_ok=True)
+            _copy_tree_contents(TEMPLATES_AGENTS_DIR, claude_agents)
+            _install_guard_hook(root / ".claude" / "settings.json", messages)
+            messages.append(
+                "Commit .claude/ so ticket worktrees inherit the agents and the guard hook."
+            )
+        configured_harnesses.append("claude (.claude/skills/, .claude/agents/, guard hook)")
 
     if should_configure_gemini:
         gemini_skills = root / ".gemini" / "skills"

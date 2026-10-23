@@ -343,6 +343,37 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "kanban_ticket_lease",
+        "description": (
+            "Renew your lease on an in-progress ticket, or take over one whose holder's "
+            "lease expired. kanban_next skips tickets with a live lease."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ticket_id": _string("Ticket id."),
+                "owner": _string("Who is working the ticket."),
+                "minutes": {"type": "integer", "description": "Lease length."},
+            },
+            "required": ["ticket_id", "owner"],
+        },
+    },
+    {
+        "name": "kanban_ticket_escalate",
+        "description": (
+            "Park a ticket for a human by setting blocked_on; kanban_next skips it "
+            "until a human runs kahnban unblock. Use it instead of guessing."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ticket_id": _string("Ticket id."),
+                "reason": _string("The question or decision the human must answer."),
+            },
+            "required": ["ticket_id", "reason"],
+        },
+    },
+    {
         "name": "kanban_feedback",
         "description": "Alias of kanban_ticket_reject: send a verified ticket back to in-progress with feedback.",
         "inputSchema": {
@@ -843,6 +874,28 @@ def tool_ticket_reject(project_root: Path, arguments: Mapping[str, Any]) -> dict
     )
 
 
+def tool_ticket_lease(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    minutes = arguments.get("minutes")
+    ticket_id = _require(arguments, "ticket_id")
+    owner = _require(arguments, "owner")
+    result = core.lease(
+        _config(project_root), ticket_id, owner, minutes=int(minutes) if minutes else None
+    )
+    payload = _transition_payload(result) if result is not None else {"ok": True}
+    payload.update({"ticket_id": ticket_id.upper(), "leased_by": owner})
+    return payload
+
+
+def tool_ticket_escalate(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    return _transition_payload(
+        core.escalate(
+            _config(project_root),
+            _require(arguments, "ticket_id"),
+            _require(arguments, "reason"),
+        )
+    )
+
+
 def tool_ticket_merge(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
     config = _config(project_root)
     result = core.merge(config, _require(arguments, "ticket_id"))
@@ -881,6 +934,8 @@ TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
     "kanban_ticket_approve": tool_ticket_approve,
     "kanban_ticket_reject": tool_ticket_reject,
     "kanban_ticket_merge": tool_ticket_merge,
+    "kanban_ticket_lease": tool_ticket_lease,
+    "kanban_ticket_escalate": tool_ticket_escalate,
     "kanban_feedback": tool_ticket_reject,
 }
 

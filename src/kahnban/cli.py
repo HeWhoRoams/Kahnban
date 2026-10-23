@@ -165,6 +165,45 @@ def cmd_merge(args: argparse.Namespace) -> int:
     return EXIT_REFUSED
 
 
+def cmd_run(args: argparse.Namespace) -> int:
+    from kahnban import runner
+
+    config = _load(args)
+    result = runner.run(config, max_steps=args.max_steps)
+    marker = "[WARN]" if result.parked else "[OK]"
+    print(f"{marker} {result.stopped} ({len(result.steps)} step(s))")
+    for ticket in result.parked:
+        print(f"     waiting for a human: {ticket}")
+    if result.log_path and result.log_path.exists():
+        print(f"     worker output: {result.log_path}")
+    # Parked work is not success: exit non-zero so a cron job or CI step notices.
+    return EXIT_REFUSED if result.parked else EXIT_OK
+
+
+def cmd_lease(args: argparse.Namespace) -> int:
+    result = core.lease(_load(args), args.ticket_id, args.owner, minutes=args.minutes)
+    if result is not None:
+        _report(result)
+    print(f"[OK] {args.ticket_id.upper()} leased by {args.owner}")
+    return EXIT_OK
+
+
+def cmd_escalate(args: argparse.Namespace) -> int:
+    _report(core.escalate(_load(args), args.ticket_id, args.reason))
+    return EXIT_OK
+
+
+def cmd_unblock(args: argparse.Namespace) -> int:
+    _report(core.unblock(_load(args), args.ticket_id, args.reason))
+    return EXIT_OK
+
+
+def cmd_guard(args: argparse.Namespace) -> int:
+    from kahnban import guard
+
+    return guard.main()
+
+
 def cmd_move(args: argparse.Namespace) -> int:
     _report(core.move(_load(args), args.ticket_id, args.column, reason=args.reason))
     return EXIT_OK
@@ -629,6 +668,43 @@ def build_parser() -> argparse.ArgumentParser:
     )
     merge.add_argument("ticket_id")
     merge.set_defaults(handler=cmd_merge)
+
+    run_parser = subparsers.add_parser(
+        "run",
+        parents=[board],
+        help="drive the board with the configured workers until it is idle",
+    )
+    run_parser.add_argument("--max-steps", type=int, default=20, help="stop after N steps")
+    run_parser.set_defaults(handler=cmd_run)
+
+    lease_parser = subparsers.add_parser(
+        "lease",
+        parents=[board],
+        help="renew your hold on an in-progress ticket, or take over an expired one",
+    )
+    lease_parser.add_argument("ticket_id")
+    lease_parser.add_argument("--owner", required=True)
+    lease_parser.add_argument("--minutes", type=int, help="lease length (default: lease_minutes)")
+    lease_parser.set_defaults(handler=cmd_lease)
+
+    escalate_parser = subparsers.add_parser(
+        "escalate", parents=[board], help="park a ticket for a human (sets blocked_on)"
+    )
+    escalate_parser.add_argument("ticket_id")
+    escalate_parser.add_argument("--reason", required=True, help="the question for the human")
+    escalate_parser.set_defaults(handler=cmd_escalate)
+
+    unblock_parser = subparsers.add_parser(
+        "unblock", parents=[board], help="clear blocked_on once a human has answered"
+    )
+    unblock_parser.add_argument("ticket_id")
+    unblock_parser.add_argument("--reason", required=True, help="what was decided")
+    unblock_parser.set_defaults(handler=cmd_unblock)
+
+    guard_parser = subparsers.add_parser(
+        "guard", help="PreToolUse hook: keep a factory worker inside its role (reads stdin)"
+    )
+    guard_parser.set_defaults(handler=cmd_guard)
 
     move = subparsers.add_parser(
         "move",
