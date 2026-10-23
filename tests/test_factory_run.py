@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, dispatcher, frontmatter, guard, linter, runner, skills
+from kahnban import core, dispatcher, frontmatter, guard, learnings, linter, runner, skills
 from kahnban.cli import main
 from conftest import git, write_ticket
 from test_factory_gates import CHECK, CHECK_APP, CRITERION, PY, claimed, factory_board, strict_board
@@ -239,6 +239,39 @@ def test_the_vscode_mcp_config_starts_a_working_server(tmp_path: Path) -> None:
 
     assert entry["type"] == "stdio"
     assert json.loads(reply.stdout.splitlines()[0])["result"]["serverInfo"]
+
+
+# --- recurring learnings get a curator before new work ---------------------------
+
+
+def recur(repo: Path, times: int) -> None:
+    for _ in range(times):
+        learnings.capture_learning(
+            repo, title="Tests read the wall clock", problem="flaky", category="testing"
+        )
+
+
+def test_a_recurring_learning_is_curated_before_new_claims(repo: Path) -> None:
+    config = strict_board(repo)
+    ready_ticket(config)
+    recur(repo, 1)
+    assert dispatcher.resolve_next_action(config).action == "claim_and_implement"
+
+    recur(repo, 1)  # it happened again
+
+    assert dispatcher.resolve_next_action(config).action == "harvest_learnings"
+    assert dispatcher.resolve_next_action(config, skip_harvest=True).action == "claim_and_implement"
+
+
+def test_run_gives_the_curator_one_turn_then_moves_on(repo: Path) -> None:
+    config = strict_board(repo, workers={"default": f'{PY} -c "import sys; sys.stdin.read()"'})
+    recur(repo, 2)
+
+    result = runner.run(config, max_steps=5, echo=lambda line: None)
+
+    assert [step.action for step in result.steps] == ["harvest_learnings"]
+    assert result.steps[0].outcome == "curator turn finished (exit 0)"
+    assert "idle" in result.stopped.lower()
 
 
 # --- metrics and stale claims ------------------------------------------------------

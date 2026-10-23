@@ -20,7 +20,8 @@ built, what has been proven, and the limits that are known.
 | Verify | `kahnban verify` | contract unchanged, clean committed tip, scope incl. tests/CI, every validation line, each criterion's test, red check in a scratch worktree |
 | Review | `kahnban approve` / `reject` | reviewer ≠ owner, approval bound to the verified commit; reject routes back with reasons |
 | Land | `kahnban merge` / `done` | merge onto current main in a scratch worktree, tests on the result, fast-forward only if green |
-| Run it | `kahnban run` | the loop runs every gate itself; workers only refine, implement, review |
+| Run it | `kahnban run` | the loop runs every gate itself; workers only refine, implement, review, and (once per run, when a learning recurs) curate |
+| Learn | `kahnban learnings` | recurring or critical learnings are curated before new claims; promotion needs an artifact that exists |
 | Observe | `status.json`, `kahnban lint` | per-ticket verify attempts, rejections, escalations, cycle time and first-pass yield; BL19 flags claims idle past `stale_after_days` |
 
 ## Proven

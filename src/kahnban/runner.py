@@ -3,7 +3,7 @@
 The board decides what happens next (:mod:`kahnban.dispatcher`). Workers — any
 command configured under ``workers`` in board.config.json, typically a headless
 coding agent — only do the judgment work: refine a ticket, implement it, review
-it. Every gate (ready, claim, verify, merge, done) is run by this loop itself, so
+it, turn a recurring learning into a fix ticket. Every gate (ready, claim, verify, merge, done) is run by this loop itself, so
 a worker can neither skip one nor report success it did not earn.
 """
 
@@ -37,6 +37,10 @@ FOOTERS = {
     "spec_analyst": (
         "Edit only the ticket file and its spec, then exit. The runner runs "
         "'kahnban ready {ticket}' and sends it back to you if the gate refuses."
+    ),
+    "curator": (
+        "Change no code yourself: capture each fix as a ticket, promote the learning "
+        "with that ticket as its artifact, edit only learnings/, then exit."
     ),
 }
 
@@ -94,9 +98,22 @@ def run(
         raise RunStop(_NO_WORKER.format(role="any role"))
     result = RunResult(log_path=_log_path(config))
     attempts: Counter[tuple[str, str]] = Counter()
+    curated = False  # the curator gets one turn per run; then the board moves on
     for number in range(1, max_steps + 1):
-        rec = dispatcher.resolve_next_action(config)
-        if rec.action in ("idle", "harvest_learnings"):
+        rec = dispatcher.resolve_next_action(config, skip_harvest=curated)
+        if rec.action == "harvest_learnings":
+            curated = True
+            try:
+                code, _ = _work(config, "curator", rec, config.project_root, result.log_path)
+                outcome = f"curator turn finished (exit {code})"
+            except RunStop:
+                raise
+            except core.KahnbanError as error:
+                outcome = f"refused: {error}"
+            result.steps.append(Step(number, rec.action, None, outcome))
+            echo(f"[{number}] {rec.action}: {outcome}")
+            continue
+        if rec.action == "idle":
             result.parked = _parked(config)
             result.stopped = (
                 f"nothing left the runner can do; {len(result.parked)} ticket(s) "

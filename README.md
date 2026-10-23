@@ -159,7 +159,7 @@ A spec lists one observable outcome per line under `## Requirements` (`- R1: ...
 
 ## Running the Factory (`kahnban run`)
 
-`kahnban run` is the loop: it asks the dispatcher for the next action, runs every gate itself (`ready`, `claim`, `verify`, `merge`, `done`), and starts a worker only for the judgment work: refining, implementing, reviewing. A worker cannot skip a gate or report a success it did not earn.
+`kahnban run` is the loop: it asks the dispatcher for the next action, runs every gate itself (`ready`, `claim`, `verify`, `merge`, `done`), and starts a worker only for the judgment work: refining, implementing, reviewing, and, once per run when a learning has recurred (`occurrences >= 2`) or is critical, curating it into a fix ticket before new work is claimed. A worker cannot skip a gate or report a success it did not earn.
 
 ```powershell
 kahnban skills install --harness claude   # .claude/agents/kahnban-*.md + the guard hook; commit .claude/

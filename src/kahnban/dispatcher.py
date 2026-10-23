@@ -44,8 +44,12 @@ def resolve_next_action(
     config: core.Config,
     *,
     preferred_role: str | None = None,
+    skip_harvest: bool = False,
 ) -> DispatchRecommendation:
-    """Analyze current board state and return the prioritized next operational handoff."""
+    """Analyze current board state and return the prioritized next operational handoff.
+
+    ``skip_harvest`` lets the factory loop move on once its curator has had a turn.
+    """
     root = config.project_root
     open_tickets = [t for t in core.iter_tickets(config) if _is_open(t)]
 
@@ -122,7 +126,32 @@ def resolve_next_action(
             baton=baton.to_dict(),
         )
 
-    # Priority 3: Check 2-ready (Claim & Implement)
+    # Priority 3: a mistake that recurred (or is critical) is fixed structurally
+    # before new work starts and runs into it again. One-off learnings wait.
+    # list_learnings already tolerates a missing directory and reports unreadable files.
+    from kahnban import learnings
+
+    recurring = [
+        record
+        for record in learnings.list_learnings(root, include_archive=False)
+        if record.occurrences >= 2 or record.severity == "critical"
+    ]
+    if recurring and not skip_harvest and preferred_role in (None, "curator"):
+        count = len(recurring)
+        return DispatchRecommendation(
+            action="harvest_learnings",
+            assigned_role="curator",
+            summary=f"{count} recurring learning pattern(s) in ./learnings/ need a structural fix.",
+            command="kahnban learnings list && /harvest-learnings",
+            prompt=(
+                f"You are a Continuous Learning Curator. {count} learning pattern(s) recurred: "
+                + ", ".join(f"{r.id} ({r.occurrences}x, {r.severity})" for r in recurring)
+                + ". For each, capture the structural fix as a ticket and promote the learning "
+                "with 'kahnban learnings promote <id> --level <n> --artifact <ticket id>'."
+            ),
+        )
+
+    # Priority 4: Check 2-ready (Claim & Implement)
     ready_tickets = [t for t in open_tickets if t.column == config.ready_column]
     # Only tickets whose blast radius is free: an overlapping claim would be refused.
     active_radii = core.in_progress_radii(config)
@@ -153,7 +182,7 @@ def resolve_next_action(
             baton=baton.to_dict(),
         )
 
-    # Priority 4: Check 1-refining or 0-backlog (Spec & Refine)
+    # Priority 5: Check 1-refining or 0-backlog (Spec & Refine)
     refining_tickets = [t for t in open_tickets if t.column == config.refining_column]
     backlog_tickets = [t for t in open_tickets if t.column == config.backlog_column]
     intake_candidates = refining_tickets or backlog_tickets
@@ -175,25 +204,6 @@ def resolve_next_action(
                 f"## Blast radius (source and test files), "
                 f"and ## Validation commands (### Feature Tests and ### Regression Tests). "
                 f"Run 'kahnban ready {target.ticket_id}' once complete."
-            ),
-        )
-
-    # Priority 5: Check ./learnings/ (Continuous Learning Curator)
-    # list_learnings already tolerates a missing directory and reports unreadable files.
-    from kahnban import learnings
-
-    pending_learnings = learnings.list_learnings(root, include_archive=False)
-    if pending_learnings and (preferred_role in (None, "curator")):
-        count = len(pending_learnings)
-        return DispatchRecommendation(
-            action="harvest_learnings",
-            assigned_role="curator",
-            summary=f"{count} pending learning pattern(s) in ./learnings/ ready for structural promotion.",
-            command="kahnban learnings list && /harvest-learnings",
-            prompt=(
-                f"You are a Continuous Learning Curator. There are {count} active learning pattern(s). "
-                "Review them, promote resolved items to the appropriate escalation ladder tier, "
-                "and encode structural safeguards into codebase rules or tests."
             ),
         )
 
