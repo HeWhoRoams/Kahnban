@@ -36,6 +36,21 @@ elif role == "qa_reviewer":
          "approve", ticket, "--reviewer", "qa-bot"],
         check=True,
     )
+elif role == "spec_analyst":
+    # What the live Haiku spec analyst did: annotated radius entries, and it ran
+    # the ready gate itself.
+    import glob
+    from kahnban import core, frontmatter
+    path = glob.glob(os.path.join(root, "plans", "tickets", "0-backlog", ticket + "-*.md"))[0]
+    fields, body = frontmatter.parse(open(path, encoding="utf-8").read())
+    check = sys.executable + " tests/check_app.py"
+    body = core.replace_section(body, "Acceptance criteria", "- [ ] f() returns 2 (test: `" + check + "`)")
+    body = core.replace_section(
+        body, "Blast radius", "- `src/app.py` — the function to change\\n- `tests/check_app.py` — its test"
+    )
+    body = core.replace_section(body, "Validation", "```\\n" + check + "\\n```")
+    open(path, "w", encoding="utf-8").write(frontmatter.serialize(fields, body))
+    subprocess.run([sys.executable, "-m", "kahnban", "--project-root", root, "ready", ticket], check=True)
 print(role, "finished")
 """
 
@@ -118,6 +133,23 @@ def test_run_takes_a_ready_ticket_all_the_way_to_done(repo: Path, tmp_path: Path
     assert (metrics["done"], metrics["first_pass_yield"]) == (1, 1.0)
 
 
+def test_run_takes_a_bare_backlog_idea_through_refinement_to_done(repo: Path, tmp_path: Path) -> None:
+    # Live run A found both bugs this covers: annotated radius entries parsed as
+    # garbage paths, and a spec analyst running 'ready' itself was called refused.
+    worker = tmp_path / "worker.py"
+    worker.write_text(WORKER.format(check_app=CHECK_APP), encoding="utf-8")
+    config = factory_board(repo, workers={"default": f"{PY} {worker}"})
+    assert main(["--project-root", str(repo), "new", "Make f return 2", "--problem", "f returns 1"]) == 0
+
+    result = runner.run(config, max_steps=10, echo=lambda line: None)
+
+    assert [step.action for step in result.steps] == [
+        "spec_and_refine", "claim_and_implement", "review_and_gate", "merge_and_close",
+    ], [step.outcome for step in result.steps]
+    assert "the worker ran the ready gate" in result.steps[0].outcome
+    assert core.find_ticket(config, "TST-001").column == "5-done"
+
+
 def test_run_escalates_a_ticket_that_makes_no_progress(repo: Path) -> None:
     idle_worker = f'{PY} -c "import sys; sys.stdin.read()"'
     config = strict_board(repo, workers={"default": idle_worker}, max_attempts=2)
@@ -126,7 +158,9 @@ def test_run_escalates_a_ticket_that_makes_no_progress(repo: Path) -> None:
     result = runner.run(config, max_steps=10, echo=lambda line: None)
 
     assert result.steps[-1].outcome.startswith("escalated")
-    assert str(fields_of(config)["blocked_on"]).startswith("human:")
+    blocked_on = str(fields_of(config)["blocked_on"])
+    assert blocked_on.startswith("human:")
+    assert "last: refused: require_proof" in blocked_on  # the human sees why, not just "no progress"
     assert "wait for a human" in result.stopped
     assert result.parked and result.parked[0].startswith("TST-001")
 

@@ -28,7 +28,10 @@ HEARTBEAT_SEC = 60
 FOOTERS = {
     "coder": (
         "Commit all of your work on the ticket branch before you exit. Do not run "
-        "kahnban verify, merge or done: the factory runner does that after you exit."
+        "kahnban verify, merge or done: the factory runner does that after you exit. "
+        "If the fix needs a file outside the blast radius, or a test or check you were "
+        "not given to change, do not touch it: run 'kahnban escalate {ticket} --reason "
+        "\"<what has to change and why>\"' and exit."
     ),
     "qa_reviewer": (
         "Finish by running exactly one of 'kahnban approve {ticket} --reviewer qa-reviewer' "
@@ -98,6 +101,7 @@ def run(
         raise RunStop(_NO_WORKER.format(role="any role"))
     result = RunResult(log_path=_log_path(config))
     attempts: Counter[tuple[str, str]] = Counter()
+    last_outcome: dict[tuple[str, str], str] = {}
     curated = False  # the curator gets one turn per run; then the board moves on
     for number in range(1, max_steps + 1):
         rec = dispatcher.resolve_next_action(config, skip_harvest=curated)
@@ -126,8 +130,11 @@ def run(
         # ponytail: attempts are counted per run; persist them if runs are short cron jobs
         attempts[(rec.action, ticket)] += 1
         if attempts[(rec.action, ticket)] > config.max_attempts:
-            reason = f"'{rec.action}' made no progress after {config.max_attempts} attempts"
-            core.escalate(config, ticket, reason)
+            reason = (
+                f"'{rec.action}' made no progress after {config.max_attempts} attempts; "
+                f"last: {last_outcome.get((rec.action, ticket), 'none')}"
+            )
+            core.escalate(config, ticket, reason[:300])
             outcome = f"escalated: {reason}"
         else:
             try:
@@ -136,8 +143,11 @@ def run(
                 raise
             except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
                 outcome = f"refused: {error}"
+        # One line, details kept: a refusal's paths are on its continuation lines.
+        summary = " ".join(part.strip() for part in outcome.splitlines() if part.strip())
+        last_outcome[(rec.action, ticket)] = summary.replace('"', "'")
         result.steps.append(Step(number, rec.action, rec.ticket_id, outcome))
-        echo(f"[{number}] {rec.action} {ticket}: {(outcome.splitlines() or [''])[0]}")
+        echo(f"[{number}] {rec.action} {ticket}: {summary[:400]}")
     result.stopped = f"stopped after {max_steps} steps"
     result.parked = _parked(config)
     return result
@@ -164,6 +174,12 @@ def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path
         return f"reviewer exited {code} without approving or rejecting"
     if rec.action == "spec_and_refine":
         code, _ = _work(config, "spec_analyst", rec, config.project_root, log)
+        if core.find_ticket(config, ticket).column not in (
+            config.backlog_column,
+            config.refining_column,
+        ):
+            # A spec analyst may run 'kahnban ready' itself; the gate still decided.
+            return f"refined (worker exit {code}); the worker ran the ready gate and it passed"
         core.ready(config, ticket)
         return f"refined (worker exit {code}) and passed the ready gate"
     raise RunStop(f"runner has no handler for action '{rec.action}'")

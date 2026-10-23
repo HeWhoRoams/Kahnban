@@ -511,13 +511,24 @@ def checkboxes(body: str, heading: str = "Acceptance criteria") -> tuple[int, in
 
 
 def parse_blast_radius(body: str) -> list[str]:
-    """Declared paths under ``## Blast radius``, normalized to forward slashes."""
+    """Declared paths under ``## Blast radius``, normalized to forward slashes.
+
+    An entry may carry a note after its path (``- `src/a.py` — the parser``):
+    a backticked path is taken as the path, and an unquoted one ends where a
+    spaced dash or parenthesis starts the note.
+    """
     entries: list[str] = []
     for line in section(body, "Blast radius").split("\n"):
         stripped = line.strip()
         if not stripped.startswith(("-", "*")):
             continue
-        item = stripped[1:].strip().strip("`").strip('"').strip("'").strip()
+        item = stripped[1:].strip()
+        quoted = re.match(r"`([^`]+)`", item)
+        if quoted:
+            item = quoted.group(1)
+        else:
+            item = re.split(r"\s+(?:—|–|-|\()", item, maxsplit=1)[0]
+        item = item.strip().strip('"').strip("'").strip()
         if not item or item.lower().startswith("_none"):
             continue
         entries.append(normalize_path_entry(item))

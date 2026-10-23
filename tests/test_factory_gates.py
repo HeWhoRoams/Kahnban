@@ -252,6 +252,22 @@ def test_undeclared_test_and_ci_changes_are_out_of_scope(repo: Path) -> None:
     assert ".github/workflows/ci.yml" in str(error.value)
 
 
+def test_blast_radius_entries_may_carry_a_note() -> None:
+    # A live spec analyst wrote "- `src/app.py` — the function to modify"; the path
+    # parsed as the whole line, and verify called every in-scope change out of scope.
+    body = (
+        "## Blast radius\n"
+        "- `src/app.py` — the function to modify\n"
+        "- src/b.py — an unquoted note\n"
+        "- `tests/check app.py` (new)\n"
+        "- src/my-file.py\n"
+    )
+    assert core.parse_blast_radius(body) == [
+        core.normalize_path_entry(path)
+        for path in ("src/app.py", "src/b.py", "tests/check app.py", "src/my-file.py")
+    ]
+
+
 # --- evidence per criterion --------------------------------------------------
 
 

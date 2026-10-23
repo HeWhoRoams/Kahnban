@@ -5,16 +5,11 @@
 
 ## Prove more of it live
 
-The engine paths below are covered by tests with fake workers but have not run with
-real agents yet. Use the scratch-repo smoke setup (one ticket, Haiku workers) and add:
-
-1. A backlog ticket with no criteria, so the spec analyst has to refine it.
-2. A ticket the reviewer should reject (a hollow `assert True` test), to see the
-   reject → revise → re-verify loop with real agents.
-3. Two tickets that conflict on main, to see `merge` refuse and send one back.
-
-Preflight first: `claude auth status` and one trivial `claude -p` call, in the same
-shell the run will use.
+Refinement, rejection and a refused merge have all run with real Haiku agents (see
+IMPLEMENTATION_STATUS.md). Next: a real feature in a real adopter repo (several
+tickets from one approved spec), measuring first-pass yield and escalations from
+`status.json`. Preflight first: `claude auth status` and one trivial `claude -p`
+call, in the same shell the run will use.
 
 ## P3 — learning and operations
 

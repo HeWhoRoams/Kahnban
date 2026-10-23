@@ -32,6 +32,15 @@ built, what has been proven, and the limits that are known.
 - Live smoke test (2026-10-22): headless `claude -p --model haiku` workers took a ticket
   from `2-ready` to `5-done` unattended; the guard hook blocked a reviewer's file write
   inside a real Claude Code session.
+- Live scenarios (2026-10-23, Haiku workers):
+  - a reviewer rejected a ticket that printed to stdout against its stated rule; the
+    coder removed the print, verify passed, it was approved, merged and closed;
+  - two tickets each green alone broke an invariant together: the merge queue refused
+    the second, sent it back, the coder tried to relax the regression test (outside
+    its radius) and the scope gate refused that, then it was escalated to a human;
+  - a bare backlog idea was refined by the spec analyst, but annotated radius entries
+    (`` `src/app.py` — note ``) parsed as garbage paths and every in-scope change was
+    called out of scope; fixed, with the run reproduced in a regression test.
 - The first CI run found a real bug local runs had missed (stale bytecode fooling the red
   check); fixed in `52c8a85`.
 
@@ -48,8 +57,8 @@ built, what has been proven, and the limits that are known.
 - `kahnban run` works one ticket at a time, and its retry counts reset per run.
 - The red check proves the tests depend on the change, not that they fail for the right
   reason; a test-only ticket cannot pass strict proof.
-- Live agents have been run on one trivial ticket only: not yet the spec-analyst path,
-  a reviewer rejection, or a refused merge.
+- Live agents have only run on toy tickets (one-line changes). How they handle real
+  multi-file features, and how often they need a human, is still unmeasured.
 
 ## History
 
