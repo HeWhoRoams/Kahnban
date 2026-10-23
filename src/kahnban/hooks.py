@@ -55,7 +55,13 @@ def run_hook(
     payload: dict[str, Any] | None = None,
     timeout: float = 30.0,
 ) -> HookResult:
-    """Execute a lifecycle hook script if present, passing structured context."""
+    """Execute a lifecycle hook script if present, passing structured context.
+
+    The context arrives twice: as ``KAHNBAN_*`` environment variables, and as one
+    JSON object on stdin (``event``, ``ticket``, ``column``, ``worktree``,
+    ``baton_path`` plus the event's own ``payload`` fields). A ``pre-transition``
+    hook that exits 2 vetoes the move; every other exit code only reports.
+    """
     script = find_hook_script(project_root, event)
     if not script:
         return HookResult(
@@ -74,6 +80,17 @@ def run_hook(
     env["KAHNBAN_BATON_PATH"] = str(baton_path)
     if payload:
         env["KAHNBAN_PAYLOAD_JSON"] = json.dumps(payload, default=str)
+    event_json = json.dumps(
+        {
+            "event": event,
+            "ticket": ticket_id,
+            "column": column,
+            "worktree": worktree,
+            "baton_path": baton_path,
+            **(payload or {}),
+        },
+        default=str,
+    )
 
     cmd: list[str] | str
     use_shell = False
@@ -103,6 +120,7 @@ def run_hook(
             cmd,
             shell=use_shell,
             cwd=str(project_root),
+            input=event_json,
             capture_output=True,
             text=True,
             errors="replace",

@@ -232,7 +232,7 @@ def cmd_spec(args: argparse.Namespace) -> int:
 def cmd_guard(args: argparse.Namespace) -> int:
     from kahnban import guard
 
-    return guard.main()
+    return guard.main(stop=args.stop)
 
 
 def cmd_move(args: argparse.Namespace) -> int:
@@ -762,6 +762,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     guard_parser = subparsers.add_parser(
         "guard", help="PreToolUse hook: keep a factory worker inside its role (reads stdin)"
+    )
+    guard_parser.add_argument(
+        "--stop",
+        action="store_true",
+        help="run as a Stop hook: refuse to let a worker stop before its role's exit condition holds",
     )
     guard_parser.set_defaults(handler=cmd_guard)
 

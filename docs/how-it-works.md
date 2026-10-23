@@ -7,7 +7,7 @@ This page is one level down from the [board overview in the README](../README.md
 
 ## Stage by stage
 
-Every ticket gate is one function in `core`, and the CLI, the MCP server and `kahnban run` all call that same function. When a check fails, the ticket stays where it is and the command says why. The diagrams show the checks; the [gate tables in the README](../README.md#what-verify-refuses) spell out the verify, review, merge and spec refusals in full.
+Every ticket gate is one function in `core`, and the CLI, the MCP server and `kahnban run` all call that same function. When a check fails, the ticket stays where it is, the command says why, and the `on-refusal` hook hears about it. Every move rewrites the ticket's handoff baton for whoever acts next and runs the `pre-transition` hook (exit 2 vetoes the move) and the `post-transition` hook. The diagrams show the checks; the [gate tables in the README](../README.md#what-verify-refuses) spell out the verify, review, merge and spec refusals in full.
 
 ### Backlog and refining
 
@@ -42,7 +42,7 @@ flowchart TD
   gate -.->|any check fails| stay["refused,<br/>every problem listed"]
 ```
 
-Passing freezes the contract: a hash of the acceptance criteria, blast radius and validation sections, which `verify` checks later. In a repo with `.agents/` (from `init --agentic`) it also writes a handoff baton and fires the `post-ready` hook.
+Passing freezes the contract: a hash of the acceptance criteria, blast radius and validation sections, which `verify` checks later. It also fires the `post-ready` hook.
 
 ### Ready
 
@@ -74,7 +74,7 @@ flowchart TD
   gate -.->|any check fails| stay["refused,<br/>stays in 2-ready"]
 ```
 
-Passing records a lease for the owner. With `--worktree` (which `kahnban run` always uses) it creates the worktree `.worktrees/<ID>` on branch `ticket/<ID>` and writes `.agents/HANDOFF.json` into it. In a repo with `.agents/` it also fires the `post-claim` hook.
+Passing records a lease for the owner. With `--worktree` (which `kahnban run` always uses) it creates the worktree `.worktrees/<ID>` on branch `ticket/<ID>` and writes `.agents/HANDOFF.json` into it. It also fires the `post-claim` hook.
 
 ### In progress
 
@@ -206,7 +206,7 @@ The dispatcher takes the first row that matches, so finishing work comes before 
 | 4 | a `2-ready` ticket whose blast radius is free | claims it into a worktree, then implements and verifies it | coder |
 | 5 | a ticket in `0-backlog` or `1-refining` | starts refinement, then runs the ready gate | spec-analyst |
 
-Escalating sets `blocked_on: human: <reason>` and fires the `on-escalate` hook. The dispatcher skips the ticket until someone runs `kahnban unblock`, and the run carries on with the rest of the board. Workers run with `KAHNBAN_ROLE` set, so [`kahnban guard`](../README.md#running-the-factory-kahnban-run) and the CLI refuse anything outside their role.
+Escalating sets `blocked_on: human: <reason>` and fires the `on-escalate` hook. The dispatcher skips the ticket until someone runs `kahnban unblock`, and the run carries on with the rest of the board. Workers run with `KAHNBAN_ROLE` set, so [`kahnban guard`](../README.md#running-the-factory-kahnban-run) and the CLI refuse anything outside their role, and its Stop hook pushes back once if a worker tries to stop before its role is done.
 
 ### The merge queue
 

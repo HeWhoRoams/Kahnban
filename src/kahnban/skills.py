@@ -33,10 +33,12 @@ GUARD_HOOK = {
     "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
     "hooks": [{"type": "command", "command": GUARD_COMMAND}],
 }
+STOP_COMMAND = "kahnban guard --stop"
+STOP_HOOK = {"hooks": [{"type": "command", "command": STOP_COMMAND}]}
 
 
 def _install_guard_hook(settings_path: Path, messages: list[str]) -> None:
-    """Add the role guard as a PreToolUse hook, keeping every existing setting."""
+    """Add the role guard as PreToolUse and Stop hooks, keeping every existing setting."""
     data: dict[str, Any] = {}
     if settings_path.is_file():
         try:
@@ -47,14 +49,17 @@ def _install_guard_hook(settings_path: Path, messages: list[str]) -> None:
                 "PreToolUse hook by hand."
             )
             return
-    entries = data.setdefault("hooks", {}).setdefault("PreToolUse", [])
-    if any(
-        hook.get("command") == GUARD_COMMAND
-        for entry in entries
-        for hook in entry.get("hooks", [])
+    added = False
+    for event, hook, command in (
+        ("PreToolUse", GUARD_HOOK, GUARD_COMMAND),
+        ("Stop", STOP_HOOK, STOP_COMMAND),
     ):
+        entries = data.setdefault("hooks", {}).setdefault(event, [])
+        if not any(h.get("command") == command for entry in entries for h in entry.get("hooks", [])):
+            entries.append(hook)
+            added = True
+    if not added:
         return
-    entries.append(GUARD_HOOK)
     from kahnban.core import write_text_atomic
 
     settings_path.parent.mkdir(parents=True, exist_ok=True)

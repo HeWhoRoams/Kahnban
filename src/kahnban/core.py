@@ -11,6 +11,7 @@ translate raised errors into stderr text and exit codes.
 from __future__ import annotations
 
 import fnmatch
+import functools
 import hashlib
 import json
 import os
@@ -19,7 +20,7 @@ import shutil
 import subprocess
 import random
 import time
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -1108,8 +1109,16 @@ def transition(
     extra_paths: Sequence[Path] = (),
     commit_message: str | None = None,
     timestamp: datetime | None = None,
+    verification: Mapping[str, object] | None = None,
 ) -> TransitionResult:
-    """Move a ticket and commit the board change on the default branch."""
+    """Move a ticket and commit the board change on the default branch.
+
+    Every move is also a handoff: a ``pre-transition`` hook can veto it (exit 2),
+    the ticket's baton is rewritten for whoever acts next, and a
+    ``post-transition`` hook hears about it.
+    """
+    from kahnban import hooks
+
     valid_targets = [*config.columns, "archive"]
     if target_column not in valid_targets:
         raise GateError(
@@ -1118,6 +1127,15 @@ def transition(
         )
     ticket = find_ticket(config, ticket_id)
     _require_board_branch(config)
+    event = {"from": ticket.column, "to": target_column, "log_entry": log_entry}
+    veto = hooks.run_hook(
+        config.project_root, "pre-transition", ticket.ticket_id, column=target_column, payload=event
+    )
+    if veto.executed and veto.exit_code == 2:
+        raise GateError(
+            f"pre-transition hook refused {ticket.column} -> {target_column}: "
+            + (veto.stderr.strip() or "no reason given")
+        )
     now = timestamp or datetime.now()
 
     updates: dict[str, object] = {
@@ -1151,13 +1169,72 @@ def transition(
     )
     sha = gitops.commit(config.project_root, message, paths=commit_paths)
 
-    return TransitionResult(
+    result = TransitionResult(
         ticket_id=ticket.ticket_id,
         from_column=ticket.column,
         to_column=target_column,
         path=destination,
         commit=sha,
     )
+    baton = _refresh_baton(config, ticket.ticket_id, log_entry, result.messages, verification)
+    after = hooks.run_hook(
+        config.project_root,
+        "post-transition",
+        ticket.ticket_id,
+        column=target_column,
+        baton_path=str(baton or ""),
+        payload={**event, "commit": sha},
+    )
+    if after.executed and after.exit_code != 0:
+        result.messages.append(
+            f"[WARN] post-transition hook exit {after.exit_code}: {after.stderr.strip()[:300]}"
+        )
+    return result
+
+
+def _refresh_baton(
+    config: Config,
+    ticket_id: str,
+    event: str,
+    messages: list[str],
+    verification: Mapping[str, object] | None = None,
+) -> Path | None:
+    """Rewrite the ticket's handoff baton; a failure is a warning, never a lost move."""
+    from kahnban import handoff
+
+    try:
+        return handoff.refresh(
+            config,
+            ticket_id,
+            event=event,
+            verification=dict(verification) if verification is not None else None,
+        )
+    except (KahnbanError, frontmatter.FrontmatterError, OSError) as error:
+        messages.append(f"[WARN] handoff baton not refreshed: {error}")
+        return None
+
+
+def _report_refusal(config: Config, ticket_id: str, gate: str, reason: str) -> None:
+    """Run the ``on-refusal`` hook: every gate that says no says so the same way."""
+    from kahnban import hooks
+
+    hooks.run_hook(
+        config.project_root, "on-refusal", ticket_id, payload={"gate": gate, "reason": reason}
+    )
+
+
+def _refusals_reported(gate: Callable[..., Any]) -> Callable[..., Any]:
+    """Fire ``on-refusal`` whenever ``gate`` raises :class:`GateError`, then re-raise."""
+
+    @functools.wraps(gate)
+    def wrapper(config: Config, ticket_id: str, *args: Any, **kwargs: Any) -> Any:
+        try:
+            return gate(config, ticket_id, *args, **kwargs)
+        except GateError as error:
+            _report_refusal(config, ticket_id, gate.__name__, str(error))
+            raise
+
+    return wrapper
 
 
 # --- gates ------------------------------------------------------------------
@@ -1453,6 +1530,7 @@ def replace_section(body: str, heading: str, content: str) -> str:
     return body
 
 
+@_refusals_reported
 def ready(
     config: Config, ticket_id: str, *, timestamp: datetime | None = None
 ) -> TransitionResult:
@@ -1464,6 +1542,37 @@ def ready(
             f"{ticket.ticket_id} is in {ticket.column}; "
             f"'ready' applies to {config.refining_column}"
         )
+    problems = ready_problems(config, ticket)
+    if problems:
+        raise GateError(
+            f"{ticket.ticket_id} is not ready:\n"
+            + "\n".join(f"  - {problem}" for problem in problems)
+        )
+    frozen = contract_hash(frontmatter.parse(ticket.text)[1])
+    result = transition(
+        config,
+        ticket.ticket_id,
+        target,
+        log_entry=f"ready gate passed -> {target} | contract {frozen}",
+        fm_updates={"contract_hash": frozen},
+        timestamp=timestamp,
+    )
+    from kahnban.handoff import get_handoff_path
+    from kahnban.hooks import run_hook
+
+    baton = get_handoff_path(config.project_root, ticket.ticket_id)
+    run_hook(
+        config.project_root,
+        "post-ready",
+        ticket.ticket_id,
+        column=target,
+        baton_path=str(baton) if baton.exists() else "",
+    )
+    return result
+
+
+def ready_problems(config: Config, ticket: Ticket) -> list[str]:
+    """Everything that keeps ``ticket`` out of the ready column; empty when it may pass."""
     fields, body = frontmatter.parse(ticket.text)
     problems: list[str] = []
 
@@ -1478,7 +1587,7 @@ def ready(
     if str(blocked_on).strip():
         problems.append(f"blocked_on is set: {blocked_on}")
     problems.extend(_dependency_problems(config, fields))
-    problems.extend(extension_problems(config, fields, body, target))
+    problems.extend(extension_problems(config, fields, body, config.ready_column))
     if config.require_proof:
         untested = untested_criteria_problem(fields, body)
         if untested:
@@ -1492,38 +1601,7 @@ def ready(
         from kahnban import specs
 
         problems.extend(specs.ticket_problems(config, fields, require_approved=True))
-
-    if problems:
-        raise GateError(
-            f"{ticket.ticket_id} is not ready:\n"
-            + "\n".join(f"  - {problem}" for problem in problems)
-        )
-    frozen = contract_hash(body)
-    result = transition(
-        config,
-        ticket.ticket_id,
-        target,
-        log_entry=f"ready gate passed -> {target} | contract {frozen}",
-        fm_updates={"contract_hash": frozen},
-        timestamp=timestamp,
-    )
-    try:
-        if (config.project_root / ".agents").is_dir():
-            from kahnban.hooks import run_hook
-            from kahnban.handoff import build_handoff_baton, write_handoff_baton, get_handoff_path
-            baton = build_handoff_baton(config, ticket.ticket_id, stage="implementation", assigned_role="coder")
-            write_handoff_baton(config.project_root, baton, write_root=True)
-            h_path = get_handoff_path(config.project_root, ticket.ticket_id)
-            run_hook(
-                config.project_root,
-                "post-ready",
-                ticket.ticket_id,
-                column=target,
-                baton_path=str(h_path),
-            )
-    except Exception as hook_err:
-        result.messages.append(f"[WARN] post-ready hook error: {hook_err}")
-    return result
+    return problems
 
 
 def _dependency_problems(config: Config, fields: Mapping[str, object]) -> list[str]:
@@ -1571,6 +1649,7 @@ def in_progress_radii(
     return radii
 
 
+@_refusals_reported
 def claim(
     config: Config,
     ticket_id: str,
@@ -1697,35 +1776,20 @@ def claim(
                 fm_updates=updates,
                 timestamp=timestamp,
             )
-            result.messages = list(messages)
+            result.messages = [*messages, *result.messages]
             write_lease(config, ticket.ticket_id, owner.strip())
-            try:
-                wt_dir = info.path if info is not None else None
-                has_agents = (config.project_root / ".agents").is_dir()
-                if has_agents or wt_dir:
-                    from kahnban.handoff import build_handoff_baton, write_handoff_baton, get_handoff_path
-                    baton = build_handoff_baton(config, ticket.ticket_id, stage="implementation", assigned_role="coder")
-                    write_handoff_baton(
-                        config.project_root,
-                        baton,
-                        worktree_dir=wt_dir,
-                        write_root=has_agents,
-                    )
-                if has_agents:
-                    from kahnban.hooks import run_hook
-                    from kahnban.handoff import get_handoff_path
-                    wt_rel = wt_dir.relative_to(config.project_root).as_posix() if wt_dir else ""
-                    h_path = get_handoff_path(config.project_root, ticket.ticket_id)
-                    run_hook(
-                        config.project_root,
-                        "post-claim",
-                        ticket.ticket_id,
-                        column=target,
-                        worktree=wt_rel,
-                        baton_path=str(h_path),
-                    )
-            except Exception as hook_err:
-                result.messages.append(f"[WARN] post-claim hook error: {hook_err}")
+            from kahnban.handoff import get_handoff_path
+            from kahnban.hooks import run_hook
+
+            baton = get_handoff_path(config.project_root, ticket.ticket_id)
+            run_hook(
+                config.project_root,
+                "post-claim",
+                ticket.ticket_id,
+                column=target,
+                worktree=info.path.relative_to(config.project_root).as_posix() if info else "",
+                baton_path=str(baton) if baton.exists() else "",
+            )
 
             if not remote or local or not config.sync_remote:
                 return result
@@ -1909,7 +1973,7 @@ def escalate(
             commit_message=f"kanban({ticket.ticket_id}): escalated",
             timestamp=timestamp,
         )
-        result.messages = list(lock_warnings)
+        result.messages = [*lock_warnings, *result.messages]
     drop_lease(config, ticket.ticket_id)
     try:
         from kahnban.hooks import run_hook
@@ -1944,7 +2008,7 @@ def unblock(
             commit_message=f"kanban({ticket.ticket_id}): unblocked",
             timestamp=timestamp,
         )
-        result.messages = list(lock_warnings)
+        result.messages = [*lock_warnings, *result.messages]
         return result
 
 
@@ -2079,6 +2143,7 @@ def _red_run(
         _remove_scratch_tree(config, tree)
 
 
+@_refusals_reported
 def verify(
     config: Config,
     ticket_id: str,
@@ -2133,6 +2198,7 @@ def verify(
                 log_entry=entry,
                 timestamp=now,
             )
+            messages.extend(result.messages)
             result.messages = messages
             return VerifyResult(
                 ticket_id=ticket.ticket_id,
@@ -2196,6 +2262,7 @@ def verify(
         messages.append(f"Running Tier 1 (Feature Tests): {feat_cmd}")
         exit_code, stage_output = run_block(config, feat_cmd, cwd)
         stages.append(("TIER 1: FEATURE TESTS", stage_output))
+        feature_passed = exit_code == 0
 
         passed_criteria: set[str] = set()
         if exit_code == 0 and criteria:
@@ -2217,6 +2284,7 @@ def verify(
             exit_code, stage_output = run_block(config, reg_cmd, cwd)
             stages.append(("TIER 2: REGRESSION TESTS", stage_output))
             commands.append(reg_cmd)
+        regression_passed = exit_code == 0
 
         if exit_code == 0 and proof_base:
             red_code, stage_output = _red_run(
@@ -2247,6 +2315,11 @@ def verify(
         ]
         if messages:
             entry_lines.insert(1, "    " + "; ".join(messages))
+        verification = {
+            "feature_passed": feature_passed,
+            "regression_passed": regression_passed,
+            "artifact": _relative(config, artifact),
+        }
 
         if exit_code == 0:
             ticked_text = _tick_passed_criteria(ticket.text, passed_criteria)
@@ -2267,6 +2340,7 @@ def verify(
                     "integrated_sha": "",
                 },
                 timestamp=now,
+                verification=verification,
             )
             drop_lease(config, ticket.ticket_id)
             # Trigger post-verify hook
@@ -2284,6 +2358,7 @@ def verify(
                 )
             except Exception as hook_err:
                 messages.append(f"[WARN] post-verify hook error: {hook_err}")
+            messages.extend(result.messages)
             result.messages = messages
             return VerifyResult(
                 ticket_id=ticket.ticket_id,
@@ -2310,6 +2385,9 @@ def verify(
             f"kanban({ticket.ticket_id}): verify failed (exit {exit_code})",
             paths=[rel],
         )
+        reason = f"verify failed (exit {exit_code}); full output: {verification['artifact']}"
+        _refresh_baton(config, ticket.ticket_id, reason, messages, verification)
+        _report_refusal(config, ticket.ticket_id, "verify", reason)
         return VerifyResult(
             ticket_id=ticket.ticket_id,
             passed=False,
@@ -2364,6 +2442,7 @@ def is_branch_content_merged(repo: Path, branch: str, default_branch: str, confi
     return True
 
 
+@_refusals_reported
 def done(
     config: Config,
     ticket_id: str,
@@ -2454,7 +2533,7 @@ def done(
             log_entry=entry,
             timestamp=timestamp,
         )
-        result.messages = list(lock_warnings)
+        result.messages = [*lock_warnings, *result.messages]
         try:
             from kahnban.hooks import run_hook
             from kahnban.handoff import get_handoff_path
@@ -2481,6 +2560,7 @@ def _verifying_ticket(config: Config, ticket_id: str, action: str) -> Ticket:
     return ticket
 
 
+@_refusals_reported
 def approve(
     config: Config,
     ticket_id: str,
@@ -2523,10 +2603,11 @@ def approve(
             commit_message=f"kanban({ticket.ticket_id}): approved by {reviewer}",
             timestamp=timestamp,
         )
-        result.messages = list(lock_warnings)
+        result.messages = [*lock_warnings, *result.messages]
         return result
 
 
+@_refusals_reported
 def reject(
     config: Config,
     ticket_id: str,
@@ -2562,7 +2643,7 @@ def reject(
             },
             timestamp=timestamp,
         )
-        result.messages = list(lock_warnings)
+        result.messages = [*lock_warnings, *result.messages]
     from kahnban import handoff
 
     drop_lease(config, ticket.ticket_id)  # the old holder's session is over
@@ -2586,6 +2667,7 @@ def _remove_scratch_tree(config: Config, tree: Path) -> None:
         raise KahnbanError(f"could not remove scratch worktree {tree}; remove it by hand")
 
 
+@_refusals_reported
 def merge(
     config: Config, ticket_id: str, *, timestamp: datetime | None = None
 ) -> VerifyResult:
@@ -2673,6 +2755,12 @@ def merge(
                 f"kanban({ticket.ticket_id}): merge refused (exit {exit_code})",
                 paths=[rel],
             )
+            reason = (
+                f"merge refused: integration tests exit={exit_code}; "
+                f"full output: {_relative(config, artifact)}"
+            )
+            _refresh_baton(config, ticket.ticket_id, reason, messages)
+            _report_refusal(config, ticket.ticket_id, "merge", reason)
             return VerifyResult(
                 ticket_id=ticket.ticket_id,
                 passed=False,
@@ -2695,6 +2783,7 @@ def merge(
             commit_message=f"kanban({ticket.ticket_id}): integrated into {default_branch}",
             timestamp=now,
         )
+        messages.extend(result.messages)
         result.messages = messages
         return VerifyResult(
             ticket_id=ticket.ticket_id,
@@ -2731,7 +2820,7 @@ def move(
             ),
             timestamp=timestamp,
         )
-        result.messages = list(lock_warnings)
+        result.messages = [*lock_warnings, *result.messages]
         return result
 
 
@@ -2776,7 +2865,7 @@ def cleanup(
             commit_message=f"kanban({ticket.ticket_id}): cleanup",
             timestamp=timestamp,
         )
-        result.messages = [*lock_warnings, *notes]
+        result.messages = [*lock_warnings, *notes, *result.messages]
         return result
 
 

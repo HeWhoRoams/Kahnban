@@ -149,6 +149,53 @@ def build_handoff_baton(
     )
 
 
+def next_role(config: core.Config, column: str, fields: dict[str, Any]) -> tuple[str, str]:
+    """(role, stage) of whoever acts next on a ticket in ``column``."""
+    if str(fields.get("blocked_on") or "").strip():
+        return "human", "escalated"
+    if column in (config.backlog_column, config.refining_column):
+        return "spec_analyst", "refinement"
+    if column in (config.ready_column, config.in_progress_column):
+        return "coder", "implementation"
+    if column == config.verifying_column:
+        if str(fields.get("reviewer") or "").strip():
+            return "integrator", "closure"
+        return "qa_reviewer", "verification"
+    return "none", "closed"
+
+
+def refresh(
+    config: core.Config,
+    ticket_id: str,
+    *,
+    event: str,
+    verification: dict[str, Any] | None = None,
+) -> Path | None:
+    """Rewrite the ticket's baton for whoever acts next; run on every board move.
+
+    ``event`` is why the ticket is where it is (the move's log entry, a refusal);
+    ``verification`` is the outcome of the verify run that caused it, if any.
+    """
+    ticket = core.find_ticket(config, ticket_id)
+    fields, _ = frontmatter.parse(ticket.text)
+    worktree_field = str(fields.get("worktree") or "").strip()
+    tree = config.project_root / worktree_field if worktree_field else None
+    has_agents = (config.project_root / ".agents").is_dir()
+    if not has_agents and not (tree and tree.is_dir()):
+        return None
+    role, stage = next_role(config, ticket.column, fields)
+    baton = build_handoff_baton(config, ticket_id, stage=stage, assigned_role=role)
+    baton.context["last_event"] = event.strip().splitlines()[0][:300] if event.strip() else ""
+    results = baton.verification_results
+    if verification is not None:
+        results.feature_tests_passed = bool(verification.get("feature_passed"))
+        results.regression_tests_passed = bool(verification.get("regression_passed"))
+        results.feature_log = verification.get("artifact")
+    elif ticket.column not in (config.verifying_column, config.done_column):
+        results.feature_tests_passed = results.regression_tests_passed = False
+    return write_handoff_baton(config.project_root, baton, worktree_dir=tree, write_root=has_agents)
+
+
 def _prompt(
     role: str,
     ticket_id: str,
