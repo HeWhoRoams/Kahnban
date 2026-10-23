@@ -116,11 +116,13 @@ def test_promote_learning(temp_project: Path):
         temp_project,
         rec.id,
         level="level-2",
+        artifact="BL16",
         resolution_notes="Added BL16 lint check enforcing blast-radius disjointness.",
         today="2026-10-21",
     )
 
     assert promoted.status == "promoted"
+    assert "(artifact: `BL16`)" in promoted.proposed_remediation
     assert promoted.escalation_level == "level-2"
     assert promoted.resolved == "2026-10-21"
     assert "Added BL16 lint check" in promoted.proposed_remediation
@@ -137,6 +139,23 @@ def test_promote_learning(temp_project: Path):
     all_recs = learnings.list_learnings(temp_project, include_archive=True)
     assert len(all_recs) == 1
     assert all_recs[0].status == "promoted"
+
+
+def test_promote_refuses_an_artifact_that_does_not_exist(temp_project: Path):
+    rec, _ = learnings.capture_learning(
+        temp_project, title="Flaky clock in tests", problem="Tests read the wall clock."
+    )
+    (temp_project / "tests").mkdir(exist_ok=True)
+    (temp_project / "tests" / "test_clock.py").write_text("", encoding="utf-8")
+
+    for missing in ("BL99", "tests/test_nowhere.py", ""):
+        with pytest.raises(ValueError, match="does not exist|is required"):
+            learnings.promote_learning(temp_project, rec.id, level="level-3", artifact=missing)
+
+    promoted = learnings.promote_learning(
+        temp_project, rec.id, level="level-3", artifact="tests/test_clock.py"
+    )
+    assert promoted.status == "promoted"
 
 
 def test_cli_learnings(temp_project: Path, capsys: pytest.CaptureFixture):
@@ -197,6 +216,7 @@ def test_cli_learnings(temp_project: Path, capsys: pytest.CaptureFixture):
         "learnings", "promote", "LRN-0001",
         "--level", "level-2",
         "--notes", "Added adaptive column parser",
+        "--artifact", "BL01",
     ])
     assert ret == 0
     captured = capsys.readouterr()

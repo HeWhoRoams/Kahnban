@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from kahnban import core, frontmatter
+from kahnban import core, frontmatter, gitops
 
 LEARNINGS_DIR_NAME = "learnings"
 ARCHIVE_DIR_NAME = "archive"
@@ -429,16 +429,49 @@ def capture_learning(
     return rec, True
 
 
+def _artifact_problem(root: Path, artifact: str) -> str | None:
+    """None when ``artifact`` names something real, else why not."""
+    if not artifact:
+        return "--artifact is required: the lint rule, path, commit or ticket that now guards this"
+    if re.fullmatch(r"BL\d{2}", artifact):
+        from kahnban import linter
+
+        return None if artifact in linter.RULES else f"lint rule {artifact} does not exist"
+    if (root / artifact).exists():
+        return None
+    if re.fullmatch(r"[0-9a-fA-F]{7,40}", artifact) and gitops.is_repo(root):
+        if gitops.commit_exists(root, artifact):
+            return None
+    try:
+        core.find_ticket(core.load_config(root), artifact)
+        return None
+    except core.KahnbanError:
+        pass
+    return (
+        f"artifact '{artifact}' does not exist: name a lint rule (BL19), a path in the "
+        "repo, a commit, or a ticket id"
+    )
+
+
 def promote_learning(
     project_root: Path,
     learning_id: str,
     *,
     level: str,
+    artifact: str,
     resolution_notes: str = "",
     today: str | None = None,
 ) -> LearningRecord:
-    """Promote an actionable learning to resolved/promoted status and move to archive."""
+    """Promote an actionable learning to resolved/promoted status and move to archive.
+
+    ``artifact`` is the defence that now exists: a lint rule id, a path in the repo,
+    a commit, or the ticket that will build it. A promotion without one is a note,
+    and notes are what the ladder exists to replace.
+    """
     root = Path(project_root).resolve()
+    problem = _artifact_problem(root, artifact.strip())
+    if problem:
+        raise ValueError(problem)
     records = list_learnings(root, include_archive=False)
     target: LearningRecord | None = None
     for r in records:
@@ -453,8 +486,10 @@ def promote_learning(
     target.status = "promoted"
     target.resolved = today_str
     target.escalation_level = level
-    if resolution_notes:
-        target.proposed_remediation += f"\n\n**Resolution ({today_str}, {level}):** {resolution_notes}"
+    target.proposed_remediation += (
+        f"\n\n**Resolution ({today_str}, {level}):** {resolution_notes or 'promoted'} "
+        f"(artifact: `{artifact.strip()}`)"
+    )
 
     # Render updated markdown
     content = target.render_markdown()

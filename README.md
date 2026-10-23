@@ -212,7 +212,7 @@ Kahnban incorporates a pattern-aggregating self-improvement queue based on conti
   - **Level 4 — Documentation & Rules**: Update `AGENTS.md` / rules when static barriers are impossible.
 
   ```powershell
-  kahnban learnings promote LRN-0001 --level 2 --notes "Added AST rule rejecting non-atomic writes"
+  kahnban learnings promote LRN-0001 --level 2 --artifact tools/lint_atomic_writes.py --notes "AST rule rejecting non-atomic writes"
   ```
   Promoted records are archived cleanly to `learnings/archive/`.
 

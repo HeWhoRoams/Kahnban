@@ -487,6 +487,7 @@ def cmd_learnings(args: argparse.Namespace) -> int:
                 root,
                 args.id,
                 level=lvl,
+                artifact=args.artifact,
                 resolution_notes=args.notes or "",
             )
             print(f"[OK] Promoted {rec.id} ({rec.title}) to Level {args.level}. Moved to ./learnings/archive/")
@@ -911,6 +912,11 @@ def build_parser() -> argparse.ArgumentParser:
     l_promote.add_argument("id", help="learning ID to promote")
     l_promote.add_argument("--level", required=True, choices=["1", "2", "3", "4", "level-1", "level-2", "level-3", "level-4"], help="enforcement level applied (1-4 or level-1..4)")
     l_promote.add_argument("--notes", help="resolution and remediation notes")
+    l_promote.add_argument(
+        "--artifact",
+        required=True,
+        help="what now guards it: a lint rule (BL19), a path, a commit, or a ticket id",
+    )
     l_promote.set_defaults(handler=cmd_learnings)
 
     learnings_parser.set_defaults(handler=cmd_learnings)

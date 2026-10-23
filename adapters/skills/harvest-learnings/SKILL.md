@@ -28,5 +28,5 @@ Always fix at the highest level that holds:
 4. **Promote & Archive:**
    - Update learning record: `status: promoted`, `resolved: <date>`, `escalation_level: level-X`.
    - Move from `./learnings/` to `./learnings/archive/`.
-   - Use `kahnban learnings promote <id> --level <level> --notes "<resolution notes>"`.
+   - Use `kahnban learnings promote <id> --level <level> --artifact <rule, path, commit or ticket> --notes "<resolution notes>"`.
 5. **Report:** Output an executive changelog of defenses added.

@@ -130,7 +130,7 @@ kahnban done <ID> [--merge-commit <sha>]       # production gate -> 5-done + lea
 kahnban cleanup <ID>                           # prune worktree & local branch
 kahnban learnings list                         # view active learning records
 kahnban learnings capture --title "<t>"        # cluster/log pattern in ./learnings/
-kahnban learnings promote <id> --level 1..4    # graduate learning to archive
+kahnban learnings promote <id> --level 1..4 --artifact <x>  # needs a real rule/path/commit/ticket
 kahnban escalate <ID> --reason "<question>"    # park for a human instead of guessing
 kahnban run --max-steps 20                     # the factory loop (configure 'workers' first)
 kahnban move <ID> <column> --reason "<why>"    # escape hatch; always logged

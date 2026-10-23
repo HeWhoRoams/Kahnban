@@ -20,9 +20,10 @@ shell the run will use.
 
 - **Metrics per role:** `status.json` now has per-ticket counts and board-level
   first-pass yield; per-role breakdowns (which worker caused rejections) are next.
-- **Learnings loop:** `learnings promote` should require a linked artifact (rule id,
-  test path or commit) that exists, and harvest should be scheduled when a record
-  reaches `occurrences >= 2`, not only when the board is idle.
+- **Learnings loop:** `learnings promote` now requires an artifact that exists; what
+  is left is scheduling harvest when a record reaches `occurrences >= 2` (today the
+  dispatcher only offers it when the board is otherwise idle, and `kahnban run`
+  stops there instead of starting the curator).
 - **Housekeeping:** rename the pstack `blast-radius` skill (it collides with the
   ticket field); run this repository's own work on a kahnban board.
 
