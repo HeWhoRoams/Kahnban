@@ -159,6 +159,16 @@ def refine_ticket(
     return ticket.path
 
 
+def set_board_config(repo: Path, **values: object) -> None:
+    """Edit plans/board.config.json and commit it, as an adopter would."""
+    path = repo / "plans" / "board.config.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload.update(values)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    git(repo, "add", "plans/board.config.json")
+    git(repo, "commit", "-m", "configure board")
+
+
 def scaffold_board(repo: Path, config_overrides: dict | None = None) -> Path:
     """Create plans/board.config.json plus the column tree; commit it."""
     config = dict(DEFAULT_CONFIG)
@@ -175,7 +185,8 @@ def scaffold_board(repo: Path, config_overrides: dict | None = None) -> Path:
         (directory / ".gitkeep").write_text("", encoding="utf-8")
     # Mirror what `kahnban init` writes, so tracked state matches production.
     (repo / ".gitignore").write_text(
-        ".worktrees/\nplans/tickets/.artifacts/\nplans/tickets/.claim.lock\n",
+        ".worktrees/\nplans/tickets/.artifacts/\nplans/tickets/.claim.lock\n"
+        ".agents/HANDOFF.json\n__pycache__/\n*.pyc\n",
         encoding="utf-8",
         newline="\n",
     )

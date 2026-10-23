@@ -10,6 +10,8 @@ translate raised errors into stderr text and exit codes.
 
 from __future__ import annotations
 
+import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -47,6 +49,25 @@ DEFAULT_REQUIRED_HEADINGS = (
     "Implementation notes",
     "Validation",
     "Log",
+)
+# What the ready gate freezes: the sections a ticket is judged against.
+CONTRACT_SECTIONS = ("Acceptance criteria", "Blast radius", "Validation")
+# The relay baton the engine writes into every worktree; never part of a change.
+HANDOFF_IN_WORKTREE = ".agents/HANDOFF.json"
+# Matched against the full path and the file name, case-insensitively.
+DEFAULT_TEST_PATTERNS = (
+    "tests/*",
+    "test/*",
+    "spec/*",
+    "*/tests/*",
+    "*/test/*",
+    "*/spec/*",
+    "*/__tests__/*",
+    "test_*",
+    "*_test.*",
+    "*.test.*",
+    "*.spec.*",
+    "*_spec.*",
 )
 
 
@@ -95,6 +116,8 @@ class Config:
     ingest: Mapping[str, object] = field(default_factory=dict)
     allow_any_branch: bool = False
     sync_remote: bool = True
+    require_proof: bool = False
+    test_patterns: tuple[str, ...] = DEFAULT_TEST_PATTERNS
 
     @property
     def board_path(self) -> Path:
@@ -245,11 +268,14 @@ def load_config(
             raw.get("required_headings") or DEFAULT_REQUIRED_HEADINGS
         ),
         validation_command=str(raw.get("validation_command", "")),
+        regression_command=str(raw.get("regression_command", "")),
         design_doc_roots=tuple(raw.get("design_doc_roots") or ("plans",)),
         extensions=dict(raw.get("extensions") or {}),
         ingest=dict(raw.get("ingest") or {}),
         allow_any_branch=bool(raw.get("allow_any_branch", False)),
         sync_remote=bool(raw.get("sync_remote", True)),
+        require_proof=bool(raw.get("require_proof", False)),
+        test_patterns=tuple(raw.get("test_patterns") or DEFAULT_TEST_PATTERNS),
     )
     if check_version:
         require_engine_version(config)
@@ -635,6 +661,156 @@ def validation_command(config: Config, body: str) -> str:
         "no validation command found: add a fenced command block under "
         "'## Validation' or set 'validation_command' in board.config.json"
     )
+
+
+# --- the frozen contract and its proof --------------------------------------
+
+
+CRITERION_TEST_PATTERN = re.compile(r"\btest:\s*`([^`]+)`")
+
+
+def contract_hash(body: str) -> str:
+    """Digest of the contract sections; ticking a checkbox leaves it unchanged."""
+    text = "\n".join(f"## {name}\n{section(body, name)}" for name in CONTRACT_SECTIONS)
+    text = re.sub(r"\[[xX]\]", "[ ]", text)
+    text = "\n".join(line.rstrip() for line in text.split("\n"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def verify_contract(
+    config: Config, ticket_id: str, fields: Mapping[str, object], body: str
+) -> bool:
+    """False when nothing was frozen; raises when the contract changed after ready."""
+    frozen = str(fields.get("contract_hash") or "").strip()
+    if not frozen:
+        return False
+    if frozen != contract_hash(body):
+        raise GateError(
+            f"{ticket_id}: acceptance criteria, blast radius or validation changed "
+            "after the ready gate froze them. Restore them, or move the ticket back "
+            f"with 'kahnban move {ticket_id} {config.refining_column} --reason <why>' "
+            "and re-run 'kahnban ready'."
+        )
+    return True
+
+
+def criterion_tests(body: str) -> list[tuple[str, str | None]]:
+    """``(criterion, test command or None)`` for each acceptance checkbox.
+
+    A criterion names its proof inline: ``- [ ] rejects x (test: `cmd`)``.
+    """
+    criteria: list[tuple[str, str | None]] = []
+    for line in section(body, "Acceptance criteria").split("\n"):
+        match = CHECKBOX_PATTERN.match(line)
+        if not match:
+            continue
+        found = CRITERION_TEST_PATTERN.findall(line)
+        criteria.append((line[match.end() :].strip(), found[-1].strip() if found else None))
+    return criteria
+
+
+def untested_criteria_problem(
+    fields: Mapping[str, object], body: str
+) -> str | None:
+    """require_proof: every criterion names its test unless proof is manual."""
+    if str(fields.get("validation_class", "")) == "visual-deferred":
+        return None
+    untested = [text for text, command in criterion_tests(body) if command is None]
+    if not untested:
+        return None
+    return (
+        "require_proof: these criteria name no test (append (test: `cmd`)):\n"
+        + "\n".join(f"    - {text}" for text in untested)
+    )
+
+
+def _tick_passed_criteria(text: str, passed: set[str]) -> str:
+    """Check only the boxes whose own test command exited 0."""
+    if not passed:
+        return text
+    fields, body = frontmatter.parse(text)
+    lines = section(body, "Acceptance criteria").split("\n")
+    for index, line in enumerate(lines):
+        found = CRITERION_TEST_PATTERN.findall(line)
+        if CHECKBOX_PATTERN.match(line) and found and found[-1].strip() in passed:
+            lines[index] = re.sub(r"\[\s\]", "[x]", line, count=1)
+    return frontmatter.serialize(
+        fields, replace_section(body, "Acceptance criteria", "\n".join(lines))
+    )
+
+
+def is_test_path(config: Config, path: str) -> bool:
+    normalized = normalize_path_entry(path).lower()
+    name = normalized.rsplit("/", 1)[-1]
+    return any(
+        fnmatch.fnmatchcase(normalized, pattern.lower())
+        or fnmatch.fnmatchcase(name, pattern.lower())
+        for pattern in config.test_patterns
+    )
+
+
+def command_lines(block: str) -> list[str]:
+    """One command per line; a trailing ``\\`` or backtick continues the line."""
+    commands: list[str] = []
+    pending = ""
+    for raw in frontmatter.normalize_newlines(block).split("\n"):
+        line = raw.strip()
+        if line.endswith(("\\", "`")):
+            pending += line[:-1].strip() + " "
+            continue
+        line = (pending + line).strip()
+        pending = ""
+        if line and not line.startswith("#"):
+            commands.append(line)
+    if pending.strip():
+        commands.append(pending.strip())
+    return commands
+
+
+def run_command(config: Config, command: str, cwd: Path) -> tuple[int, str]:
+    """Run one command line through the platform shell."""
+    argv: str | list[str] = command
+    use_shell = True
+    if os.name == "nt":
+        argv = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command]
+        use_shell = False
+    try:
+        completed = subprocess.run(
+            argv,
+            shell=use_shell,
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=config.validation_timeout_sec,
+        )
+        return completed.returncode, (completed.stdout or "") + (completed.stderr or "")
+    except subprocess.TimeoutExpired as expired:
+        partial = "".join(
+            part for part in (expired.stdout, expired.stderr) if isinstance(part, str)
+        )
+        return 124, f"TIMEOUT after {config.validation_timeout_sec}s\n{partial}"
+
+
+def run_block(config: Config, block: str, cwd: Path) -> tuple[int, str]:
+    """Run every command line in order; the first non-zero exit fails the block.
+
+    A shell reports only its last command's status, so a multi-line block run as
+    one script passes when an earlier line fails.
+    """
+    commands = command_lines(block)
+    if not commands:
+        raise GateError(f"validation block has no command lines:\n{block}")
+    if len(commands) == 1:
+        return run_command(config, commands[0], cwd)
+    outputs: list[str] = []
+    for number, command in enumerate(commands, 1):
+        code, output = run_command(config, command, cwd)
+        outputs.append(f"$ {command}\n{output}")
+        if code != 0:
+            outputs.append(f"[line {number} of {len(commands)} exited {code}; rest skipped]")
+            return code, "\n".join(outputs)
+    return 0, "\n".join(outputs)
 
 
 # --- locking ----------------------------------------------------------------
@@ -1185,17 +1361,23 @@ def ready(
         problems.append(f"blocked_on is set: {blocked_on}")
     problems.extend(_dependency_problems(config, fields))
     problems.extend(extension_problems(config, fields, body, target))
+    if config.require_proof:
+        untested = untested_criteria_problem(fields, body)
+        if untested:
+            problems.append(untested)
 
     if problems:
         raise GateError(
             f"{ticket.ticket_id} is not ready:\n"
             + "\n".join(f"  - {problem}" for problem in problems)
         )
+    frozen = contract_hash(body)
     result = transition(
         config,
         ticket.ticket_id,
         target,
-        log_entry=f"ready gate passed -> {target}",
+        log_entry=f"ready gate passed -> {target} | contract {frozen}",
+        fm_updates={"contract_hash": frozen},
         timestamp=timestamp,
     )
     try:
@@ -1318,6 +1500,10 @@ def claim(
                 f"{ticket.ticket_id} has unsatisfied dependencies:\n"
                 + "\n".join(f"  - {problem}" for problem in problems)
             )
+        contract_updates: dict[str, object] = {}
+        if not verify_contract(config, ticket.ticket_id, fields, body):
+            contract_updates["contract_hash"] = contract_hash(body)
+            messages.append("contract frozen at claim (ticket skipped the ready gate)")
 
         in_progress = in_progress_radii(config, exclude=ticket.ticket_id)
         if len(in_progress) >= config.wip_limit:
@@ -1354,7 +1540,7 @@ def claim(
 
         for attempt in (1, 2):
             info: worktree.WorktreeInfo | None = None
-            updates: dict[str, object] = {"owner": owner.strip()}
+            updates: dict[str, object] = {"owner": owner.strip(), **contract_updates}
             if use_worktree:
                 info = worktree.provision(
                     config.project_root,
@@ -1488,16 +1674,97 @@ def _diff_scope_problems(
     default_branch = gitops.default_branch(config.project_root)
     base = gitops.merge_base(config.project_root, default_branch, branch)
     changed = gitops.diff_names(config.project_root, base, branch)
-    board_prefix = normalize_path_entry(config.board_root)
-    exempt_prefixes = ("tests/", "test/", "spec/", "specs/", "docs/", ".agents/", ".github/")
+    # Tests, CI and agent rules are code too: a change to them must be declared.
+    exempt = (config.board_root, HANDOFF_IN_WORKTREE)
     offenders = [
         path
         for path in changed
-        if not normalize_path_entry(path).startswith(board_prefix + "/")
-        and not any(normalize_path_entry(path).startswith(p) for p in exempt_prefixes)
-        and not path_within(path, radius)
+        if not path_within(path, exempt) and not path_within(path, radius)
     ]
     return offenders, []
+
+
+def _require_clean_tip(config: Config, tree: Path, branch: str) -> str:
+    """Verify tests what will merge: the committed tip, nothing uncommitted."""
+    output = gitops.run(tree, ["status", "--porcelain", "--untracked-files=all"]).stdout
+    ignorable = (HANDOFF_IN_WORKTREE, *config.shared_caches)
+    dirty = [
+        path
+        for path in (
+            line[3:].split(" -> ")[-1].strip().strip('"')
+            for line in output.splitlines()
+            if line.strip()
+        )
+        if not path_within(path, ignorable)
+    ]
+    if dirty:
+        raise GateError(
+            f"{tree.name} has uncommitted changes; verify tests the committed tip "
+            f"of {branch}, so commit them (or .gitignore build output) first:\n"
+            + "\n".join(f"  - {path}" for path in dirty)
+        )
+    head = gitops.rev_parse(tree, "HEAD")
+    tip = gitops.rev_parse(config.project_root, branch)
+    if head != tip:
+        raise GateError(
+            f"{tree.name} is at {head[:12]}, not at the tip of {branch} ({tip[:12]})"
+        )
+    return head
+
+
+def _proof_plan(
+    config: Config,
+    ticket_id: str,
+    fields: Mapping[str, object],
+    body: str,
+    branch: str,
+    cwd: Path,
+) -> tuple[str, list[str]]:
+    """require_proof: (merge-base, changed source paths) for the red check."""
+    if cwd == config.project_root or not gitops.branch_exists(config.project_root, branch):
+        raise GateError(
+            f"require_proof: {ticket_id} needs its ticket branch and worktree "
+            "(claim with --worktree) so the change can be proven"
+        )
+    untested = untested_criteria_problem(fields, body)
+    if untested:
+        raise GateError(f"{ticket_id}: {untested}")
+    base = gitops.merge_base(
+        config.project_root, gitops.default_branch(config.project_root), branch
+    )
+    source = [
+        path
+        for path in gitops.diff_names(config.project_root, base, branch)
+        if not path_within(path, (config.board_root, HANDOFF_IN_WORKTREE))
+        and not is_test_path(config, path)
+    ]
+    if not source:
+        raise GateError(
+            f"require_proof: {branch} changes no source files, so there is "
+            "nothing for its tests to prove"
+        )
+    return base, source
+
+
+def _red_run(
+    config: Config, tree: Path, base: str, source: Sequence[str], feature: str
+) -> tuple[int, str]:
+    """Feature tests against the base version of the changed source files.
+
+    Runs in the (verified clean) worktree and restores it from HEAD afterwards.
+    """
+    gitops.run(tree, ["restore", f"--source={base}", "--worktree", "--", *source])
+    try:
+        return run_block(config, feature, tree)
+    finally:
+        listed = gitops.run(
+            tree, ["ls-tree", "-r", "-z", "--name-only", "HEAD", "--", *source]
+        ).stdout
+        in_head = [path for path in listed.split("\0") if path]
+        if in_head:
+            gitops.run(tree, ["restore", "--source=HEAD", "--worktree", "--", *in_head])
+        for path in set(source) - set(in_head):
+            (tree / path).unlink(missing_ok=True)
 
 
 def verify(
@@ -1506,7 +1773,6 @@ def verify(
     *,
     manual_evidence: Path | None = None,
     force_scope: bool = False,
-    accept: bool = False,
     reason: str = "",
     timestamp: datetime | None = None,
 ) -> VerifyResult:
@@ -1523,6 +1789,8 @@ def verify(
         fields, body = frontmatter.parse(ticket.text)
         messages = list(lock_warnings)
         now = timestamp or datetime.now()
+        if not verify_contract(config, ticket.ticket_id, fields, body):
+            messages.append("[WARN] no contract_hash (claimed before contracts were frozen, or removed)")
 
         if manual_evidence is not None:
             evidence_path = Path(manual_evidence)
@@ -1596,53 +1864,64 @@ def verify(
                     f"[WARN] recorded worktree {worktree_field} is missing; "
                     "running validation in the project root"
                 )
+        branch = str(fields.get("branch") or "").strip() or worktree.branch_name(
+            ticket.ticket_id
+        )
+        if cwd != config.project_root:
+            tip = _require_clean_tip(config, cwd, branch)
+            messages.append(f"verifying {branch} at {tip[:12]}")
+        proof_base, source_paths = (
+            _proof_plan(config, ticket.ticket_id, fields, body, branch, cwd)
+            if config.require_proof
+            else ("", [])
+        )
+        criteria = [command for _, command in criterion_tests(body) if command]
 
         started = datetime.now()
-        
-        # Helper to execute a single shell command
-        def _run_single_command(cmd_str: str) -> tuple[int, str]:
-            exec_c: str | list[str] = cmd_str
-            use_sh = True
-            if os.name == "nt":
-                exec_c = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd_str]
-                use_sh = False
-            try:
-                comp = subprocess.run(
-                    exec_c,
-                    shell=use_sh,
-                    cwd=str(cwd),
-                    capture_output=True,
-                    text=True,
-                    errors="replace",
-                    timeout=config.validation_timeout_sec,
-                )
-                return comp.returncode, (comp.stdout or "") + (comp.stderr or "")
-            except subprocess.TimeoutExpired as expired:
-                return 124, (f"TIMEOUT after {config.validation_timeout_sec}s\n" +
-                             (expired.stdout or "" if isinstance(expired.stdout, str) else "") +
-                             (expired.stderr or "" if isinstance(expired.stderr, str) else ""))
-
-        # Tier 1: Feature Acceptance Tests
+        stages: list[tuple[str, str]] = []
+        commands = [feat_cmd]
         messages.append(f"Running Tier 1 (Feature Tests): {feat_cmd}")
-        t1_code, t1_output = _run_single_command(feat_cmd)
-        
-        # If Tier 1 passes and reg_cmd is distinct, execute Tier 2: Regression Tests
-        if t1_code == 0 and reg_cmd and reg_cmd != feat_cmd:
-            messages.append(f"Running Tier 2 (Regression Tests): {reg_cmd}")
-            t2_code, t2_output = _run_single_command(reg_cmd)
-            exit_code = t2_code
-            combined_cmd = f"[Tier 1: {feat_cmd}] && [Tier 2: {reg_cmd}]"
-            combined_output = (
-                f"=== TIER 1: FEATURE TESTS ===\n{t1_output}\n\n"
-                f"=== TIER 2: REGRESSION TESTS ===\n{t2_output}"
-            )
-        else:
-            exit_code = t1_code
-            combined_cmd = feat_cmd
-            combined_output = t1_output
+        exit_code, stage_output = run_block(config, feat_cmd, cwd)
+        stages.append(("TIER 1: FEATURE TESTS", stage_output))
 
-        command = combined_cmd
-        output = combined_output
+        passed_criteria: set[str] = set()
+        if exit_code == 0 and criteria:
+            reports: list[str] = []
+            for criterion in dict.fromkeys(criteria):
+                code, criterion_output = run_command(config, criterion, cwd)
+                reports.append(
+                    f"[{'PASS' if code == 0 else 'FAIL'}] $ {criterion}\n{criterion_output}"
+                )
+                if code == 0:
+                    passed_criteria.add(criterion)
+                elif exit_code == 0:
+                    exit_code = code
+            stages.append(("ACCEPTANCE CRITERIA", "\n".join(reports)))
+            commands.append(f"{len(passed_criteria)}/{len(set(criteria))} criterion tests")
+
+        if exit_code == 0 and reg_cmd and reg_cmd != feat_cmd:
+            messages.append(f"Running Tier 2 (Regression Tests): {reg_cmd}")
+            exit_code, stage_output = run_block(config, reg_cmd, cwd)
+            stages.append(("TIER 2: REGRESSION TESTS", stage_output))
+            commands.append(reg_cmd)
+
+        if exit_code == 0 and proof_base:
+            red_code, stage_output = _red_run(config, cwd, proof_base, source_paths, feat_cmd)
+            if red_code == 0:
+                exit_code = 1
+                stage_output += (
+                    "\n[FAIL] the feature tests pass without this change, so they "
+                    "do not prove it"
+                )
+            stages.append(("RED CHECK: FEATURE TESTS ON THE BASE SOURCE (must fail)", stage_output))
+            commands.append(f"red check vs {proof_base[:12]}")
+
+        command = commands[0] if len(commands) == 1 else " && ".join(
+            f"[{item}]" for item in commands
+        )
+        output = stages[0][1] if len(stages) == 1 else "\n\n".join(
+            f"=== {title} ===\n{text}" for title, text in stages
+        )
         duration = (datetime.now() - started).total_seconds()
         artifact = _write_artifact(config, ticket.ticket_id, command, output, now)
         entry_lines = [
@@ -1655,11 +1934,10 @@ def verify(
             entry_lines.insert(1, "    " + "; ".join(messages))
 
         if exit_code == 0:
-            if accept:
-                ticked_text = _tick_acceptance_criteria(ticket.text)
-                if ticked_text != ticket.text:
-                    write_text(ticket.path, ticked_text)
-                    ticket = find_ticket(config, ticket.ticket_id)
+            ticked_text = _tick_passed_criteria(ticket.text, passed_criteria)
+            if ticked_text != ticket.text:
+                write_text(ticket.path, ticked_text)
+                ticket = find_ticket(config, ticket.ticket_id)
             entry = "\n".join([entry_lines[0] + f" -> {target}", *entry_lines[1:]])
             result = transition(
                 config, ticket.ticket_id, target, log_entry=entry, timestamp=now
@@ -1764,7 +2042,6 @@ def done(
     ticket_id: str,
     *,
     merge_commit: str | None = None,
-    accept: bool = False,
     timestamp: datetime | None = None,
 ) -> TransitionResult:
     """``kahnban done`` — requires the ticket branch to be merged (plan §2.2)."""
@@ -1776,12 +2053,8 @@ def done(
                 f"{ticket.ticket_id} is in {ticket.column}; done applies to "
                 f"{config.verifying_column}"
             )
-        if accept:
-            ticked_text = _tick_acceptance_criteria(ticket.text)
-            if ticked_text != ticket.text:
-                write_text(ticket.path, ticked_text)
-                ticket = find_ticket(config, ticket.ticket_id)
         fields, body = frontmatter.parse(ticket.text)
+        unfrozen = not verify_contract(config, ticket.ticket_id, fields, body)
         problems: list[str] = []
 
         checked, unchecked = checkboxes(body)
@@ -1842,6 +2115,8 @@ def done(
         entry = f"done gate passed -> {config.done_column}"
         if merge_note:
             entry += f" | {merge_note}"
+        if unfrozen:
+            entry += " | [WARN] no contract_hash"
         result = transition(
             config,
             ticket.ticket_id,
@@ -1973,6 +2248,7 @@ def init_board(
         "log_output_max_bytes": 65536,
         "required_headings": list(DEFAULT_REQUIRED_HEADINGS),
         "validation_command": validation_command,
+        "require_proof": True,
         "design_doc_roots": ["plans"],
         "extensions": {},
         "ingest": {"heading_level": None, "section_aliases": {}},
@@ -2083,6 +2359,7 @@ def init_board(
             "plans/tickets/.claim.lock",
             ".agents/state/",
             ".agents/handoffs/",
+            HANDOFF_IN_WORKTREE,
             "__pycache__/",
             "*.pyc",
         )

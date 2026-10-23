@@ -156,7 +156,8 @@ def resolve_next_action(
             command=f"kahnban ready {target.ticket_id}",
             prompt=(
                 f"You are a Spec Analyst Agent. Refine {target.ticket_id}: '{t_title}'. "
-                f"Define explicit ## Acceptance criteria (checkboxes), ## Blast radius (files), "
+                f"Define explicit ## Acceptance criteria (checkboxes, each ending '(test: `cmd`)'), "
+                f"## Blast radius (source and test files), "
                 f"and ## Validation commands (### Feature Tests and ### Regression Tests). "
                 f"Run 'kahnban ready {target.ticket_id}' once complete."
             ),

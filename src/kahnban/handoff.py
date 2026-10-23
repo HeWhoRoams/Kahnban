@@ -10,7 +10,7 @@ from typing import Any
 from kahnban import core, frontmatter
 
 HANDOFFS_DIR_NAME = ".agents/handoffs"
-WORKTREE_HANDOFF_REL = ".agents/HANDOFF.json"
+WORKTREE_HANDOFF_REL = core.HANDOFF_IN_WORKTREE
 
 
 @dataclass

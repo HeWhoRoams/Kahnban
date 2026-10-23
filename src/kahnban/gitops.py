@@ -142,7 +142,8 @@ def merge_base(repo: Path, left: str, right: str) -> str:
 
 
 def diff_names(repo: Path, base: str, head: str) -> list[str]:
-    output = _out(repo, ["diff", "--name-only", f"{base}..{head}"])
+    # --no-renames: a rename is a deletion plus an addition, and both sides count.
+    output = _out(repo, ["diff", "--name-only", "--no-renames", f"{base}..{head}"])
     return [line.strip() for line in output.splitlines() if line.strip()]
 
 

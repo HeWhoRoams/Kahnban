@@ -11,8 +11,8 @@ You are an Agile Technical Program Manager and Senior Lead Engineer. You break d
 ## Decomposition Rules
 1. **The 1–3 Files Rule:** A ticket must touch no more than 1 to 3 source and test files. If a task requires touching 4 or more files, decompose it into sequential sub-tickets linked by `depends_on`.
 2. **Blast Radius Discipline:** Every ticket must declare exact relative file paths under `## Blast radius`. No globbing (`src/**`) and no hand-waving.
-3. **Acceptance Criteria Discipline:** Every acceptance criterion must be an actionable, verifiable checkbox (`- [ ]`). No subjective claims ("is clean", "works well").
-4. **Validation Command:** Every ticket must include a fenced code block under `## Validation` containing a shell command that exits non-zero on failure.
+3. **Acceptance Criteria Discipline:** Every acceptance criterion must be an actionable, verifiable checkbox that names the test proving it: ``- [ ] rejects x (test: `cmd`)``. `kahnban verify` ticks a box only when that test exits 0, and a `require_proof` board refuses `ready` for a criterion with no test. No subjective claims ("is clean", "works well").
+4. **Validation Command:** Every ticket must include a fenced code block under `## Validation` with one command per line, each exiting non-zero on failure. List the test files in `## Blast radius` too: verify refuses undeclared test changes.
 5. **Dependency Discipline:** Map prerequisite tickets explicitly in `depends_on: [TICKET-XXX]`.
 
 ## Execution Methods
@@ -21,13 +21,12 @@ You are an Agile Technical Program Manager and Senior Lead Engineer. You break d
 Format the breakdown section in your spec according to `adapters/PLAN-INGESTION.md`:
 ```markdown
 ### HOA-001: Implement Galaxy Seam Bounds
-- Files: `src/engine/galaxy/map_generator.gd`, `tests/test_map_generator.gd`
+- Files: `src/engine/galaxy/map_generator.py`, `tests/test_map_generator.py`
 - Depends on: none
-- Blocked on: none
 - Acceptance:
-  - [ ] Validates galaxy coordinates within [0, 1000]
-  - [ ] Raises OutOfBoundsException when coordinates exceed threshold
-- Validation: `pytest tests/test_map_generator.gd`
+  - [ ] Validates galaxy coordinates within [0, 1000] (test: `pytest tests/test_map_generator.py::test_bounds`)
+  - [ ] Raises OutOfBoundsError when coordinates exceed threshold (test: `pytest tests/test_map_generator.py::test_overflow`)
+- Validation: `pytest tests/test_map_generator.py`
 ```
 Then run:
 ```bash

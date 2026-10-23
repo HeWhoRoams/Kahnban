@@ -66,9 +66,9 @@ When invoked, the agent systematically drives work through 5 strict stages:
 2. **Claim & Worktree Isolation**: `kahnban claim <ID> --worktree` $\rightarrow$ emits `.agents/HANDOFF.json` into worktree $\rightarrow$ triggers `post-claim` hook
 3. **Execution Rigor**: Coder Agent reads `HANDOFF.json`, adheres strictly to declared blast radius, and applies PSTACK principles + `/tdd`
 4. **Dual-Tier QA & Verification**:
-   - **Tier 1 (Feature Acceptance Tests)**: Proves every item in `## Acceptance criteria`.
-   - **Tier 2 (System Regression Tests)**: Proves zero regressions across the whole repository.
-   - `kahnban verify <ID>` enforces both tiers pass before moving to `4-verifying`.
+   - **Tier 1 (Feature Tests)**, then each acceptance criterion's own test, then **Tier 2 (Regression Tests)**.
+   - With `require_proof`, the feature tests are re-run against the base version of the changed source and must fail there.
+   - `kahnban verify <ID>` moves to `4-verifying` only if all of that holds, and ticks only the boxes whose test passed.
 5. **Review Gate & Closure**:
    - QA Reviewer Agent audits tests and diff. If defective, records rejection feedback (`kahnban feedback <ID> -m "..."`).
    - If approved: returns to project root $\rightarrow$ `git merge` $\rightarrow$ `kahnban done` $\rightarrow$ triggers `post-done` hook $\rightarrow$ `/reflect` $\rightarrow$ `kahnban cleanup`
@@ -93,6 +93,30 @@ pytest tests/ -q
 ```
 
 If the regression block is omitted, Kahnban automatically falls back to `validation_command` / `regression_command` in `plans/board.config.json`.
+
+Each line of a block is one command, run on its own; the first non-zero exit fails the block (a trailing `\` or backtick continues a line). Shell state such as `cd` does not carry between lines.
+
+Each acceptance criterion names the test that proves it, and `verify` ticks the box only when that test exits 0:
+
+```markdown
+## Acceptance criteria
+- [ ] Revoked tokens are rejected (test: `pytest tests/features/test_token_revocation.py::test_rejects_revoked`)
+- [ ] Error copy matches the design
+```
+
+A criterion without a test is left for a reviewer to tick. Under `require_proof` the ready gate refuses one unless the ticket is `validation_class: visual-deferred`.
+
+### What `verify` refuses
+
+| Gate | Refuses when |
+| :--- | :--- |
+| Frozen contract | `## Acceptance criteria`, `## Blast radius` or `## Validation` changed after `ready` (stored as `contract_hash`; ticking boxes does not count) |
+| Clean tip | the worktree has uncommitted or untracked changes, or is not at the tip of `ticket/<ID>` |
+| Scope | the branch changes any path outside `## Blast radius`, tests and `.github/` included |
+| Fail fast | any line of a validation block, or any criterion test, exits non-zero |
+| Proof (`require_proof`) | the branch changes no source files, a criterion names no test, or the feature tests still pass with the source reverted to the merge-base |
+
+`kahnban init` writes `"require_proof": true`; boards without the key keep the old behaviour. Files matching `test_patterns` (defaults: `tests/`, `test_*`, `*_test.*`, `*.spec.*`, …) count as tests, everything else as source.
 
 ---
 
@@ -142,7 +166,7 @@ Kahnban incorporates a pattern-aggregating self-improvement queue based on conti
 2. **Universal Client** — agents use MCP or the CLI; both call the same in-process core, so there is exactly one implementation of every transition.
 3. **Worktree Isolation** — code changes live in `.worktrees/<ID>` on `ticket/<ID>`; board state never lands on a ticket branch (Rule D2).
 4. **Enforced Gates** — the tooling refuses invalid transitions; refinement is enforced at `2-ready`.
-5. **Dual-Tier QA Verification** — `kahnban verify` executes both card feature tests and global regression tests, blocking on non-zero exit codes (Rule D4).
+5. **Proven Verification** — `kahnban verify` runs the committed tip's feature, criterion and regression tests line by line, and under `require_proof` shows the feature tests fail without the change (Rule D4).
 6. **Domain Isolation** — claim-time blast-radius overlap refusal plus verify-time diff containment prevent merge conflicts (Rules D7, BL16).
 7. **Pattern-Aggregating Feedback** — friction and mistakes are captured into `./learnings/`, clustered into recurrence records, and promoted into structural defenses.
 8. **Relay Baton Handoffs** — transitions emit `.agents/HANDOFF.json` and invoke lifecycle hooks (`post-ready`, `post-claim`, `post-verify`, `post-done`) for autonomous cross-agent dispatch.

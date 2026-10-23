@@ -105,7 +105,6 @@ def cmd_verify(args: argparse.Namespace) -> int:
         args.ticket_id,
         manual_evidence=Path(args.manual_evidence) if args.manual_evidence else None,
         force_scope=args.force_scope,
-        accept=getattr(args, "accept", False),
         reason=args.reason or "",
     )
     for message in result.messages:
@@ -128,7 +127,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 def cmd_done(args: argparse.Namespace) -> int:
     config = _load(args)
-    _report(core.done(config, args.ticket_id, merge_commit=args.merge_commit, accept=getattr(args, "accept", False)))
+    _report(core.done(config, args.ticket_id, merge_commit=args.merge_commit))
     print(f"Learnings advisory: Ticket {args.ticket_id} completed. Run '/reflect' before 'kahnban cleanup' to capture patterns.")
     return EXIT_OK
 
@@ -571,9 +570,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--force-scope", action="store_true", help="accept a diff outside the radius"
     )
     verify.add_argument("--reason", help="required with any override")
-    verify.add_argument(
-        "--accept", action="store_true", help="automatically check acceptance criteria on pass"
-    )
     verify.set_defaults(handler=cmd_verify)
 
     done = subparsers.add_parser(
@@ -581,9 +577,6 @@ def build_parser() -> argparse.ArgumentParser:
         parents=[board], help="verifying -> done (requires a merge)")
     done.add_argument("ticket_id")
     done.add_argument("--merge-commit", help="sha of the merge on the default branch")
-    done.add_argument(
-        "--accept", action="store_true", help="automatically check all acceptance criteria checkboxes"
-    )
     done.set_defaults(handler=cmd_done)
 
     move = subparsers.add_parser(

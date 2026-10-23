@@ -57,7 +57,7 @@ All work items must move strictly through these sequential stages:
   ```bash
   kahnban verify <TICKET-ID>
   ```
-  Kahnban executes the fenced `## Validation` command in a clean subprocess. Acceptance checkboxes are only ticked by the engine on exit code 0.
+  Commit everything first: verify refuses uncommitted work and any change outside `## Blast radius` (tests and CI included). It runs each `## Validation` line (the first failure stops it) and each criterion's own ``(test: `cmd`)``, and ticks only the boxes whose test passed. Under `require_proof` it also re-runs the feature tests on the base source, where they must fail. A coder never ticks a box; only a reviewer ticks one that names no test.
 
 ### Stage 5: In Production & Continuous Learning
 - **Column:** `5-done`

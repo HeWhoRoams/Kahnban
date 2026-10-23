@@ -22,8 +22,8 @@ validation_class: headless-verified
 Why this exists and what is wrong today. State the behavioral gap clearly.
 
 ## Acceptance criteria
-- [ ] Explicit testable condition 1
-- [ ] Explicit testable condition 2
+- [ ] Explicit testable condition 1 (test: `command that proves condition 1`)
+- [ ] Explicit testable condition 2 (test: `command that proves condition 2`)
 
 ## Blast radius
 - `path/to/file/this/ticket/owns.ext`
@@ -34,7 +34,7 @@ Why this exists and what is wrong today. State the behavioral gap clearly.
 
 ## Validation
 ```
-command that exits non-zero on failure
+one command per line; each line must exit 0
 ```
 
 ## Log

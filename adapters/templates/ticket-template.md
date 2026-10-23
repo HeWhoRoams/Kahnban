@@ -22,9 +22,9 @@ validation_class: headless-verified
 Why this exists and what is wrong today. State the behavioral gap clearly with exact references.
 
 ## Acceptance criteria
-- [ ] Explicit testable condition 1
-- [ ] Explicit testable condition 2
-- [ ] Interface and type contracts respected
+- [ ] Explicit testable condition 1 (test: `command that proves condition 1`)
+- [ ] Explicit testable condition 2 (test: `command that proves condition 2`)
+- [ ] Interface and type contracts respected (test: `type checker or contract test`)
 
 ## Blast radius
 - `path/to/source/file.ext`
@@ -37,7 +37,7 @@ Why this exists and what is wrong today. State the behavioral gap clearly with e
 
 ## Validation
 ```
-command that exits non-zero on failure
+one command per line; each line must exit 0
 ```
 
 ## Log

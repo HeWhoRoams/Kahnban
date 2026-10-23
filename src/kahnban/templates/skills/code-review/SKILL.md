@@ -32,10 +32,10 @@ Once manual/code checks pass, run the automated verification command through Kah
 ```bash
 kahnban verify <TICKET-ID>
 ```
-- Kahnban runs the fenced `## Validation` command in a clean subprocess.
-- Kahnban asserts exit code `0`.
-- Kahnban asserts that git diff is contained within the ticket's blast radius.
-- Upon passing, Kahnban marks acceptance checkboxes and transitions the ticket to `4-verifying/`.
+- Kahnban refuses if the contract (criteria, blast radius, validation) changed after `ready`, if the worktree has uncommitted changes, or if the branch diff leaves the blast radius (tests and CI included).
+- Kahnban runs each `## Validation` line and each criterion's own test; any non-zero exit fails verify.
+- With `require_proof`, Kahnban re-runs the feature tests against the base version of the changed source; they must fail there.
+- Upon passing, Kahnban ticks only the boxes whose test passed and transitions the ticket to `4-verifying/`. Boxes without a test are yours to tick after review.
 
 ### 5. Final Stage: Production Integration (Stage 5)
 1. Review PR / merge `ticket/<TICKET-ID>` into `main`.

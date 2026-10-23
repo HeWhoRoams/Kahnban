@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from kahnban import cli, core, dispatcher, frontmatter, gitops, handoff, linter, mcp_server, skills
+from conftest import set_board_config
 
 
 @pytest.fixture
@@ -92,48 +93,6 @@ def test_mcp_tool_next_no_load_config_name_error(repo: Path) -> None:
     assert "action" in res["recommendation"]
 
 
-def test_done_with_accept_ticks_checkboxes(repo: Path) -> None:
-    """Finding 5: kahnban done --accept ticks unchecked criteria so done gate passes."""
-    config = core.load_config(repo)
-    ticket_file = repo / "plans" / "tickets" / "2-ready" / "AUD-003-accept.md"
-    ticket_file.write_text(
-        "---\nid: AUD-003\ntitle: Feature Three\nstatus: ready\ncreated: 2026-10-22\nupdated: 2026-10-22\n---\n\n"
-        "## Problem\nFeature problem.\n\n"
-        "## Acceptance criteria\n- [ ] step one works\n- [ ] step two works\n\n"
-        "## Blast radius\n- src/\n\n"
-        "## Validation\n```bash\npython -c \"print('OK')\"\n```\n\n"
-        "## Log\n- 2026-10-22 ready\n",
-        encoding="utf-8",
-    )
-    subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
-    subprocess.run(["git", "-C", str(repo), "commit", "-m", "add ticket 3"], check=True)
-
-    core.claim(config, "AUD-003", "coder-agent", create_worktree=True)
-    wt = repo / ".worktrees" / "AUD-003"
-    (wt / "src").mkdir(parents=True, exist_ok=True)
-    (wt / "src" / "feature.py").write_text("done = True\n", encoding="utf-8")
-    subprocess.run(["git", "-C", str(wt), "add", "."], check=True)
-    subprocess.run(["git", "-C", str(wt), "commit", "-m", "work in tree"], check=True)
-
-    v_res = core.verify(config, "AUD-003")
-    assert v_res.passed is True
-
-    # Merge branch to main
-    subprocess.run(["git", "-C", str(repo), "merge", "--no-ff", "ticket/AUD-003", "-m", "merge 3"], check=True)
-
-    # Calling done without accept refuses
-    with pytest.raises(core.GateError, match="still unchecked"):
-        core.done(config, "AUD-003", accept=False)
-
-    # Calling done with accept succeeds and moves to 5-done
-    d_res = core.done(config, "AUD-003", accept=True)
-    assert d_res.to_column == "5-done"
-    done_ticket = core.find_ticket(config, "AUD-003")
-    checked, unchecked = core.checkboxes(frontmatter.parse(done_ticket.text)[1])
-    assert checked == 2
-    assert unchecked == 0
-
-
 def test_transition_does_not_commit_unrelated_staged_files(repo: Path) -> None:
     """Finding 6: transition() must not commit foreign staged files into the board commit."""
     config = core.load_config(repo)
@@ -184,12 +143,13 @@ def test_claim_local_flag_skips_remote(repo: Path, monkeypatch: pytest.MonkeyPat
 
 def test_done_supports_squashed_merges(repo: Path) -> None:
     """Finding 9: kahnban done and linter accept branches whose content was squash-merged."""
+    set_board_config(repo, require_proof=False)
     config = core.load_config(repo)
     ticket_file = repo / "plans" / "tickets" / "2-ready" / "AUD-005-squash.md"
     ticket_file.write_text(
         "---\nid: AUD-005\ntitle: Squash Feature\nstatus: ready\ncreated: 2026-10-22\nupdated: 2026-10-22\n---\n\n"
         "## Problem\nFeature problem.\n\n"
-        "## Acceptance criteria\n- [ ] works\n\n"
+        "## Acceptance criteria\n- [ ] works (test: `python -c \"print('OK')\"`)\n\n"
         "## Blast radius\n- src/\n\n"
         "## Validation\n```bash\npython -c \"print('OK')\"\n```\n\n"
         "## Implementation notes\nImplemented feature 5 with squash.\n\n"
@@ -216,8 +176,7 @@ def test_done_supports_squashed_merges(repo: Path) -> None:
 
     # Branch is NOT an ancestor in commit-graph, but tree diff against main is empty
     assert not gitops.is_ancestor(repo, "ticket/AUD-005", "main")
-    # done with accept should succeed
-    res = core.done(config, "AUD-005", accept=True)
+    res = core.done(config, "AUD-005")
     assert res.to_column == "5-done"
 
     # Linter BL15 should pass without errors
@@ -225,8 +184,8 @@ def test_done_supports_squashed_merges(repo: Path) -> None:
     assert lint_res.ok is True
 
 
-def test_blast_radius_exempts_test_directory(repo: Path) -> None:
-    """Finding 10: Changes in tests/ do not trigger blast radius out-of-scope errors."""
+def test_blast_radius_does_not_exempt_the_test_directory(repo: Path) -> None:
+    """Finding 10, reversed: an undeclared test change could weaken the proof."""
     config = core.load_config(repo)
     ticket_file = repo / "plans" / "tickets" / "2-ready" / "AUD-006-tdd.md"
     ticket_file.write_text(
@@ -250,9 +209,8 @@ def test_blast_radius_exempts_test_directory(repo: Path) -> None:
     subprocess.run(["git", "-C", str(wt), "add", "."], check=True)
     subprocess.run(["git", "-C", str(wt), "commit", "-m", "code and tests"], check=True)
 
-    # verify should pass without needing --force-scope
-    v_res = core.verify(config, "AUD-006")
-    assert v_res.passed is True
+    with pytest.raises(core.GateError, match="tests/test_feature6.py"):
+        core.verify(config, "AUD-006")
 
 
 def test_dispatcher_prioritizes_non_conflicting_ready_ticket(repo: Path) -> None:

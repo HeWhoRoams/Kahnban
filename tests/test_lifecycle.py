@@ -15,7 +15,16 @@ from kahnban import core, frontmatter, gitops, linter
 from kahnban.cli import main
 from conftest import git, init_repo, refine_ticket
 
-VALIDATION = f'{sys.executable} -c "print(\'validation ok\')"'
+VALIDATION = f"{sys.executable} tests/check_widget.py"
+# `kahnban init` boards require proof: each criterion names the test proving it.
+ACCEPTANCE = (f"widget() returns 42 (test: `{VALIDATION}`)",)
+CHECK_WIDGET = (
+    "import sys\n"
+    "sys.path.insert(0, 'src')\n"
+    "from widget import widget\n"
+    "assert widget() == 42\n"
+    "print('validation ok')\n"
+)
 
 
 def cli(repo: Path, *argv: str) -> int:
@@ -24,7 +33,11 @@ def cli(repo: Path, *argv: str) -> int:
 
 def refine(config: core.Config, ticket_id: str) -> None:
     refine_ticket(
-        config, ticket_id, blast_radius=("src/widget.py",), validation=VALIDATION
+        config,
+        ticket_id,
+        blast_radius=("src/widget.py", "tests/check_widget.py"),
+        acceptance=ACCEPTANCE,
+        validation=VALIDATION,
     )
 
 
@@ -61,23 +74,23 @@ def test_full_ticket_lifecycle(tmp_path: Path, capsys: pytest.CaptureFixture[str
     # 5. do the work inside the worktree, in scope -----------------------
     (tree / "src").mkdir(parents=True, exist_ok=True)
     (tree / "src" / "widget.py").write_text("def widget():\n    return 42\n", encoding="utf-8")
+    (tree / "tests").mkdir(parents=True, exist_ok=True)
+    (tree / "tests" / "check_widget.py").write_text(CHECK_WIDGET, encoding="utf-8")
     git(tree, "add", "-A")
     git(tree, "commit", "-m", "E2E-001: add the widget")
 
-    # 6. verify runs the validation command itself ------------------------
+    # 6. verify runs the tests, proves them red on the base source, ticks the box
     assert cli(repo, "verify", "E2E-001") == 0
     captured = capsys.readouterr().out
     assert "validation ok" in captured
+    assert "RED CHECK" in captured
     ticket = core.find_ticket(config, "E2E-001")
     assert ticket.column == "4-verifying"
     _, body = frontmatter.parse(ticket.text)
     assert "verify exit=0" in core.section(body, "Log")
+    assert core.checkboxes(body) == (1, 0)
 
-    # 7. human review: check the boxes, merge, then done -------------------
-    assert cli(repo, "done", "E2E-001") == 1  # criteria still unchecked
-    core.write_text(ticket.path, core.read_text(ticket.path).replace("- [ ]", "- [x]"))
-    git(repo, "add", "-A")
-    git(repo, "commit", "-m", "accept E2E-001")
+    # 7. review, merge, then done ------------------------------------------
     assert cli(repo, "done", "E2E-001") == 1  # branch not merged yet
     git(repo, "merge", "--no-ff", "-m", "merge ticket/E2E-001", "ticket/E2E-001")
     assert cli(repo, "done", "E2E-001") == 0
@@ -129,7 +142,13 @@ def test_two_agents_work_disjoint_domains_concurrently(tmp_path: Path) -> None:
     for title, owned in (("Own the ui", "src/ui/"), ("Own the engine", "src/engine/")):
         assert cli(repo, "new", title) == 0
     for ticket_id, owned in (("E2E-001", "src/ui/"), ("E2E-002", "src/engine/")):
-        refine_ticket(config, ticket_id, blast_radius=(owned,), validation=VALIDATION)
+        refine_ticket(
+            config,
+            ticket_id,
+            blast_radius=(owned,),
+            acceptance=ACCEPTANCE,
+            validation=VALIDATION,
+        )
         assert cli(repo, "move", ticket_id, "1-refining", "--reason", "refining") == 0
         assert cli(repo, "ready", ticket_id) == 0
         assert cli(repo, "claim", ticket_id, "--owner", f"agent-{ticket_id}") == 0
@@ -141,7 +160,11 @@ def test_two_agents_work_disjoint_domains_concurrently(tmp_path: Path) -> None:
     # A third ticket that reaches into a claimed domain is refused.
     assert cli(repo, "new", "Touch the ui too") == 0
     refine_ticket(
-        config, "E2E-003", blast_radius=("src/ui/panel.py",), validation=VALIDATION
+        config,
+        "E2E-003",
+        blast_radius=("src/ui/panel.py",),
+        acceptance=ACCEPTANCE,
+        validation=VALIDATION,
     )
     assert cli(repo, "move", "E2E-003", "1-refining", "--reason", "refining") == 0
     assert cli(repo, "ready", "E2E-003") == 0

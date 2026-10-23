@@ -151,12 +151,13 @@ something one agent can finish and verify on its own. Under each heading, use
 exactly these labels:
 
 **Why:** one or two sentences on the behavioral gap.
-**Acceptance:** a checkbox list of testable conditions. Leave every box
-unchecked; they are ticked only after the test command passes.
+**Acceptance:** a checkbox list of testable conditions, each naming its test:
+``- [ ] rejects coordinates over 1000 (test: `pytest tests/test_map.py::test_bounds`)``.
+Leave every box unchecked; `verify` ticks a box only when its own test passes.
 **Files:** backtick-quoted paths or directory prefixes this unit may change.
 Two units must never list overlapping paths — they will be refused as a
 merge-conflict risk.
-**Validation:** one command that exits non-zero on failure.
+**Validation:** one command per line, each exiting non-zero on failure.
 **Depends on:** titles of other units that must finish first (omit if none).
 
 Do not invent file paths you have not confirmed exist, and do not write a
