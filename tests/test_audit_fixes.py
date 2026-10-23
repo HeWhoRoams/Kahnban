@@ -53,23 +53,25 @@ def test_post_claim_hook_and_handoff_baton_in_worktree(repo: Path) -> None:
 
 
 def test_cmd_feedback_no_name_error(repo: Path) -> None:
-    """Finding 2: _project_root was undefined in cli.cmd_feedback()."""
+    """Finding 2: _project_root was undefined in cli.cmd_feedback(); feedback now rejects."""
     config = core.load_config(repo)
-    ticket_file = repo / "plans" / "tickets" / "2-ready" / "AUD-002-feedback.md"
+    ticket_file = repo / "plans" / "tickets" / "4-verifying" / "AUD-002-feedback.md"
     ticket_file.write_text(
-        "---\nid: AUD-002\ntitle: Feature Two\nstatus: ready\ncreated: 2026-10-22\nupdated: 2026-10-22\n---\n\n"
-        "## Acceptance criteria\n- [ ] criterion 1\n\n## Blast radius\n- src/\n\n"
+        "---\nid: AUD-002\ntitle: Feature Two\nstatus: verifying\nowner: coder-agent\n"
+        "created: 2026-10-22\nupdated: 2026-10-22\n---\n\n"
+        "## Acceptance criteria\n- [x] criterion 1\n\n## Blast radius\n- src/\n\n"
         "## Validation\n```bash\npython -c \"print(1)\"\n```\n\n"
-        "## Log\n- 2026-10-22 ready\n",
+        "## Log\n- 2026-10-22 verified\n",
         encoding="utf-8",
     )
     subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
     subprocess.run(["git", "-C", str(repo), "commit", "-m", "add ticket 2"], check=True)
-    core.claim(config, "AUD-002", "coder-agent", create_worktree=False)
 
-    # Invoke cmd_feedback via CLI main
     exit_code = cli.main(["--project-root", str(repo), "feedback", "AUD-002", "-m", "Fix the test asserts"])
     assert exit_code == 0
+    ticket = core.find_ticket(config, "AUD-002")
+    assert ticket.column == "3-in-progress"
+    assert "Fix the test asserts" in core.section(frontmatter.parse(ticket.text)[1], "Log")
 
 
 def test_skills_install_vscode_no_json_name_error(tmp_path: Path) -> None:
@@ -143,7 +145,8 @@ def test_claim_local_flag_skips_remote(repo: Path, monkeypatch: pytest.MonkeyPat
 
 def test_done_supports_squashed_merges(repo: Path) -> None:
     """Finding 9: kahnban done and linter accept branches whose content was squash-merged."""
-    set_board_config(repo, require_proof=False)
+    # A squash merged outside kahnban is exactly what require_integration forbids.
+    set_board_config(repo, require_proof=False, require_review=False, require_integration=False)
     config = core.load_config(repo)
     ticket_file = repo / "plans" / "tickets" / "2-ready" / "AUD-005-squash.md"
     ticket_file.write_text(

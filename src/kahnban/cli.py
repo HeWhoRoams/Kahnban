@@ -15,7 +15,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from kahnban import __version__, core, dispatcher, gitops, handoff, ingest, linter, session, skills, worktree
+from kahnban import __version__, core, dispatcher, gitops, ingest, linter, session, skills, worktree
 
 EXIT_OK = 0
 EXIT_REFUSED = 1
@@ -130,6 +130,39 @@ def cmd_done(args: argparse.Namespace) -> int:
     _report(core.done(config, args.ticket_id, merge_commit=args.merge_commit))
     print(f"Learnings advisory: Ticket {args.ticket_id} completed. Run '/reflect' before 'kahnban cleanup' to capture patterns.")
     return EXIT_OK
+
+
+def cmd_approve(args: argparse.Namespace) -> int:
+    _report(core.approve(_load(args), args.ticket_id, args.reviewer, note=args.note or ""))
+    return EXIT_OK
+
+
+def cmd_reject(args: argparse.Namespace) -> int:
+    message = _read_text_argument(args.message, args.message_file)
+    if not message:
+        raise core.GateError("pass the reasons with --message TEXT or --message-file FILE")
+    _report(core.reject(_load(args), args.ticket_id, args.reviewer, message))
+    return EXIT_OK
+
+
+def cmd_merge(args: argparse.Namespace) -> int:
+    result = core.merge(_load(args), args.ticket_id)
+    for message in result.messages:
+        print(message)
+    print(f"$ {result.command}")
+    if result.output.strip():
+        print(result.output.rstrip("\n"))
+    if result.artifact:
+        print(f"     full output: {result.artifact}")
+    if result.passed and result.transition is not None:
+        _report(result.transition)
+        return EXIT_OK
+    print(
+        f"[FAIL] {result.ticket_id}: integration tests exited {result.exit_code}; "
+        "the default branch was not changed",
+        file=sys.stderr,
+    )
+    return EXIT_REFUSED
 
 
 def cmd_move(args: argparse.Namespace) -> int:
@@ -425,15 +458,8 @@ def cmd_next(args: argparse.Namespace) -> int:
 
 
 def cmd_feedback(args: argparse.Namespace) -> int:
-    root = _load(args).project_root
-    feedback_text = args.message
-    ticket_id = args.ticket
-    author = getattr(args, "author", "qa_reviewer") or "qa_reviewer"
-    baton = handoff.record_rejection_feedback(root, ticket_id, feedback_text, author=author)
-    if not baton:
-        sys.stderr.write(f"No active handoff baton found for ticket '{ticket_id}'.\n")
-        return EXIT_REFUSED
-    print(f"[OK] Recorded rejection feedback for {ticket_id} into .agents/HANDOFF.json.")
+    """Older name for ``reject``: feedback that does not move the ticket loops forever."""
+    _report(core.reject(_load(args), args.ticket, args.author or "qa_reviewer", args.message))
     return EXIT_OK
 
 def cmd_skills(args: argparse.Namespace) -> int:
@@ -578,6 +604,31 @@ def build_parser() -> argparse.ArgumentParser:
     done.add_argument("ticket_id")
     done.add_argument("--merge-commit", help="sha of the merge on the default branch")
     done.set_defaults(handler=cmd_done)
+
+    approve = subparsers.add_parser(
+        "approve",
+        parents=[board], help="a reviewer other than the owner signs off a verified ticket")
+    approve.add_argument("ticket_id")
+    approve.add_argument("--reviewer", required=True, help="who is approving (not the owner)")
+    approve.add_argument("--note", help="optional review note for the Log")
+    approve.set_defaults(handler=cmd_approve)
+
+    reject = subparsers.add_parser(
+        "reject",
+        parents=[board], help="send a verified ticket back to in-progress with the reasons")
+    reject.add_argument("ticket_id")
+    reject.add_argument("--reviewer", default="reviewer", help="who is rejecting")
+    reject.add_argument("--message", "-m", help="what has to be fixed")
+    reject.add_argument("--message-file", help="read the reasons from FILE, or - for stdin")
+    reject.set_defaults(handler=cmd_reject)
+
+    merge = subparsers.add_parser(
+        "merge",
+        parents=[board],
+        help="merge onto the default branch, test the result, and land it only if green",
+    )
+    merge.add_argument("ticket_id")
+    merge.set_defaults(handler=cmd_merge)
 
     move = subparsers.add_parser(
         "move",
@@ -749,7 +800,7 @@ def build_parser() -> argparse.ArgumentParser:
     next_parser.add_argument("--json", action="store_true", help="output structured JSON baton")
     next_parser.add_argument(
         "--role",
-        choices=["coder", "qa_reviewer", "reviewer", "spec_analyst", "curator"],
+        choices=["coder", "qa_reviewer", "reviewer", "integrator", "spec_analyst", "curator"],
         help="filter next action for a specific agent role",
     )
     next_parser.set_defaults(handler=cmd_next)
@@ -758,7 +809,7 @@ def build_parser() -> argparse.ArgumentParser:
     fb_parser = subparsers.add_parser(
         "feedback",
         parents=[board],
-        help="record QA or code review rejection feedback for coder agent",
+        help="alias of 'reject': send a verified ticket back with feedback",
     )
     fb_parser.add_argument("ticket", help="ticket ID (e.g. KB-001)")
     fb_parser.add_argument("--message", "-m", required=True, help="rejection feedback explanation")

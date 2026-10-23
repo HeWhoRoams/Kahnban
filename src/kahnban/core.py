@@ -117,6 +117,8 @@ class Config:
     allow_any_branch: bool = False
     sync_remote: bool = True
     require_proof: bool = False
+    require_review: bool = False
+    require_integration: bool = False
     test_patterns: tuple[str, ...] = DEFAULT_TEST_PATTERNS
 
     @property
@@ -275,6 +277,8 @@ def load_config(
         allow_any_branch=bool(raw.get("allow_any_branch", False)),
         sync_remote=bool(raw.get("sync_remote", True)),
         require_proof=bool(raw.get("require_proof", False)),
+        require_review=bool(raw.get("require_review", False)),
+        require_integration=bool(raw.get("require_integration", False)),
         test_patterns=tuple(raw.get("test_patterns") or DEFAULT_TEST_PATTERNS),
     )
     if check_version:
@@ -827,8 +831,13 @@ def board_lock(
     stale_seconds: int = LOCK_STALE_SECONDS,
     max_retries: int = LOCK_RETRY_ATTEMPTS,
     retry_interval: float = LOCK_RETRY_INTERVAL,
+    hold_seconds: int = 0,
 ):
-    """Exclusive board lock covering gate checks through commit (§3.3)."""
+    """Exclusive board lock covering gate checks through commit (§3.3).
+
+    A holder that runs tests passes ``hold_seconds``; the lock records that
+    deadline so waiters do not break it as stale while the tests are running.
+    """
     lock_path = config.board_path / LOCK_NAME
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     warnings: list[str] = []
@@ -843,7 +852,8 @@ def board_lock(
                 holder = lock_path.read_text(encoding="utf-8").strip()
             except OSError:
                 age, holder = 0.0, "unknown"
-            if age > stale_seconds:
+            held_until = re.search(r"\buntil=(\d+)", holder)
+            if age > stale_seconds and time.time() > int(held_until.group(1) if held_until else 0):
                 warnings.append(
                     f"broke stale board lock after {int(age)}s (held by {holder})"
                 )
@@ -866,7 +876,11 @@ def board_lock(
     try:
         os.write(
             descriptor,
-            f"pid={os.getpid()} at={datetime.now().isoformat(timespec='seconds')}\n".encode(),
+            (
+                f"pid={os.getpid()} at={datetime.now().isoformat(timespec='seconds')}"
+                + (f" until={int(time.time()) + hold_seconds}" if hold_seconds else "")
+                + "\n"
+            ).encode(),
         )
         os.close(descriptor)
         descriptor = None
@@ -1076,15 +1090,17 @@ def normalize_acceptance(lines: Iterable[str]) -> list[str]:
     return rendered
 
 
-def _tick_acceptance_criteria(text: str) -> str:
-    """Rewrite unchecked checkboxes to checked in '## Acceptance criteria' (Principle 5)."""
+def _tick_acceptance_criteria(text: str, *, ticked: bool = True) -> str:
+    """Set every checkbox in '## Acceptance criteria' to checked (or unchecked)."""
     fields, body = frontmatter.parse(text)
     criteria = section(body, 'Acceptance criteria')
     if not criteria:
         return text
-    ticked = re.sub(r'^(\s*[-*]\s*)\[\s*\]', r'\1[x]', criteria, flags=re.MULTILINE)
-    new_body = replace_section(body, 'Acceptance criteria', ticked)
-    return frontmatter.serialize(fields, new_body)
+    box, mark = (r'\[\s*\]', '[x]') if ticked else (r'\[[xX]\]', '[ ]')
+    rewritten = re.sub(r'^(\s*[-*]\s*)' + box, r'\g<1>' + mark, criteria, flags=re.MULTILINE)
+    if rewritten == criteria:
+        return text
+    return frontmatter.serialize(fields, replace_section(body, 'Acceptance criteria', rewritten))
 
 
 def render_ticket(
@@ -1684,6 +1700,50 @@ def _diff_scope_problems(
     return offenders, []
 
 
+def ticket_branch(fields: Mapping[str, object], ticket_id: str) -> str:
+    return str(fields.get("branch") or "").strip() or worktree.branch_name(ticket_id)
+
+
+def branch_tip(config: Config, branch: str) -> str:
+    """Commit at the tip of ``branch``, or '' when the branch is gone."""
+    if not gitops.branch_exists(config.project_root, branch):
+        return ""
+    return gitops.rev_parse(config.project_root, branch)
+
+
+def _release_problems(
+    config: Config,
+    fields: Mapping[str, object],
+    branch: str,
+    tip: str,
+    default_branch: str,
+) -> list[str]:
+    """require_review / require_integration conditions for ``done``."""
+    problems: list[str] = []
+    reviewer = str(fields.get("reviewer") or "").strip()
+    owner = str(fields.get("owner") or "").strip()
+    if config.require_review:
+        if not reviewer:
+            problems.append(
+                "not approved: a reviewer runs 'kahnban approve <ID> --reviewer <name>'"
+            )
+        elif reviewer.lower() == owner.lower():
+            problems.append(f"approved by its own owner '{owner}'")
+        elif tip and str(fields.get("approved_sha") or "").strip() != tip:
+            problems.append(f"{branch} moved after approval; reject it and re-verify")
+    if config.require_integration:
+        integrated = str(fields.get("integrated_sha") or "").strip()
+        if not integrated:
+            problems.append(
+                "not integrated: 'kahnban merge <ID>' tests the merged result before it lands"
+            )
+        elif not gitops.is_ancestor(config.project_root, integrated, default_branch):
+            problems.append(f"integration commit {integrated[:12]} is not on '{default_branch}'")
+        elif tip and not gitops.is_ancestor(config.project_root, tip, integrated):
+            problems.append(f"{branch} has commits that were never integration-tested")
+    return problems
+
+
 def _require_clean_tip(config: Config, tree: Path, branch: str) -> str:
     """Verify tests what will merge: the committed tip, nothing uncommitted."""
     output = gitops.run(tree, ["status", "--porcelain", "--untracked-files=all"]).stdout
@@ -1778,7 +1838,8 @@ def verify(
 ) -> VerifyResult:
     """``kahnban verify`` — runs the validation command itself (D4)."""
     target = config.verifying_column
-    with board_lock(config) as lock_warnings:
+    # ponytail: fixed budget of four timeouts; heartbeat the lock if verifies run longer
+    with board_lock(config, hold_seconds=config.validation_timeout_sec * 4) as lock_warnings:
         _require_board_branch(config)
         ticket = find_ticket(config, ticket_id)
         if ticket.column != config.in_progress_column:
@@ -1864,9 +1925,8 @@ def verify(
                     f"[WARN] recorded worktree {worktree_field} is missing; "
                     "running validation in the project root"
                 )
-        branch = str(fields.get("branch") or "").strip() or worktree.branch_name(
-            ticket.ticket_id
-        )
+        branch = ticket_branch(fields, ticket.ticket_id)
+        tip = ""
         if cwd != config.project_root:
             tip = _require_clean_tip(config, cwd, branch)
             messages.append(f"verifying {branch} at {tip[:12]}")
@@ -1939,8 +1999,19 @@ def verify(
                 write_text(ticket.path, ticked_text)
                 ticket = find_ticket(config, ticket.ticket_id)
             entry = "\n".join([entry_lines[0] + f" -> {target}", *entry_lines[1:]])
+            # A fresh verify invalidates any earlier approval or integration.
             result = transition(
-                config, ticket.ticket_id, target, log_entry=entry, timestamp=now
+                config,
+                ticket.ticket_id,
+                target,
+                log_entry=entry,
+                fm_updates={
+                    "verified_sha": tip,
+                    "reviewer": "",
+                    "approved_sha": "",
+                    "integrated_sha": "",
+                },
+                timestamp=now,
             )
             # Trigger post-verify hook
             try:
@@ -2064,9 +2135,9 @@ def done(
             problems.append(f"{unchecked} acceptance criteria are still unchecked")
 
         default_branch = gitops.default_branch(config.project_root)
-        branch = str(fields.get("branch") or "").strip() or worktree.branch_name(
-            ticket.ticket_id
-        )
+        branch = ticket_branch(fields, ticket.ticket_id)
+        tip = branch_tip(config, branch)
+        problems.extend(_release_problems(config, fields, branch, tip, default_branch))
         merge_note = ""
         if merge_commit:
             sha = merge_commit.strip()
@@ -2112,6 +2183,9 @@ def done(
                 + "\n".join(f"  - {problem}" for problem in problems)
             )
 
+        integrated = str(fields.get("integrated_sha") or "").strip()
+        if integrated:
+            merge_note = f"merge-commit: {integrated}"  # the merge itself, not the branch tip
         entry = f"done gate passed -> {config.done_column}"
         if merge_note:
             entry += f" | {merge_note}"
@@ -2139,6 +2213,241 @@ def done(
         except Exception as hook_err:
             result.messages.append(f"[WARN] post-done hook error: {hook_err}")
         return result
+
+
+def _verifying_ticket(config: Config, ticket_id: str, action: str) -> Ticket:
+    ticket = find_ticket(config, ticket_id)
+    if ticket.column != config.verifying_column:
+        raise GateError(
+            f"{ticket.ticket_id} is in {ticket.column}; {action} applies to "
+            f"{config.verifying_column}"
+        )
+    return ticket
+
+
+def approve(
+    config: Config,
+    ticket_id: str,
+    reviewer: str,
+    *,
+    note: str = "",
+    timestamp: datetime | None = None,
+) -> TransitionResult:
+    """``kahnban approve`` — someone other than the owner signs off the verified tip."""
+    reviewer = reviewer.strip()
+    if not reviewer:
+        raise GateError("--reviewer is required to approve a ticket")
+    with board_lock(config) as lock_warnings:
+        _require_board_branch(config)
+        ticket = _verifying_ticket(config, ticket_id, "approve")
+        fields, body = frontmatter.parse(ticket.text)
+        verify_contract(config, ticket.ticket_id, fields, body)
+        owner = str(fields.get("owner") or "").strip()
+        if reviewer.lower() == owner.lower():
+            raise GateError(
+                f"{ticket.ticket_id} is owned by '{owner}'; a different reviewer must approve it"
+            )
+        branch = ticket_branch(fields, ticket.ticket_id)
+        tip = branch_tip(config, branch)
+        verified = str(fields.get("verified_sha") or "").strip()
+        if tip and verified and tip != verified:
+            raise GateError(
+                f"{branch} moved since verify ({verified[:12]} -> {tip[:12]}); "
+                "reject it so the new commits are verified"
+            )
+        entry = f"approved by {reviewer}" + (f" at {tip[:12]}" if tip else "")
+        if note.strip():
+            entry += f": {note.strip()}"
+        result = transition(
+            config,
+            ticket.ticket_id,
+            ticket.column,
+            log_entry=entry,
+            fm_updates={"reviewer": reviewer, "approved_sha": tip},
+            commit_message=f"kanban({ticket.ticket_id}): approved by {reviewer}",
+            timestamp=timestamp,
+        )
+        result.messages = list(lock_warnings)
+        return result
+
+
+def reject(
+    config: Config,
+    ticket_id: str,
+    reviewer: str,
+    message: str,
+    *,
+    timestamp: datetime | None = None,
+) -> TransitionResult:
+    """``kahnban reject`` — send a verified ticket back to its coder, with the reasons.
+
+    The reasons are committed to the ticket's ``## Log``; every box is unticked so
+    the next verify has to earn them again.
+    """
+    if not message.strip():
+        raise GateError("a rejection needs a message saying what to fix")
+    reviewer = reviewer.strip() or "reviewer"
+    with board_lock(config) as lock_warnings:
+        _require_board_branch(config)
+        ticket = _verifying_ticket(config, ticket_id, "reject")
+        unticked = _tick_acceptance_criteria(ticket.text, ticked=False)
+        if unticked != ticket.text:
+            write_text(ticket.path, unticked)
+        result = transition(
+            config,
+            ticket.ticket_id,
+            config.in_progress_column,
+            log_entry=f"rejected by {reviewer}:\n{_indent_output(message.strip())}",
+            fm_updates={
+                "verified_sha": "",
+                "reviewer": "",
+                "approved_sha": "",
+                "integrated_sha": "",
+            },
+            timestamp=timestamp,
+        )
+        result.messages = list(lock_warnings)
+    from kahnban import handoff
+
+    # The baton is a local mirror for the coder's prompt; the Log is the record.
+    handoff.record_rejection_feedback(
+        config.project_root, ticket.ticket_id, message.strip(), author=reviewer
+    )
+    return result
+
+
+def _remove_merge_tree(config: Config, tree: Path) -> None:
+    """Remove a merge worktree, unlinking cache junctions before git touches it."""
+    for cache in config.shared_caches:
+        link = tree / cache.replace("\\", "/").strip("/")
+        if worktree.is_link(link):
+            worktree.remove_link(link)
+    if tree.exists():
+        gitops.run(config.project_root, ["worktree", "remove", "--force", str(tree)], check=False)
+    gitops.worktree_prune(config.project_root)
+    if tree.exists():
+        raise KahnbanError(f"could not remove merge worktree {tree}; remove it by hand")
+
+
+def merge(
+    config: Config, ticket_id: str, *, timestamp: datetime | None = None
+) -> VerifyResult:
+    """``kahnban merge`` — the merge queue: test the merged result, then land it.
+
+    The ticket branch is merged onto the current default branch in a throwaway
+    worktree, the feature and regression tests run on that result, and the
+    default branch is fast-forwarded only if they pass. The board lock
+    serializes merges, so each one is tested against everything merged before it.
+    """
+    with board_lock(config, hold_seconds=config.validation_timeout_sec * 3) as lock_warnings:
+        default_branch = _require_board_branch(config)
+        ticket = _verifying_ticket(config, ticket_id, "merge")
+        fields, body = frontmatter.parse(ticket.text)
+        verify_contract(config, ticket.ticket_id, fields, body)
+        branch = ticket_branch(fields, ticket.ticket_id)
+        tip = branch_tip(config, branch)
+        if not tip:
+            raise GateError(f"{branch} does not exist; there is nothing to merge")
+        reviewer = str(fields.get("reviewer") or "").strip()
+        if config.require_review and (
+            not reviewer or str(fields.get("approved_sha") or "").strip() != tip
+        ):
+            raise GateError(
+                f"{ticket.ticket_id} is not approved at {tip[:12]}; a reviewer runs "
+                f"'kahnban approve {ticket.ticket_id} --reviewer <name>' first"
+            )
+        feat_cmd, reg_cmd = parse_validation_commands(config, body)
+        messages = list(lock_warnings)
+        now = timestamp or datetime.now()
+        base = gitops.rev_parse(config.project_root, default_branch)
+        tree = config.project_root / ".worktrees" / f".merge-{ticket.ticket_id}"
+        _remove_merge_tree(config, tree)
+        gitops.run(config.project_root, ["worktree", "add", "--detach", str(tree), base])
+        stages: list[tuple[str, str]] = []
+        try:
+            _, warnings = worktree.link_caches(config.project_root, tree, config.shared_caches)
+            messages.extend(f"[WARN] {warning}" for warning in warnings)
+            title = str(fields.get("title") or ticket.ticket_id)
+            merged = gitops.run(
+                tree,
+                ["merge", "--no-ff", "--no-edit", "-m", f"merge {branch}: {title}", branch],
+                check=False,
+            )
+            if merged.returncode != 0:
+                conflicts = gitops.run(
+                    tree, ["diff", "--name-only", "--diff-filter=U"], check=False
+                ).stdout.split()
+                raise GateError(
+                    f"{branch} does not merge cleanly onto {default_branch}; rebase it, "
+                    "re-verify, and merge again:\n"
+                    + "\n".join(f"  - {path}" for path in conflicts or [merged.stderr.strip()])
+                )
+            merge_sha = gitops.rev_parse(tree, "HEAD")
+            exit_code, output = run_block(config, feat_cmd, tree)
+            stages.append(("INTEGRATION: FEATURE TESTS", output))
+            if exit_code == 0 and reg_cmd and reg_cmd != feat_cmd:
+                exit_code, output = run_block(config, reg_cmd, tree)
+                stages.append(("INTEGRATION: REGRESSION TESTS", output))
+        finally:
+            _remove_merge_tree(config, tree)
+
+        command = f"merge {branch} onto {default_branch} {base[:12]}"
+        output = "\n\n".join(f"=== {heading} ===\n{text}" for heading, text in stages)
+        artifact = _write_artifact(config, ticket.ticket_id, command, output, now)
+        detail = [
+            f"    $ {command}",
+            _indent_output(_truncate(output, config.log_output_max_bytes)),
+            f"    full output: {_relative(config, artifact)}",
+        ]
+        if exit_code != 0:
+            text = frontmatter.append_log(
+                ticket.text,
+                log_line(
+                    "\n".join([f"merge refused: integration tests exit={exit_code}", *detail]),
+                    timestamp=now,
+                ),
+            )
+            write_text(ticket.path, text)
+            rel = _relative(config, ticket.path)
+            gitops.add(config.project_root, [rel])
+            gitops.commit(
+                config.project_root,
+                f"kanban({ticket.ticket_id}): merge refused (exit {exit_code})",
+                paths=[rel],
+            )
+            return VerifyResult(
+                ticket_id=ticket.ticket_id,
+                passed=False,
+                exit_code=exit_code,
+                command=command,
+                output=output,
+                artifact=artifact,
+                messages=messages,
+            )
+
+        gitops.run(config.project_root, ["merge", "--ff-only", merge_sha])
+        result = transition(
+            config,
+            ticket.ticket_id,
+            ticket.column,
+            log_entry="\n".join(
+                [f"integrated into {default_branch} | merge-commit: {merge_sha}", *detail]
+            ),
+            fm_updates={"integrated_sha": merge_sha},
+            commit_message=f"kanban({ticket.ticket_id}): integrated into {default_branch}",
+            timestamp=now,
+        )
+        result.messages = messages
+        return VerifyResult(
+            ticket_id=ticket.ticket_id,
+            passed=True,
+            exit_code=0,
+            command=command,
+            output=output,
+            artifact=artifact,
+            transition=result,
+            messages=messages,
+        )
 
 
 def move(
@@ -2249,6 +2558,8 @@ def init_board(
         "required_headings": list(DEFAULT_REQUIRED_HEADINGS),
         "validation_command": validation_command,
         "require_proof": True,
+        "require_review": True,
+        "require_integration": True,
         "design_doc_roots": ["plans"],
         "extensions": {},
         "ingest": {"heading_level": None, "section_aliases": {}},

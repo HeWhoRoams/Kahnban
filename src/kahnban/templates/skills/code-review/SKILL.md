@@ -38,7 +38,7 @@ kahnban verify <TICKET-ID>
 - Upon passing, Kahnban ticks only the boxes whose test passed and transitions the ticket to `4-verifying/`. Boxes without a test are yours to tick after review.
 
 ### 5. Final Stage: Production Integration (Stage 5)
-1. Review PR / merge `ticket/<TICKET-ID>` into `main`.
+1. A reviewer other than the owner runs `kahnban approve <TICKET-ID> --reviewer <name>` (or `kahnban reject ... -m "..."`), then `kahnban merge <TICKET-ID>` lands it through the merge queue.
 2. Move ticket to done:
    ```bash
    kahnban done <TICKET-ID>

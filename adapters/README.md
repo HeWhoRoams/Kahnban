@@ -111,7 +111,7 @@ cp -r skills/* ../../.agents/skills/
 | **2** | `1-refining` $\rightarrow$ `2-ready` | `/to-spec`, `/to-tickets` | Formal specification in `.agents/specs/`, decomposition into 1–3 file tickets. Gate: `kahnban ready <ID>` verifies blast radius and design docs. |
 | **3** | `3-in-progress` | `/tdd` | Claim with worktree isolation (`kahnban claim <ID> --worktree`), Red-Green-Refactor test loops in `.worktrees/<ID>`. |
 | **4** | `4-verifying` | `/code-review` | Diff vs. blast radius containment audit, acceptance criteria verification. Gate: `kahnban verify <ID>` runs the fenced validation command in the worktree. |
-| **5** | `5-done` | PR Merge | Integration to `main`. Gate: `kahnban done <ID>` blocks until all `[x]` criteria are checked and git merge is verified. Worktree is pruned via `kahnban cleanup <ID>`. |
+| **5** | `5-done` | Approve + merge queue | `kahnban approve <ID> --reviewer <name>` (not the owner), then `kahnban merge <ID>` tests the merged result and lands it. Gate: `kahnban done <ID>` blocks until all `[x]` criteria are checked, the approved tip is what landed, and it came through the merge queue. Worktree is pruned via `kahnban cleanup <ID>`. |
 
 ---
 
@@ -216,5 +216,5 @@ This single skill weaves together the entire software factory:
 2. **Worktree Isolation:** `kahnban claim <ID> --worktree` -> `ACTIVE_SESSION.md`.
 3. **Disciplined Build:** PSTACK principles + `/tdd` Red-Green-Refactor test loops.
 4. **Hygiene & Proof:** `/unslop` + `/no-comments` -> `kahnban verify <ID>`.
-5. **Gated Review & Closure:** `/code-review` -> Git merge -> `kahnban done <ID>`.
+5. **Gated Review & Closure:** `/code-review` -> `kahnban approve` (another agent) -> `kahnban merge` -> `kahnban done <ID>`.
 6. **Continuous Adaptation:** `/reflect` logs session friction to `./learnings/` -> `/harvest-learnings` hardens repo defenses.

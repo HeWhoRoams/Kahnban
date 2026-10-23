@@ -16,8 +16,8 @@ from kahnban import core, frontmatter, handoff
 
 @dataclass
 class DispatchRecommendation:
-    action: str  # review_and_gate, resume_worktree, claim_and_implement, spec_and_refine, harvest_learnings, idle
-    assigned_role: str  # qa_reviewer, coder, spec_analyst, curator, none
+    action: str  # merge_and_close, review_and_gate, resume_worktree, claim_and_implement, spec_and_refine, harvest_learnings, idle
+    assigned_role: str  # integrator, qa_reviewer, coder, spec_analyst, curator, none
     ticket_id: str | None = None
     ticket_title: str | None = None
     column: str | None = None
@@ -39,27 +39,38 @@ def resolve_next_action(
     """Analyze current board state and return the prioritized next operational handoff."""
     root = config.project_root
 
-    # Priority 1: Check 4-verifying (Review / QA Gate)
-    # Tickets here have passed machine verification and await QA / Standards Review before merge
+    # Priority 1: 4-verifying. Unapproved tickets go to a reviewer; approved ones
+    # go to the integrator, who lands them through the merge queue.
     verifying_tickets = [
         t for t in core.iter_tickets(config) if t.column == config.verifying_column
     ]
-    if verifying_tickets and (preferred_role in (None, "qa_reviewer", "reviewer")):
-        target = verifying_tickets[0]
-        baton = handoff.build_handoff_baton(
-            config, target.ticket_id, stage="verification", assigned_role="qa_reviewer"
-        )
+    for target in verifying_tickets:
         fields, body = frontmatter.parse(target.text)
-        wt = str(fields.get("worktree") or "")
+        approved = bool(str(fields.get("reviewer") or "").strip())
+        if approved and preferred_role not in (None, "integrator"):
+            continue
+        if not approved and preferred_role not in (None, "qa_reviewer", "reviewer"):
+            continue
+        role = "integrator" if approved else "qa_reviewer"
+        baton = handoff.build_handoff_baton(
+            config,
+            target.ticket_id,
+            stage="closure" if approved else "verification",
+            assigned_role=role,
+        )
         return DispatchRecommendation(
-            action="review_and_gate",
-            assigned_role="qa_reviewer",
+            action="merge_and_close" if approved else "review_and_gate",
+            assigned_role=role,
             ticket_id=target.ticket_id,
             ticket_title=str(fields.get('title') or target.ticket_id),
             column=target.column,
-            worktree=wt,
-            summary=f"Ticket {target.ticket_id} passed dual verification; ready for QA audit and merge.",
-            command=f"git merge --no-ff ticket/{target.ticket_id} && kahnban done {target.ticket_id}",
+            worktree=str(fields.get("worktree") or ""),
+            summary=(
+                f"Ticket {target.ticket_id} is approved; merge it through the queue and close it."
+                if approved
+                else f"Ticket {target.ticket_id} passed verification; review it, then approve or reject."
+            ),
+            command=baton.next_action.get("command", ""),
             prompt=baton.next_action.get("prompt", ""),
             baton=baton.to_dict(),
         )

@@ -90,9 +90,13 @@ def test_full_ticket_lifecycle(tmp_path: Path, capsys: pytest.CaptureFixture[str
     assert "verify exit=0" in core.section(body, "Log")
     assert core.checkboxes(body) == (1, 0)
 
-    # 7. review, merge, then done ------------------------------------------
-    assert cli(repo, "done", "E2E-001") == 1  # branch not merged yet
-    git(repo, "merge", "--no-ff", "-m", "merge ticket/E2E-001", "ticket/E2E-001")
+    # 7. a different reviewer approves, the merge queue lands it, then done
+    assert cli(repo, "done", "E2E-001") == 1  # not approved, not merged
+    assert cli(repo, "approve", "E2E-001", "--reviewer", "agent-a") == 1  # the owner
+    assert cli(repo, "approve", "E2E-001", "--reviewer", "reviewer-b") == 0
+    assert cli(repo, "done", "E2E-001") == 1  # approved but not integrated
+    assert cli(repo, "merge", "E2E-001") == 0
+    assert "INTEGRATION: FEATURE TESTS" in capsys.readouterr().out
     assert cli(repo, "done", "E2E-001") == 0
     assert core.find_ticket(config, "E2E-001").column == "5-done"
 
@@ -123,6 +127,8 @@ def test_full_ticket_lifecycle(tmp_path: Path, capsys: pytest.CaptureFixture[str
         "ready gate passed -> 2-ready",
         "claimed by agent-a -> 3-in-progress",
         "verify exit=0",
+        "approved by reviewer-b",
+        "integrated into main | merge-commit:",
         "done gate passed -> 5-done",
         "cleanup:",
     ):

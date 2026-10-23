@@ -40,7 +40,9 @@ kahnban claim KB-001 --owner agent-a --worktree
 # ... execute in isolated worktree .worktrees\KB-001 on branch ticket/KB-001 ...
 
 kahnban verify KB-001                    # executes Dual-Tier QA: Tier 1 Feature Tests && Tier 2 Regression Tests
-# ... return to project root, review, merge ticket/KB-001 into main ...
+kahnban approve KB-001 --reviewer qa-b   # a reviewer other than the owner signs off the verified tip
+# or: kahnban reject KB-001 --reviewer qa-b -m "..."   (back to in-progress, boxes unticked)
+kahnban merge KB-001                     # merge queue: test main+branch, land only if green
 
 kahnban done KB-001                      # marks done and triggers learnings reflection prompt
 # ... capture friction or mistakes into self-improving queue ...
@@ -70,8 +72,8 @@ When invoked, the agent systematically drives work through 5 strict stages:
    - With `require_proof`, the feature tests are re-run against the base version of the changed source and must fail there.
    - `kahnban verify <ID>` moves to `4-verifying` only if all of that holds, and ticks only the boxes whose test passed.
 5. **Review Gate & Closure**:
-   - QA Reviewer Agent audits tests and diff. If defective, records rejection feedback (`kahnban feedback <ID> -m "..."`).
-   - If approved: returns to project root $\rightarrow$ `git merge` $\rightarrow$ `kahnban done` $\rightarrow$ triggers `post-done` hook $\rightarrow$ `/reflect` $\rightarrow$ `kahnban cleanup`
+   - QA Reviewer Agent audits tests and diff. If defective: `kahnban reject <ID> --reviewer <name> -m "..."` moves it back to `3-in-progress` with the reasons in its Log.
+   - If sound: `kahnban approve <ID> --reviewer <name>` (never the owner) $\rightarrow$ integrator runs `kahnban merge <ID>` $\rightarrow$ `kahnban done` $\rightarrow$ triggers `post-done` hook $\rightarrow$ `/reflect` $\rightarrow$ `kahnban cleanup`
 
 ---
 
@@ -116,7 +118,17 @@ A criterion without a test is left for a reviewer to tick. Under `require_proof`
 | Fail fast | any line of a validation block, or any criterion test, exits non-zero |
 | Proof (`require_proof`) | the branch changes no source files, a criterion names no test, or the feature tests still pass with the source reverted to the merge-base |
 
-`kahnban init` writes `"require_proof": true`; boards without the key keep the old behaviour. Files matching `test_patterns` (defaults: `tests/`, `test_*`, `*_test.*`, `*.spec.*`, …) count as tests, everything else as source.
+### What `approve`, `merge` and `done` refuse
+
+| Gate | Refuses when |
+| :--- | :--- |
+| Review (`require_review`) | `approve` by the ticket's owner, or after the branch moved since verify; `merge` and `done` without an approval of the current branch tip |
+| Rejection | `reject` always moves the ticket back to `3-in-progress`, unticks every box, and clears the verify, approval and integration records |
+| Merge queue (`require_integration`) | `merge` lands nothing if the branch conflicts with the default branch, or if the feature or regression tests fail on the merged result; `done` refuses a ticket that did not land through `kahnban merge` |
+
+`merge` holds the board lock while its tests run, so merges happen one at a time and each is tested against everything merged before it. A fresh `verify` clears any earlier approval.
+
+`kahnban init` writes `"require_proof"`, `"require_review"` and `"require_integration"` as `true`; boards without those keys keep the old behaviour. Files matching `test_patterns` (defaults: `tests/`, `test_*`, `*_test.*`, `*.spec.*`, …) count as tests, everything else as source.
 
 ---
 

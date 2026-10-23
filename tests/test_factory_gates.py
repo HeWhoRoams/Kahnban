@@ -1,13 +1,15 @@
-"""Each gate refuses the dishonest input that once got past it (audit probes A-F)."""
+"""Each gate refuses the dishonest input that once got past it (audit probes A-J)."""
 
 from __future__ import annotations
 
+import os
 import sys
+import time
 from pathlib import Path
 
 import pytest
 
-from kahnban import core, frontmatter
+from kahnban import core, dispatcher, frontmatter, gitops
 from conftest import git, scaffold_board, write_ticket
 
 PY = sys.executable
@@ -35,6 +37,7 @@ def strict_board(repo: Path, **overrides: object) -> core.Config:
 def claimed(
     config: core.Config,
     *,
+    ticket_id: str = "TST-001",
     validation: str = CHECK,
     acceptance: tuple[str, ...] = (CRITERION,),
     radius: tuple[str, ...] = ("src/app.py", "tests/check_app.py"),
@@ -42,17 +45,32 @@ def claimed(
     write_ticket(
         config.board_path,
         "1-refining",
-        "TST-001",
-        "fix-f",
+        ticket_id,
+        "fix",
         acceptance=acceptance,
         blast_radius=radius,
         validation=validation,
     )
     git(config.project_root, "add", "-A")
-    git(config.project_root, "commit", "-m", "refine TST-001")
-    core.ready(config, "TST-001")
-    core.claim(config, "TST-001", "coder", create_worktree=True)
-    return config.project_root / ".worktrees" / "TST-001"
+    git(config.project_root, "commit", "-m", f"refine {ticket_id}")
+    core.ready(config, ticket_id)
+    core.claim(config, ticket_id, "coder", create_worktree=True)
+    return config.project_root / ".worktrees" / ticket_id
+
+
+def factory_board(repo: Path, **overrides: object) -> core.Config:
+    """What `kahnban init` writes: proof, review and integration all required."""
+    return strict_board(repo, require_review=True, require_integration=True, **overrides)
+
+
+def verified(
+    config: core.Config, ticket_id: str = "TST-001", files: dict[str, str] = FIX, **kwargs: object
+) -> Path:
+    tree = claimed(config, ticket_id=ticket_id, **kwargs)  # type: ignore[arg-type]
+    commit_work(tree, files)
+    result = core.verify(config, ticket_id)
+    assert result.passed, result.output
+    return tree
 
 
 def commit_work(tree: Path, files: dict[str, str]) -> None:
@@ -269,3 +287,149 @@ def test_regression_command_from_config_is_run(repo: Path) -> None:
     assert not result.passed
     assert "TIER 2: REGRESSION TESTS" in result.output
 
+
+# --- rejection routes the ticket back (probe G) ------------------------------
+
+
+def test_reject_sends_the_ticket_back_and_it_can_be_reverified(repo: Path) -> None:
+    config = factory_board(repo)
+    tree = verified(config)
+
+    core.reject(config, "TST-001", "qa", "cover the overflow case")
+
+    assert core.find_ticket(config, "TST-001").column == "3-in-progress"
+    body = body_of(config)
+    assert core.checkboxes(body) == (0, 1)
+    assert "cover the overflow case" in core.section(body, "Log")
+    recommendation = dispatcher.resolve_next_action(config)
+    assert recommendation.assigned_role == "coder"
+    assert recommendation.ticket_id == "TST-001"
+    commit_work(tree, {"src/app.py": "def f():\n    return 2  # overflow-safe\n"})
+    assert core.verify(config, "TST-001").passed
+
+
+# --- approval by someone other than the owner (probe H) ----------------------
+
+
+def test_the_owner_cannot_approve_and_done_needs_an_approval(repo: Path) -> None:
+    config = factory_board(repo)
+    verified(config)
+
+    with pytest.raises(core.GateError, match="different reviewer"):
+        core.approve(config, "TST-001", "Coder")
+    with pytest.raises(core.GateError, match="not approved"):
+        core.merge(config, "TST-001")
+    git(repo, "merge", "--no-ff", "-m", "self-merge", "ticket/TST-001")
+    with pytest.raises(core.GateError, match="not approved") as error:
+        core.done(config, "TST-001")
+    assert "not integrated" in str(error.value)
+
+
+def test_an_approval_covers_only_the_commit_it_saw(repo: Path) -> None:
+    config = factory_board(repo)
+    tree = verified(config)
+    core.approve(config, "TST-001", "reviewer")
+    commit_work(tree, {"src/app.py": "def f():\n    return 2\n\n\nLATE = 1\n"})
+
+    with pytest.raises(core.GateError, match="not approved at"):
+        core.merge(config, "TST-001")
+    with pytest.raises(core.GateError, match="moved since verify"):
+        core.approve(config, "TST-001", "reviewer")
+
+
+def test_dispatcher_hands_approved_tickets_to_the_integrator(repo: Path) -> None:
+    config = factory_board(repo)
+    verified(config)
+    assert dispatcher.resolve_next_action(config).action == "review_and_gate"
+
+    core.approve(config, "TST-001", "reviewer")
+
+    recommendation = dispatcher.resolve_next_action(config)
+    assert recommendation.action == "merge_and_close"
+    assert recommendation.command == "kahnban merge TST-001 && kahnban done TST-001"
+
+
+# --- the merge queue tests the merged result (probe J) -----------------------
+
+
+def _check(module: str, name: str, value: int) -> str:
+    return (
+        f"import sys\nsys.path.insert(0, 'src')\nfrom {module} import {name}\n"
+        f"assert {name} == {value}, {name}\n"
+    )
+
+
+def test_merge_queue_refuses_what_only_breaks_main_in_combination(repo: Path) -> None:
+    config = factory_board(repo, regression_command=f"{PY} tests/check_sum.py")
+    (repo / "src" / "a.py").write_text("X = 1\n", encoding="utf-8")
+    (repo / "src" / "b.py").write_text("Y = 1\n", encoding="utf-8")
+    (repo / "tests").mkdir()
+    (repo / "tests" / "check_sum.py").write_text(
+        "import sys\nsys.path.insert(0, 'src')\nfrom a import X\nfrom b import Y\n"
+        "assert X + Y < 4, X + Y\n",
+        encoding="utf-8",
+    )
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "X + Y must stay below 4")
+    for ticket_id, module, name in (("TST-001", "a", "X"), ("TST-002", "b", "Y")):
+        check = f"{PY} tests/check_{module}.py"
+        verified(
+            config,
+            ticket_id,
+            {f"src/{module}.py": f"{name} = 2\n", f"tests/check_{module}.py": _check(module, name, 2)},
+            validation=check,
+            acceptance=(f"- [ ] {name} is 2 (test: `{check}`)",),
+            radius=(f"src/{module}.py", f"tests/check_{module}.py"),
+        )
+        core.approve(config, ticket_id, "reviewer")
+
+    assert core.merge(config, "TST-001").passed
+    main_before = gitops.rev_parse(repo, "main")
+
+    second = core.merge(config, "TST-002")
+
+    assert not second.passed
+    assert "INTEGRATION: REGRESSION TESTS" in second.output
+    # main only gained the board commit that logs the refusal; no code landed
+    assert all(path.startswith("plans/") for path in gitops.diff_names(repo, main_before, "main"))
+    assert (repo / "src" / "b.py").read_text(encoding="utf-8") == "Y = 1\n"
+    assert core.find_ticket(config, "TST-002").column == "4-verifying"
+    with pytest.raises(core.GateError, match="not integrated"):
+        core.done(config, "TST-002")
+    assert core.done(config, "TST-001").to_column == "5-done"
+    assert not (repo / ".worktrees" / ".merge-TST-002").exists()
+
+
+def test_merge_refuses_a_conflict_and_leaves_main_alone(repo: Path) -> None:
+    config = factory_board(repo)
+    verified(config)
+    core.approve(config, "TST-001", "reviewer")
+    (repo / "src" / "app.py").write_text("def f():\n    return 3\n", encoding="utf-8")
+    git(repo, "commit", "-am", "main changes the same line")
+    main_before = gitops.rev_parse(repo, "main")
+
+    with pytest.raises(core.GateError, match="does not merge cleanly"):
+        core.merge(config, "TST-001")
+
+    assert gitops.rev_parse(repo, "main") == main_before
+    assert not (repo / ".worktrees" / ".merge-TST-001").exists()
+
+
+# --- a lock held through a long test run is not "stale" ----------------------
+
+
+def test_a_lock_is_not_broken_before_its_holder_deadline(board: Path) -> None:
+    config = core.load_config(board)
+    lock = config.board_path / core.LOCK_NAME
+    long_ago = time.time() - 10 * core.LOCK_STALE_SECONDS
+    lock.write_text(f"pid=1 at=then until={int(time.time()) + 3600}\n", encoding="utf-8")
+    os.utime(lock, (long_ago, long_ago))
+
+    with pytest.raises(core.LockError):
+        with core.board_lock(config, max_retries=1):
+            pass
+
+    lock.write_text("pid=1 at=then\n", encoding="utf-8")
+    os.utime(lock, (long_ago, long_ago))
+    with core.board_lock(config, max_retries=2) as warnings:
+        assert any("stale" in warning for warning in warnings)

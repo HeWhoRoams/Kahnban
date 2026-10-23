@@ -36,7 +36,7 @@ class HandoffBaton:
     ticket_id: str = ""
     title: str = ""
     stage: str = "implementation"  # refinement, implementation, verification, closure
-    assigned_role: str = "coder"  # spec_analyst, coder, qa_reviewer, curator
+    assigned_role: str = "coder"  # spec_analyst, coder, qa_reviewer, integrator, curator
     harness: str = "auto"
     paths: dict[str, str] = field(default_factory=dict)
     qa_contract: QAContract = field(default_factory=QAContract)
@@ -109,25 +109,36 @@ def build_handoff_baton(
     # Generate role-tailored prompt and next command
     prompt = ""
     cmd = ""
+    title = str(fields.get("title") or ticket.ticket_id)
     if assigned_role == "coder":
         cmd = f"kahnban claim {ticket_id} --worktree --owner coder-agent"
         prompt = (
-            f"You are a specialized Coder Agent working on {ticket_id}: '{str(fields.get("title") or ticket.ticket_id)}'. "
+            f"You are a specialized Coder Agent working on {ticket_id}: '{title}'. "
             f"Operate inside isolated worktree '{worktree_field or f'.worktrees/{ticket_id}'}'. "
             f"Follow TDD (Red -> Green -> Refactor). "
             f"Touch ONLY files in blast radius: {', '.join(blast_radius) or 'none declared'}. "
             f"Run feature tests: `{feat_cmd}`. "
-            f"Ensure global regression tests pass: `{reg_cmd}`."
+            f"Ensure global regression tests pass: `{reg_cmd}`. "
+            f"Commit everything, then run 'kahnban verify {ticket_id}'."
         )
     elif assigned_role == "qa_reviewer":
-        cmd = f"kahnban verify {ticket_id}"
+        cmd = f"kahnban approve {ticket_id} --reviewer qa-reviewer"
         prompt = (
-            f"You are a QA Reviewer Agent auditing {ticket_id}: '{str(fields.get("title") or ticket.ticket_id)}'. "
-            f"Inspect the diff in worktree '{worktree_field}'. "
+            f"You are a QA Reviewer Agent auditing {ticket_id}: '{title}'. "
+            f"Inspect the diff of branch 'ticket/{ticket_id}' against the default branch. "
             f"Verify all acceptance criteria are proven by high-fidelity tests. "
             f"Run `/unslop` and `/no-comments`. "
-            f"If defects exist, record feedback in .agents/HANDOFF.json and reject. "
-            f"If verified, return to root, merge to main, and run 'kahnban done {ticket_id}'."
+            f"If defects exist, run 'kahnban reject {ticket_id} --reviewer qa-reviewer -m \"<what to fix>\"'. "
+            f"If it is sound, run '{cmd}'. Never merge or mark it done yourself."
+        )
+    elif assigned_role == "integrator":
+        cmd = f"kahnban merge {ticket_id} && kahnban done {ticket_id}"
+        prompt = (
+            f"You are the Integrator for {ticket_id}: '{title}', which a reviewer approved. "
+            f"Run 'kahnban merge {ticket_id}' from the project root: it merges onto the "
+            f"current default branch, runs the tests on the result, and lands it only if "
+            f"they pass. Then run 'kahnban done {ticket_id}'. If the merge is refused, run "
+            f"'kahnban reject {ticket_id} --reviewer integrator -m \"<the failure>\"'."
         )
     elif assigned_role == "curator":
         cmd = f"kahnban done {ticket_id}"

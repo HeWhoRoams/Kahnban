@@ -59,9 +59,11 @@ All work items must move strictly through these sequential stages:
 
 ### Stage 5: In Production
 - **Column:** `5-done`
-- **Rule:** Human review and PR merge of `ticket/<TICKET-ID>` into the default branch (`main`).
-- Finalize and prune:
+- **Rule:** A reviewer who is not the owner approves (or rejects) the verified tip, then the merge queue lands it. Never `git merge` a ticket branch by hand.
+- Review, land, finalize and prune:
   ```bash
+  kahnban approve <TICKET-ID> --reviewer <name>       # or: kahnban reject <TICKET-ID> --reviewer <name> -m "..."
+  kahnban merge <TICKET-ID>                           # tests main + branch, fast-forwards only if green
   kahnban done <TICKET-ID>
   kahnban cleanup <TICKET-ID>
   ```
@@ -104,6 +106,9 @@ kahnban new "<title>" --problem-file spec.txt  # single ticket creation
 kahnban ready <ID>                             # refinement gate -> 2-ready
 kahnban claim <ID> --owner <name> --worktree   # claim & spawn isolated worktree
 kahnban verify <ID>                            # execute validation command -> 4-verifying
+kahnban approve <ID> --reviewer <name>         # sign off the verified tip (never the owner)
+kahnban reject <ID> --reviewer <name> -m "..." # back to in-progress with reasons in the Log
+kahnban merge <ID>                             # merge queue: test main+branch, land only if green
 kahnban done <ID> [--merge-commit <sha>]       # production gate -> 5-done
 kahnban cleanup <ID>                           # prune worktree & local branch
 kahnban move <ID> <column> --reason "<why>"    # escape hatch; always logged

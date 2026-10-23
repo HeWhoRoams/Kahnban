@@ -291,15 +291,60 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             "properties": {
                 "role": {
                     "type": "string",
-                    "enum": ["coder", "qa_reviewer", "reviewer", "spec_analyst", "curator"],
+                    "enum": ["coder", "qa_reviewer", "reviewer", "integrator", "spec_analyst", "curator"],
                     "description": "Optional filter for a specific agent role",
                 }
             },
         },
     },
     {
+        "name": "kanban_ticket_approve",
+        "description": (
+            "Sign off a verified ticket as a reviewer other than its owner. Records the "
+            "approved branch tip; done refuses on require_review boards without it."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ticket_id": _string("Ticket id."),
+                "reviewer": _string("Who is approving; must not be the owner."),
+                "note": _string("Optional review note for the Log."),
+            },
+            "required": ["ticket_id", "reviewer"],
+        },
+    },
+    {
+        "name": "kanban_ticket_reject",
+        "description": (
+            "Send a verified ticket back to in-progress. The feedback is committed to "
+            "the ticket's Log and every acceptance box is unticked."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ticket_id": _string("Ticket id."),
+                "feedback": _string("What has to be fixed."),
+                "reviewer": _string("Who is rejecting (default: qa_reviewer)."),
+            },
+            "required": ["ticket_id", "feedback"],
+        },
+    },
+    {
+        "name": "kanban_ticket_merge",
+        "description": (
+            "Merge queue: merge the ticket branch onto the current default branch in a "
+            "throwaway worktree, run the feature and regression tests on the result, "
+            "and fast-forward the default branch only if they pass."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"ticket_id": _string("Ticket id.")},
+            "required": ["ticket_id"],
+        },
+    },
+    {
         "name": "kanban_feedback",
-        "description": "Record QA or code review rejection feedback into .agents/HANDOFF.json to route the ticket back to the coder agent with specific remediation instructions.",
+        "description": "Alias of kanban_ticket_reject: send a verified ticket back to in-progress with feedback.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -775,23 +820,45 @@ def tool_next(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any
     }
 
 
-def tool_feedback(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
-    from kahnban import handoff
-    ticket_id = str(arguments["ticket_id"]).strip().upper()
-    feedback = str(arguments["feedback"]).strip()
-    author = str(arguments.get("author") or "qa_reviewer").strip()
-    baton = handoff.record_rejection_feedback(project_root, ticket_id, feedback, author=author)
-    if not baton:
-        return {
-            "ok": False,
-            "error": f"No active handoff baton found for ticket {ticket_id}",
-        }
-    return {
-        "ok": True,
-        "ticket_id": ticket_id,
-        "assigned_role": baton.assigned_role,
-        "prompt": baton.next_action.get("prompt", ""),
+def tool_ticket_approve(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    return _transition_payload(
+        core.approve(
+            _config(project_root),
+            _require(arguments, "ticket_id"),
+            _require(arguments, "reviewer"),
+            note=str(arguments.get("note") or ""),
+        )
+    )
+
+
+def tool_ticket_reject(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    reviewer = arguments.get("reviewer") or arguments.get("author") or "qa_reviewer"
+    return _transition_payload(
+        core.reject(
+            _config(project_root),
+            _require(arguments, "ticket_id"),
+            str(reviewer),
+            _require(arguments, "feedback"),
+        )
+    )
+
+
+def tool_ticket_merge(project_root: Path, arguments: Mapping[str, Any]) -> dict[str, Any]:
+    config = _config(project_root)
+    result = core.merge(config, _require(arguments, "ticket_id"))
+    payload: dict[str, Any] = {
+        "ok": result.passed,
+        "ticket_id": result.ticket_id,
+        "passed": result.passed,
+        "exit_code": result.exit_code,
+        "command": result.command,
+        "output": core._truncate(result.output, config.log_output_max_bytes),
+        "artifact": result.artifact.as_posix() if result.artifact else None,
+        "messages": result.messages,
     }
+    if result.transition is not None:
+        payload["transition"] = _transition_payload(result.transition)
+    return payload
 
 
 TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
@@ -811,7 +878,10 @@ TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
     "kanban_session_get": tool_session_status,
     "kanban_session_update": tool_session_update,
     "kanban_next": tool_next,
-    "kanban_feedback": tool_feedback,
+    "kanban_ticket_approve": tool_ticket_approve,
+    "kanban_ticket_reject": tool_ticket_reject,
+    "kanban_ticket_merge": tool_ticket_merge,
+    "kanban_feedback": tool_ticket_reject,
 }
 
 

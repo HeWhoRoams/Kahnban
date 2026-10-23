@@ -63,10 +63,11 @@ All work items must move strictly through these sequential stages:
 - **Column:** `5-done`
 - **Rule:**
   1. Return to project root (`cd <project-root>`). Never merge from within `.worktrees/`.
-  2. Merge `ticket/<TICKET-ID>` into the default branch (`main`).
-  3. Finalize: `kahnban done <TICKET-ID>`.
-  4. Run `/reflect` to log friction, mistakes, or environmental traps to `./learnings/`.
-  5. Clean up: `kahnban cleanup <TICKET-ID>`.
+  2. A reviewer who is not the owner runs `kahnban approve <TICKET-ID> --reviewer <name>`, or `kahnban reject <TICKET-ID> --reviewer <name> -m "<what to fix>"` to send it back.
+  3. Land it through the merge queue: `kahnban merge <TICKET-ID>` (tests the merged result; never `git merge` by hand).
+  4. Finalize: `kahnban done <TICKET-ID>`.
+  5. Run `/reflect` to log friction, mistakes, or environmental traps to `./learnings/`.
+  6. Clean up: `kahnban cleanup <TICKET-ID>`.
 
 ---
 
@@ -119,6 +120,9 @@ kahnban new "<title>" --problem-file spec.txt  # single ticket creation
 kahnban ready <ID>                             # refinement gate -> 2-ready
 kahnban claim <ID> --owner <name> --worktree   # claim & spawn isolated worktree
 kahnban verify <ID>                            # execute validation command -> 4-verifying
+kahnban approve <ID> --reviewer <name>         # sign off the verified tip (never the owner)
+kahnban reject <ID> --reviewer <name> -m "..." # back to in-progress with reasons in the Log
+kahnban merge <ID>                             # merge queue: test main+branch, land only if green
 kahnban done <ID> [--merge-commit <sha>]       # production gate -> 5-done + learnings advisory
 kahnban cleanup <ID>                           # prune worktree & local branch
 kahnban learnings list                         # view active learning records

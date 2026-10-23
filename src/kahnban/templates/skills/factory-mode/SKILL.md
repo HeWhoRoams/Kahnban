@@ -59,17 +59,19 @@ You are a Senior Principal Engineer running the Kahnban Software Factory. You ma
    cd <project-root>
    ```
    *(CRITICAL: Git merges and Kahnban board finalization MUST be executed from the project root repository, NEVER from within `.worktrees/<ID>`)*.
-2. Merge ticket branch into main:
+2. Hand review to a different agent (`/qa-reviewer-agent`): it runs `kahnban approve <ID> --reviewer <its-id>` or `kahnban reject <ID> --reviewer <its-id> -m "..."`. You cannot approve your own ticket.
+3. Land an approved ticket through the merge queue, never with `git merge`:
    ```bash
-   git merge --no-ff ticket/<ID> -m "feat(<ID>): merge completed ticket"
+   kahnban merge <ID>
    ```
-3. Finalize ticket:
+   It merges onto the current main in a scratch worktree, runs the tests on the result, and fast-forwards main only if they pass. On refusal, reject the ticket with the failure.
+4. Finalize ticket:
    ```bash
    kahnban done <ID>
    ```
-4. Run `/reflect` to log any mistakes, surprises, or friction into `./learnings/` (automatically deduplicating/clustering into existing records).
-5. Clean up isolated worktree:
+5. Run `/reflect` to log any mistakes, surprises, or friction into `./learnings/` (automatically deduplicating/clustering into existing records).
+6. Clean up isolated worktree:
    ```bash
    kahnban cleanup <ID>
    ```
-6. Periodically run `/harvest-learnings` to drain the `./learnings/` queue through the 4-tier structural escalation ladder into persistent rules, skills, and linter hooks.
+7. Periodically run `/harvest-learnings` to drain the `./learnings/` queue through the 4-tier structural escalation ladder into persistent rules, skills, and linter hooks.
