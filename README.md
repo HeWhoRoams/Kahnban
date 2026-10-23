@@ -6,75 +6,27 @@ Kahnban is a zero-dependency, model-agnostic Kanban system and software factory 
 
 ## How It Works
 
-Every way in (an idea, an AI-written plan, an approved spec) becomes a ticket draft. The CLI and the MCP server are thin clients over one core, and that core is the only code that moves a ticket. Board state is a folder per column, committed on the default branch; code lives in a worktree on its own ticket branch.
+A ticket's column is its status: each column is a folder under `plans/tickets/`, and every move between columns is one commit on the default branch. A ticket moves forward only through a gate, a command that checks the ticket and refuses the move if anything is missing:
 
 ```mermaid
 flowchart TD
-  subgraph entry["Ways in"]
-    idea["capture · new"]
-    plan["ingest a plan or spec"]
-    spec["spec approve<br/>(humans only)"]
-  end
-  run["kahnban run<br/>factory loop"]
-  workers["agent workers<br/>spec-analyst · coder<br/>qa-reviewer · curator"]
-  subgraph clients["Two clients"]
-    cli["kahnban CLI"]
-    mcp["MCP server"]
-  end
-  core["core<br/>every gate and the one transition() writer"]
-  subgraph repo["Git repository"]
-    board[("plans/tickets/<br/>a folder per column,<br/>on the default branch")]
-    wt[(".worktrees/KB-001<br/>on ticket/KB-001")]
-  end
-  entry --> clients
-  run -->|prompt on stdin| workers
-  workers -->|role-checked commands| clients
-  run -->|runs the gates| core
-  clients --> core
-  core -->|git mv + commit| board
-  core -->|claim · merge · cleanup| wt
-  workers -->|code and tests| wt
+  backlog["0-backlog"] --> refining["1-refining"]
+  refining -->|ready| ready["2-ready"]
+  ready -->|claim| wip["3-in-progress"]
+  wip -->|verify| verifying["4-verifying"]
+  verifying -->|"approve · merge · done"| done["5-done"]
+  verifying -.->|reject| wip
 ```
 
-A ticket's column is its status. Each arrow below is a gate that refuses the move unless its checks pass, and each move is one commit:
+| Stage | Who works it | What happens there | Leaves through |
+| :--- | :--- | :--- | :--- |
+| [0-backlog, 1-refining](docs/how-it-works.md#backlog-and-refining) | a human or the spec-analyst | Ideas, plans and specs become tickets. Refining adds acceptance criteria that each name a test, a blast radius of files, and validation commands. | `ready` |
+| [2-ready](docs/how-it-works.md#ready) | nobody yet | The ticket's contract is frozen, and it waits for a coder and a free blast radius. | `claim` |
+| [3-in-progress](docs/how-it-works.md#in-progress) | the coder | Test-first work in the ticket's own worktree, committed on `ticket/<ID>`. | `verify` |
+| [4-verifying](docs/how-it-works.md#verifying) | the qa-reviewer, then the integrator | A different reviewer approves or rejects, then the merge queue tests the merged result. | `approve`, `merge`, `done` (or `reject`) |
+| [5-done](docs/how-it-works.md#done) | — | A learnings reflection, then `cleanup` removes the worktree and branch. | — |
 
-```mermaid
-stateDiagram-v2
-  state "0-backlog" as backlog
-  state "1-refining" as refining
-  state "2-ready" as ready
-  state "3-in-progress" as wip
-  state "4-verifying" as verifying
-  state "5-done" as done
-  [*] --> backlog: capture · new · ingest
-  backlog --> refining: move · ingest --ready
-  backlog --> ready: ready gate
-  refining --> ready: ready gate
-  ready --> wip: claim
-  wip --> verifying: verify gate
-  verifying --> wip: reject
-  verifying --> verifying: approve, then merge queue
-  verifying --> done: done
-  done --> [*]: cleanup
-```
-
-The board and the code meet only at the merge queue. `merge` merges the ticket branch onto the default branch in a scratch worktree, runs the feature and regression tests on that result, and fast-forwards the default branch only if they pass:
-
-```mermaid
-gitGraph
-  commit id: "ready KB-001"
-  commit id: "claim KB-001"
-  branch ticket/KB-001
-  checkout ticket/KB-001
-  commit id: "failing test"
-  commit id: "make it pass"
-  checkout main
-  commit id: "verify KB-001"
-  commit id: "approve KB-001"
-  merge ticket/KB-001 id: "merge, tests green"
-  commit id: "integrated KB-001"
-  commit id: "done KB-001"
-```
+Each stage links to [How Kahnban works](docs/how-it-works.md), which goes one level down (the checks inside each gate) and then into the deeper flows: the factory loop, the merge queue, the architecture and the learnings loop.
 
 ## Quick Start
 
@@ -233,26 +185,7 @@ A spec lists one observable outcome per line under `## Requirements` (`- R1: ...
 
 `kahnban run` is the loop: it asks the dispatcher for the next action, runs every gate itself (`ready`, `claim`, `verify`, `merge`, `done`), and starts a worker only for the judgment work: refining, implementing, reviewing, and, once per run when a learning has recurred (`occurrences >= 2`) or is critical, curating it into a fix ticket before new work is claimed. A worker cannot skip a gate or report a success it did not earn.
 
-Each step, the dispatcher picks the first match, top to bottom. Workers only run in the rounded boxes; everything else is a gate the runner calls itself:
-
-```mermaid
-flowchart TD
-  start(["next step"]) --> v{"verifying?"}
-  v -->|approved| merge["merge → done → cleanup<br/>(a refused merge is rejected back)"]
-  v -->|not approved| review("qa-reviewer worker<br/>approves or rejects")
-  v -->|no| w{"in progress,<br/>no lease?"}
-  w -->|yes| code("coder worker in its worktree<br/>(revises if it was rejected)")
-  code --> verify["verify gate"]
-  w -->|no| l{"learning<br/>recurred?"}
-  l -->|"yes, once per run"| curate("curator worker<br/>files a fix ticket, promotes the learning")
-  l -->|no| r{"ready, radius<br/>free?"}
-  r -->|yes| claim["claim into a worktree"] --> code
-  r -->|no| i{"backlog or<br/>refining?"}
-  i -->|yes| refine("spec-analyst worker") --> ready["ready gate"]
-  i -->|no| idle(["idle: stop, report parked tickets"])
-```
-
-A ticket that comes back to the same action more than `max_attempts` times in one run is escalated to a human instead of tried again.
+[The factory loop](docs/how-it-works.md#the-factory-loop) shows the loop and the order in which the dispatcher picks work.
 
 ```powershell
 kahnban skills install --harness claude   # .claude/agents/kahnban-*.md + the guard hook; commit .claude/
@@ -285,19 +218,7 @@ Choose the permission mode deliberately: a coder needs to run tests and `git com
 
 ## Continuous Learning Subsystem (`./learnings/`)
 
-Kahnban incorporates a pattern-aggregating self-improvement queue based on continuous learning principles. Instead of logging one-off noise, it clusters environmental recurrences, escalates severity, and tracks affected file locations:
-
-```mermaid
-flowchart LR
-  cap["learnings capture"] --> match{"same pattern<br/>or location?"}
-  match -->|no| new["new LRN record"]
-  match -->|yes| bump["occurrences + 1<br/>keeps the higher severity"]
-  new --> due{"occurrences ≥ 2<br/>or critical?"}
-  bump --> due
-  due -->|yes| cur("curator: a fix ticket<br/>on the board")
-  cur --> promote["learnings promote<br/>--level 1-4 --artifact"]
-  promote --> arch[("learnings/archive/")]
-```
+Kahnban incorporates a pattern-aggregating self-improvement queue based on continuous learning principles. Instead of logging one-off noise, it clusters environmental recurrences, escalates severity, and tracks affected file locations. [The learnings loop](docs/how-it-works.md#the-learnings-loop) shows the flow from capture to promotion.
 
 - **Capture & Cluster**:
   ```powershell
@@ -325,6 +246,7 @@ flowchart LR
 
 ## Documentation
 
+- **[docs/how-it-works.md](docs/how-it-works.md)** — each stage and its gate, the factory loop, the merge queue, the architecture and the learnings loop, as diagrams
 - **[adapters/AGENTS.md](adapters/AGENTS.md)** — universal agent working agreement to copy into adopter repos
 - **[adapters/README.md](adapters/README.md)** — adopting Kahnban in an existing repository
 - **[adapters/MCP.md](adapters/MCP.md)** — MCP client registration per IDE (Cursor, Claude, VS Code, Hermes)
