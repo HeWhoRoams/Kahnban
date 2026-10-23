@@ -10,6 +10,7 @@ link never touches the target directory (§3.4).
 from __future__ import annotations
 
 import os
+import stat
 import time
 import subprocess
 from collections.abc import Iterable, Sequence
@@ -41,10 +42,15 @@ def worktree_path(project_root: Path, ticket_id: str) -> Path:
 
 def is_link(path: Path) -> bool:
     """True for symlinks and (on Windows) NTFS junctions."""
-    isjunction = getattr(os.path, "isjunction", None)
-    if isjunction is not None and isjunction(path):
+    if path.is_symlink():
         return True
-    return path.is_symlink()
+    if os.name != "nt":
+        return False
+    # What os.path.isjunction (3.12+) checks; older Pythons have no isjunction.
+    try:
+        return os.lstat(path).st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
+    except OSError:
+        return False
 
 
 def create_link(target: Path, link: Path) -> None:

@@ -150,7 +150,7 @@ def test_windows_links_are_junctions_not_symlinks(repo: Path) -> None:
     link = repo / "linked"
     worktree.create_link(cache, link)
 
-    assert os.path.isjunction(link)
+    assert worktree.is_link(link)
     assert not os.path.islink(link)
 
 
