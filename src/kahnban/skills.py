@@ -23,6 +23,12 @@ from kahnban import frontmatter
 TEMPLATES_SKILLS_DIR = Path(__file__).parent / "templates" / "skills"
 TEMPLATES_AGENTS_DIR = Path(__file__).parent / "templates" / "agents"
 GUARD_COMMAND = "kahnban guard"
+# VS Code's mcp.json schema: a stdio server is "type": "stdio" plus command/args.
+VSCODE_MCP_SERVER = {
+    "type": "stdio",
+    "command": "python",
+    "args": ["-m", "kahnban.mcp_server", "--project-root", "${workspaceFolder}"],
+}
 GUARD_HOOK = {
     "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
     "hooks": [{"type": "command", "command": GUARD_COMMAND}],
@@ -288,15 +294,7 @@ def install_skills(
             vscode_dir.mkdir(parents=True, exist_ok=True)
             if not mcp_config.exists():
                 from kahnban.core import write_text_atomic
-                mcp_data = {
-                    "servers": {
-                        "kahnban": {
-                            "command": "python",
-                            "args": ["-m", "kahnban", "mcp"],
-                            "transport": "stdio"
-                        }
-                    }
-                }
+                mcp_data = {"servers": {"kahnban": VSCODE_MCP_SERVER}}
                 write_text_atomic(mcp_config, json.dumps(mcp_data, indent=2))
         configured_harnesses.append("vscode (.vscode/mcp.json)")
 

@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import time
 from pathlib import Path
 
 import pytest
 
 from kahnban import core, dispatcher, frontmatter, guard, runner, skills
+from kahnban.cli import main
 from conftest import git, write_ticket
 from test_factory_gates import CHECK, CHECK_APP, CRITERION, PY, claimed, factory_board, strict_board
 
@@ -216,6 +219,23 @@ def test_skills_install_adds_agents_and_one_guard_hook(tmp_path: Path) -> None:
     assert commands == ["kahnban guard"]
     for role in ("coder", "qa-reviewer", "spec-analyst", "curator"):
         assert (tmp_path / ".claude" / "agents" / f"kahnban-{role}.md").is_file()
+
+
+def test_the_vscode_mcp_config_starts_a_working_server(tmp_path: Path) -> None:
+    # Audit probe K: this config used to run 'python -m kahnban mcp', which is no command.
+    assert main(["--project-root", str(tmp_path), "skills", "install", "--harness", "vscode"]) == 0
+    server = json.loads((tmp_path / ".vscode" / "mcp.json").read_text(encoding="utf-8"))
+    entry = server["servers"]["kahnban"]
+    args = [arg.replace("${workspaceFolder}", str(tmp_path)) for arg in entry["args"]]
+    request = {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}
+
+    reply = subprocess.run(
+        [sys.executable, *args], input=json.dumps(request) + "\n",
+        capture_output=True, text=True, timeout=60,
+    )
+
+    assert entry["type"] == "stdio"
+    assert json.loads(reply.stdout.splitlines()[0])["result"]["serverInfo"]
 
 
 # --- allowlist for ticket-supplied commands ------------------------------------

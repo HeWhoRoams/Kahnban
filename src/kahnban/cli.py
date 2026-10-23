@@ -952,7 +952,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     skills_parser.add_argument(
         "--harness",
-        choices=["auto", "agents", "claude", "gemini", "cursor", "all"],
+        choices=["auto", "agents", "claude", "gemini", "cursor", "vscode", "hermes", "all"],
         default="auto",
         help="target AI harness: 'auto' (default: .agents/skills + detected harnesses), 'claude', 'gemini', 'cursor', 'all'",
     )
@@ -967,7 +967,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inst_parser.add_argument(
         "--harness",
-        choices=["auto", "agents", "claude", "gemini", "cursor", "all"],
+        choices=["auto", "agents", "claude", "gemini", "cursor", "vscode", "hermes", "all"],
         default="auto",
         help="target AI harness: 'auto' (default), 'claude', 'gemini', 'cursor', 'all'",
     )
