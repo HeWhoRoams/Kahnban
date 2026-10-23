@@ -11,6 +11,7 @@ import json
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 
 from kahnban import core, frontmatter, gitops
@@ -34,6 +35,7 @@ RULES: dict[str, str] = {
     "BL16": "no two in-progress tickets have overlapping blast radii",
     "BL17": "ingest provenance is unique and its source document exists",
     "BL18": "spec traceability: cited specs and requirements exist, approved specs are covered",
+    "BL19": "in-progress tickets move within stale_after_days (warning)",
 }
 
 VIOLATION = "violation"
@@ -162,6 +164,7 @@ def lint(config: core.Config, *, strict: bool = False) -> LintResult:
     _check_blast_radius_overlap(config, result, parsed)
     _check_provenance(config, result, tickets, parsed)
     _check_traceability(config, result, tickets, parsed)
+    _check_stale(config, result, tickets, parsed)
     return result
 
 
@@ -486,6 +489,38 @@ def _check_traceability(
                 f"{spec.spec_id} {requirement} is covered by no ticket",
                 severity=WARNING,
                 path=location,
+            )
+
+
+def _check_stale(
+    config: core.Config,
+    result: LintResult,
+    tickets: Sequence[core.Ticket],
+    parsed: Mapping[Path, tuple[Mapping[str, object], str]],
+    *,
+    today: date | None = None,
+) -> None:
+    """BL19 — a claim nobody has moved in ``stale_after_days`` is probably abandoned."""
+    if not config.stale_after_days:
+        return
+    today = today or date.today()
+    for ticket in tickets:
+        if ticket.column != config.in_progress_column or ticket.path not in parsed:
+            continue
+        fields, _ = parsed[ticket.path]
+        try:
+            updated = date.fromisoformat(str(fields.get("updated") or ""))
+        except ValueError:
+            continue
+        idle = (today - updated).days
+        if idle > config.stale_after_days:
+            result.add(
+                "BL19",
+                f"in progress for {idle} days without a transition (owner "
+                f"{fields.get('owner') or 'unknown'}); lease it, escalate it, or move it back",
+                severity=WARNING,
+                ticket=ticket.ticket_id,
+                path=_relative(config, ticket.path),
             )
 
 

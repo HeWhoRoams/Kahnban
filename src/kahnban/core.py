@@ -121,6 +121,7 @@ class Config:
     require_integration: bool = False
     require_spec: bool = False
     max_blast_radius_files: int = 0
+    stale_after_days: int = 0
     test_patterns: tuple[str, ...] = DEFAULT_TEST_PATTERNS
     allowed_commands: tuple[str, ...] = ()
     lease_minutes: int = 30
@@ -288,6 +289,7 @@ def load_config(
         require_integration=bool(raw.get("require_integration", False)),
         require_spec=bool(raw.get("require_spec", False)),
         max_blast_radius_files=int(raw.get("max_blast_radius_files", 0)),
+        stale_after_days=int(raw.get("stale_after_days", 0)),
         test_patterns=tuple(raw.get("test_patterns") or DEFAULT_TEST_PATTERNS),
         allowed_commands=tuple(str(item) for item in raw.get("allowed_commands") or ()),
         lease_minutes=int(raw.get("lease_minutes", 30)),
@@ -964,6 +966,27 @@ def board_lock(
 # --- projections ------------------------------------------------------------
 
 
+LOG_ENTRY = re.compile(r"^- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) - (.*)$")
+
+
+def log_metrics(log: str) -> dict[str, Any]:
+    """Counts and cycle time read from a ticket's ``## Log`` (the audit trail)."""
+    entries = [
+        (datetime.strptime(match.group(1), "%Y-%m-%d %H:%M"), match.group(2))
+        for match in (LOG_ENTRY.match(line) for line in log.split("\n"))
+        if match
+    ]
+    done = next((when for when, text in entries if text.startswith("done gate passed")), None)
+    return {
+        "verify_attempts": sum(text.startswith("verify exit=") for _, text in entries),
+        "rejections": sum(text.startswith("rejected by") for _, text in entries),
+        "escalations": sum(text.startswith("escalated to a human") for _, text in entries),
+        "cycle_hours": (
+            round((done - entries[0][0]).total_seconds() / 3600, 1) if done and entries else None
+        ),
+    }
+
+
 def collect_records(config: Config) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for ticket in iter_tickets(config):
@@ -1006,6 +1029,7 @@ def collect_records(config: Config) -> list[dict[str, Any]]:
 
         record["blocked_on"] = str(fields.get("blocked_on", "") or "")
         record["blast_radius"] = parse_blast_radius(body)
+        record["metrics"] = log_metrics(section(body, "Log"))
 
         prob = section(body, "Problem") or section(body, "Objective")
         if prob:
@@ -2786,6 +2810,7 @@ def init_board(
         "require_integration": True,
         "require_spec": False,
         "max_blast_radius_files": 3,
+        "stale_after_days": 3,
         "allowed_commands": [],
         "design_doc_roots": ["plans"],
         "extensions": {},

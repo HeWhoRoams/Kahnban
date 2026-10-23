@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, dispatcher, frontmatter, guard, runner, skills
+from kahnban import core, dispatcher, frontmatter, guard, linter, runner, skills
 from kahnban.cli import main
 from conftest import git, write_ticket
 from test_factory_gates import CHECK, CHECK_APP, CRITERION, PY, claimed, factory_board, strict_board
@@ -112,6 +112,9 @@ def test_run_takes_a_ready_ticket_all_the_way_to_done(repo: Path, tmp_path: Path
     assert not core.branch_tip(config, "ticket/TST-001")
     assert (repo / "src" / "app.py").read_text(encoding="utf-8").strip().endswith("return 2")
     assert "coder finished" in result.log_path.read_text(encoding="utf-8")
+    metrics = json.loads((repo / "plans" / "status.json").read_text(encoding="utf-8"))["metrics"]
+    assert metrics["tickets"]["TST-001"]["verify_attempts"] == 1
+    assert (metrics["done"], metrics["first_pass_yield"]) == (1, 1.0)
 
 
 def test_run_escalates_a_ticket_that_makes_no_progress(repo: Path) -> None:
@@ -236,6 +239,37 @@ def test_the_vscode_mcp_config_starts_a_working_server(tmp_path: Path) -> None:
 
     assert entry["type"] == "stdio"
     assert json.loads(reply.stdout.splitlines()[0])["result"]["serverInfo"]
+
+
+# --- metrics and stale claims ------------------------------------------------------
+
+
+def test_log_metrics_count_attempts_rejections_and_cycle_time() -> None:
+    log = "\n".join([
+        "- 2026-10-01 09:00 - created -> 0-backlog",
+        "- 2026-10-01 10:00 - verify exit=1 in 2.0s (cwd=TST-001) (no transition)",
+        "    $ pytest",
+        "- 2026-10-01 11:00 - verify exit=0 in 2.0s (cwd=TST-001) -> 4-verifying",
+        "- 2026-10-01 12:00 - rejected by qa:",
+        "    cover the overflow case",
+        "- 2026-10-02 11:00 - done gate passed -> 5-done | merge-commit: abc",
+    ])
+
+    metrics = core.log_metrics(log)
+
+    assert metrics == {"verify_attempts": 2, "rejections": 1, "escalations": 0, "cycle_hours": 26.0}
+
+
+def test_a_claim_nobody_moves_is_reported_stale(repo: Path) -> None:
+    config = strict_board(repo, stale_after_days=3)
+    write_ticket(config.board_path, "3-in-progress", "TST-001", "old", owner="coder",
+                 branch="ticket/TST-001")  # write_ticket dates it 2026-08-18
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "an old claim")
+
+    warnings = [f for f in linter.lint(config).warnings if f.rule == "BL19"]
+
+    assert len(warnings) == 1 and "owner coder" in warnings[0].message
 
 
 # --- allowlist for ticket-supplied commands ------------------------------------

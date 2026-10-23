@@ -179,25 +179,23 @@ def resolve_next_action(
         )
 
     # Priority 5: Check ./learnings/ (Continuous Learning Curator)
-    try:
-        from kahnban import learnings
+    # list_learnings already tolerates a missing directory and reports unreadable files.
+    from kahnban import learnings
 
-        pending_learnings = learnings.list_learnings(root, include_archive=False)
-        if pending_learnings and (preferred_role in (None, "curator")):
-            count = len(pending_learnings)
-            return DispatchRecommendation(
-                action="harvest_learnings",
-                assigned_role="curator",
-                summary=f"{count} pending learning pattern(s) in ./learnings/ ready for structural promotion.",
-                command="kahnban learnings list && /harvest-learnings",
-                prompt=(
-                    f"You are a Continuous Learning Curator. There are {count} active learning pattern(s). "
-                    "Review them, promote resolved items to the appropriate escalation ladder tier, "
-                    "and encode structural safeguards into codebase rules or tests."
-                ),
-            )
-    except Exception:
-        pass
+    pending_learnings = learnings.list_learnings(root, include_archive=False)
+    if pending_learnings and (preferred_role in (None, "curator")):
+        count = len(pending_learnings)
+        return DispatchRecommendation(
+            action="harvest_learnings",
+            assigned_role="curator",
+            summary=f"{count} pending learning pattern(s) in ./learnings/ ready for structural promotion.",
+            command="kahnban learnings list && /harvest-learnings",
+            prompt=(
+                f"You are a Continuous Learning Curator. There are {count} active learning pattern(s). "
+                "Review them, promote resolved items to the appropriate escalation ladder tier, "
+                "and encode structural safeguards into codebase rules or tests."
+            ),
+        )
 
     # Default: Idle / Board Clean
     return DispatchRecommendation(

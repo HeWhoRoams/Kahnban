@@ -9,6 +9,7 @@ broke on slugs containing digits).
 from __future__ import annotations
 
 import json
+import statistics
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
@@ -120,8 +121,26 @@ def render_json(
             }
             for column in columns
         ],
+        "metrics": _metrics(records),
     }
     return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+
+
+def _metrics(records: Iterable[Record]) -> dict[str, Any]:
+    """Per-ticket counts plus how often done work passed first time, and how fast."""
+    per_ticket = {
+        str(record["id"]): dict(record["metrics"])
+        for record in sorted(records, key=_sort_key)
+        if record.get("metrics")
+    }
+    done = [m for m in per_ticket.values() if m.get("cycle_hours") is not None]
+    clean = [m for m in done if m["verify_attempts"] <= 1 and not m["rejections"]]
+    return {
+        "done": len(done),
+        "first_pass_yield": round(len(clean) / len(done), 2) if done else None,
+        "median_cycle_hours": statistics.median(m["cycle_hours"] for m in done) if done else None,
+        "tickets": per_ticket,
+    }
 
 
 def render_board_json(
