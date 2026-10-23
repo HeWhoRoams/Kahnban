@@ -4,6 +4,78 @@
 
 Kahnban is a zero-dependency, model-agnostic Kanban system and software factory conductor for AI coding workflows. It provides machine-enforced gates, strict transparency into in-flight agent tasks, prevents workspace collisions across concurrent LLM sessions, and maintains a single source of truth backed by Git storage.
 
+## How It Works
+
+Every way in (an idea, an AI-written plan, an approved spec) becomes a ticket draft. The CLI and the MCP server are thin clients over one core, and that core is the only code that moves a ticket. Board state is a folder per column, committed on the default branch; code lives in a worktree on its own ticket branch.
+
+```mermaid
+flowchart TD
+  subgraph entry["Ways in"]
+    idea["capture · new"]
+    plan["ingest a plan or spec"]
+    spec["spec approve<br/>(humans only)"]
+  end
+  run["kahnban run<br/>factory loop"]
+  workers["agent workers<br/>spec-analyst · coder<br/>qa-reviewer · curator"]
+  subgraph clients["Two clients"]
+    cli["kahnban CLI"]
+    mcp["MCP server"]
+  end
+  core["core<br/>every gate and the one transition() writer"]
+  subgraph repo["Git repository"]
+    board[("plans/tickets/<br/>a folder per column,<br/>on the default branch")]
+    wt[(".worktrees/KB-001<br/>on ticket/KB-001")]
+  end
+  entry --> clients
+  run -->|prompt on stdin| workers
+  workers -->|role-checked commands| clients
+  run -->|runs the gates| core
+  clients --> core
+  core -->|git mv + commit| board
+  core -->|claim · merge · cleanup| wt
+  workers -->|code and tests| wt
+```
+
+A ticket's column is its status. Each arrow below is a gate that refuses the move unless its checks pass, and each move is one commit:
+
+```mermaid
+stateDiagram-v2
+  state "0-backlog" as backlog
+  state "1-refining" as refining
+  state "2-ready" as ready
+  state "3-in-progress" as wip
+  state "4-verifying" as verifying
+  state "5-done" as done
+  [*] --> backlog: capture · new · ingest
+  backlog --> refining: move · ingest --ready
+  backlog --> ready: ready gate
+  refining --> ready: ready gate
+  ready --> wip: claim
+  wip --> verifying: verify gate
+  verifying --> wip: reject
+  verifying --> verifying: approve, then merge queue
+  verifying --> done: done
+  done --> [*]: cleanup
+```
+
+The board and the code meet only at the merge queue. `merge` merges the ticket branch onto the default branch in a scratch worktree, runs the feature and regression tests on that result, and fast-forwards the default branch only if they pass:
+
+```mermaid
+gitGraph
+  commit id: "ready KB-001"
+  commit id: "claim KB-001"
+  branch ticket/KB-001
+  checkout ticket/KB-001
+  commit id: "failing test"
+  commit id: "make it pass"
+  checkout main
+  commit id: "verify KB-001"
+  commit id: "approve KB-001"
+  merge ticket/KB-001 id: "merge, tests green"
+  commit id: "integrated KB-001"
+  commit id: "done KB-001"
+```
+
 ## Quick Start
 
 ```powershell
@@ -161,6 +233,27 @@ A spec lists one observable outcome per line under `## Requirements` (`- R1: ...
 
 `kahnban run` is the loop: it asks the dispatcher for the next action, runs every gate itself (`ready`, `claim`, `verify`, `merge`, `done`), and starts a worker only for the judgment work: refining, implementing, reviewing, and, once per run when a learning has recurred (`occurrences >= 2`) or is critical, curating it into a fix ticket before new work is claimed. A worker cannot skip a gate or report a success it did not earn.
 
+Each step, the dispatcher picks the first match, top to bottom. Workers only run in the rounded boxes; everything else is a gate the runner calls itself:
+
+```mermaid
+flowchart TD
+  start(["next step"]) --> v{"verifying?"}
+  v -->|approved| merge["merge → done → cleanup<br/>(a refused merge is rejected back)"]
+  v -->|not approved| review("qa-reviewer worker<br/>approves or rejects")
+  v -->|no| w{"in progress,<br/>no lease?"}
+  w -->|yes| code("coder worker in its worktree<br/>(revises if it was rejected)")
+  code --> verify["verify gate"]
+  w -->|no| l{"learning<br/>recurred?"}
+  l -->|"yes, once per run"| curate("curator worker<br/>files a fix ticket, promotes the learning")
+  l -->|no| r{"ready, radius<br/>free?"}
+  r -->|yes| claim["claim into a worktree"] --> code
+  r -->|no| i{"backlog or<br/>refining?"}
+  i -->|yes| refine("spec-analyst worker") --> ready["ready gate"]
+  i -->|no| idle(["idle: stop, report parked tickets"])
+```
+
+A ticket that comes back to the same action more than `max_attempts` times in one run is escalated to a human instead of tried again.
+
 ```powershell
 kahnban skills install --harness claude   # .claude/agents/kahnban-*.md + the guard hook; commit .claude/
 kahnban run --max-steps 20                # until the board is idle or every open ticket is parked
@@ -193,6 +286,18 @@ Choose the permission mode deliberately: a coder needs to run tests and `git com
 ## Continuous Learning Subsystem (`./learnings/`)
 
 Kahnban incorporates a pattern-aggregating self-improvement queue based on continuous learning principles. Instead of logging one-off noise, it clusters environmental recurrences, escalates severity, and tracks affected file locations:
+
+```mermaid
+flowchart LR
+  cap["learnings capture"] --> match{"same pattern<br/>or location?"}
+  match -->|no| new["new LRN record"]
+  match -->|yes| bump["occurrences + 1<br/>keeps the higher severity"]
+  new --> due{"occurrences ≥ 2<br/>or critical?"}
+  bump --> due
+  due -->|yes| cur("curator: a fix ticket<br/>on the board")
+  cur --> promote["learnings promote<br/>--level 1-4 --artifact"]
+  promote --> arch[("learnings/archive/")]
+```
 
 - **Capture & Cluster**:
   ```powershell
