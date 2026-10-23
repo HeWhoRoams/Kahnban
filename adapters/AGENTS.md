@@ -110,7 +110,7 @@ When switching AI harnesses or running low on context/credits:
 ## 6. Command Quick Reference
 
 ```powershell
-kahnban lint                                   # board rules BL01-BL18
+kahnban lint                                   # board rules BL01-BL19
 kahnban status                                 # counts + lint summary
 kahnban session                                # inspect cross-harness state
 kahnban session --flush --ticket <ID>          # update ACTIVE_SESSION.md

@@ -1,6 +1,6 @@
 # Kahnban — Portable Agentic Kanban Workflow Engine & Software Factory
 
-**Status:** Engine `1.3.0` — Full agentic Kanban pipeline, dual-tier QA gates, autonomous stage dispatcher (`kahnban next`), and multi-harness relay protocol. 296 tests passing.
+**Status:** Engine `1.4.0` (`kahnban --version`). Gated Kanban pipeline from approved spec to merged code: proof-checked verify, review and merge-queue gates, an unattended factory loop (`kahnban run`), and a role guard for agent workers. CI runs the suite on Windows and Linux, Python 3.10–3.13.
 
 Kahnban is a zero-dependency, model-agnostic Kanban system and software factory conductor for AI coding workflows. It provides machine-enforced gates, strict transparency into in-flight agent tasks, prevents workspace collisions across concurrent LLM sessions, and maintains a single source of truth backed by Git storage.
 
@@ -8,7 +8,7 @@ Kahnban is a zero-dependency, model-agnostic Kanban system and software factory 
 
 ```powershell
 py -3 -m pip install -e .        # install the engine (editable)
-py -3 -m pytest -q               # 296 tests (drives real git repos, ~5 min)
+py -3 -m pytest -q               # drives real git repos, ~5 min
 kahnban --version
 ```
 
@@ -185,6 +185,8 @@ Choose the permission mode deliberately: a coder needs to run tests and `git com
 | Timeouts | A worker that outlives `worker_timeout_sec` is killed along with every process it started, and nothing else. |
 | `kahnban guard` | A PreToolUse hook (installed by `skills install --harness claude`) that is a no-op unless `KAHNBAN_ROLE` is set. Inside a worker it blocks edits outside the role's remit (a coder: its worktree and blast radius; a reviewer: nothing) and blocks override flags, `git merge/push/rebase/reset --hard`, and `kahnban` commands outside the role. It's a tripwire against mistakes, not a sandbox. |
 | `allowed_commands` | When set, `ready`, `verify` and `merge` refuse any ticket-supplied validation or criterion command that doesn't start with an allowed prefix. Tickets can come from ingested AI plans, and their commands run with your privileges. |
+| Metrics | `plans/status.json` → `metrics`: verify attempts, rejections, escalations and cycle hours per ticket, read from its Log, plus first-pass yield and median cycle time for done work. |
+| Stale claims | Lint warning BL19 when an in-progress ticket has not moved for `stale_after_days` (`init` writes 3). |
 
 ---
 
@@ -241,24 +243,19 @@ Kahnban incorporates a pattern-aggregating self-improvement queue based on conti
 
 ---
 
-## Implementation Snapshot
+## Module Map
 
-| Component | Status | Tests | Lines |
-| :--- | :---: | ---: | ---: |
-| frontmatter | done | 10 | 196 |
-| gitops | done | 9 | 215 |
-| core | done | 61 | 2,023 |
-| ingest | done | 48 | 1,013 |
-| linter | done | 32 | 476 |
-| status | done | 8 | 239 |
-| worktree | done | 13 | 191 |
-| mcp_server | done | 26 | 846 |
-| cli | done | 36 | 827 |
-| learnings | done | 4 | 472 |
-| skills | done | 6 | 360 |
-| hooks | done | 3 | 142 |
-| handoff | done | 2 | 255 |
-| dispatcher | done | 3 | 184 |
-| lifecycle (e2e) | done | 2 | — |
+Zero runtime dependencies. Test and line counts are left out on purpose: run `py -3 -m pytest -q` for the current ones.
 
-**Total:** 296 tests passing; ~7,439 lines of engine code, zero runtime dependencies.
+| Module | Owns |
+| :--- | :--- |
+| `core` | config, the single `transition()` writer, every gate (ready, claim, verify, approve, reject, merge, done), leases, escalation |
+| `specs` | spec drafts, the approval gate, requirement coverage |
+| `runner` | `kahnban run`: the factory loop and its workers |
+| `guard` | the PreToolUse role guard for factory workers |
+| `dispatcher` / `handoff` | `kahnban next` and the relay baton each role receives |
+| `ingest` | plans, specs and ideas into ticket drafts |
+| `linter` | board rules BL01–BL19 |
+| `worktree` / `gitops` | worktrees, cache junctions, git calls |
+| `mcp_server` / `cli` | the two client surfaces over the same core |
+| `skills` / `learnings` / `session` / `hooks` / `status` | harness setup, the learnings queue, session handoff, lifecycle hooks, STATUS projections |

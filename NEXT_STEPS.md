@@ -1,162 +1,43 @@
-# NEXT STEPS FOR THE NEXT AGENT
+# Next Steps
 
-**Current date:** 2026-08-19
-**Status:** Phase 1 engine + entry points complete — 248 tests passing, version `1.1.1`
+**Date:** 2026-10-23 — engine `1.4.0`. What is built and proven is in
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md); this is what is left.
 
-Phase 1 of [plan.md](plan.md) §7 is code complete. Every module listed in the
-Layer 1 tree exists with tests, all BL01–BL16 rules have negative fixtures, and
-the full lifecycle runs end to end on a scratch repository. The entry-point
-layer (§2.6) is in too: `kahnban capture` for ideation, `kahnban ingest` for
-plan documents and feature specs, plus the matching MCP tools and BL17.
+## Prove more of it live
 
----
+The engine paths below are covered by tests with fake workers but have not run with
+real agents yet. Use the scratch-repo smoke setup (one ticket, Haiku workers) and add:
 
-## 1. Merge, tag, and push — DONE
+1. A backlog ticket with no criteria, so the spec analyst has to refine it.
+2. A ticket the reviewer should reject (a hollow `assert True` test), to see the
+   reject → revise → re-verify loop with real agents.
+3. Two tickets that conflict on main, to see `merge` refuse and send one back.
 
-`main` is merged, tagged, and pushed through `v1.1.1` (`ae113d4`), in sync with
-`origin/main`. Tags on the remote: `v1.0.0` (engine, `394a0a8`), `v1.1.0`
-(entry-point layer), `v1.1.1` (the `--config` position fix below). Nothing
-outstanding here.
+Preflight first: `claude auth status` and one trivial `claude -p` call, in the same
+shell the run will use.
 
----
+## P3 — learning and operations
 
-## 2. Phase 2 — `heirs_ancients` adoption — DONE 2026-08-19
+- **Metrics per role:** `status.json` now has per-ticket counts and board-level
+  first-pass yield; per-role breakdowns (which worker caused rejections) are next.
+- **Learnings loop:** `learnings promote` should require a linked artifact (rule id,
+  test path or commit) that exists, and harvest should be scheduled when a record
+  reaches `occurrences >= 2`, not only when the board is idle.
+- **Housekeeping:** rename the pstack `blast-radius` skill (it collides with the
+  ticket field); run this repository's own work on a kahnban board.
 
-Committed on branch **`kahnban-adoption`** in `C:\github\heirs_ancients`
-(`6d5212f` board scaffold, `bd04259` configuration and wiring), not merged and
-not pushed:
+## Harder limits (need design, not just code)
 
-- `plans/board.config.json` — §6.1 config: HOA prefix, WIP limit 3, worktrees
-  on, `.godot` shared as a junction, `validation_command` →
-  `tools/run_all_tests.ps1`, plus the `validation_class` and `balance_risk`
-  extension fields and this repo's `ingest.section_aliases` vocabulary.
-- `plans/tickets/` — column tree, archive, and a template carrying both
-  extension fields.
-- `AGENTS.md` — Kanban protocol section appended (no numeric claims, so DI-06's
-  regex anchors are untouched).
-- `tools/run_all_tests.ps1` — `kahnban lint` as the first gate; skips itself
-  when no board config exists and reports the install command when the engine
-  is missing.
-- `.vscode/mcp.json` — stdio MCP registration.
+- Tamper resistance for the frozen records beyond the guard: run workers in a
+  container, or keep contract/approval records outside the agents' write access.
+- Reviewer identity that is not self-asserted.
+- Parallel workers in `kahnban run` (leases already allow it; the loop is sequential).
+- Phase 4 from [plan.md](plan.md): the `citadel` portability smoke test.
 
-Merged to `main` and pushed (`229948c`, `43d52b2`).
+## Working on the engine
 
-**Verified:** `kahnban lint` exits 0 on the empty board, and the gate runs
-correctly inside `tools/run_all_tests.ps1`.
-
-**Pre-existing DI-06 failure — found, attributed, and fixed.** DI-06 was failing
-on their `main` with five stale-count mismatches (AGENTS.md claimed 30 systems
-scripts / 50 UI scenes / 341 test scripts / 18 data files; the repo holds
-33 / 51 / 346 / 19). Attribution was checked by running the suite on plain
-`origin/main` with no board present: identical 32 passed / 5 failed, so the board
-was not the cause — the drift arrived with upstream merge `256db1d`, which
-restored older numbers while the files moved on. Corrected in `b78e84b` (counted
-independently with DI-06's own `_count_files_in` semantics; the `game/ui`
-breakdown went 11 → 12 modals so 33 + 12 + 6 still totals 51). The suite is now
-37 passed / 0 failed, `RESULT: PASS`, runner exit 0.
-
-Next for that repo: run one ticket end to end
-(`kahnban capture` → refine → `ready` → `claim --worktree` → `verify`).
-
-Adoption also surfaced an engine bug, now fixed: `--config` / `--project-root`
-only worked *before* the subcommand, while §6.2's own gate command puts
-`--config` after it. Both positions now work, with regression tests.
-
-## 3. Phase 3 — backlog migration — DONE 2026-08-19
-
-Reconciled by hand (the domain work the engine correctly can't do): read
-Program B (all 20 items), Program E (the decision table plus the full §6.2
-CONQUEST/DIPLOMATIC investigation), and Program F end to end, then verified a
-sample of the claimed-implemented items directly against the code (garrison
-persistence, save ordering, the Hall of Fame grid, the schema `$ref` walk, the
-duplicate-key guard, and others — all matched). Result: **Program B is fully
-closed** (every item carries an implementation note the code confirms) and
-**Programs E/F are overwhelmingly resolved** — only nine genuinely open threads
-remained, written up in the documented ingest shape
-(`adapters/PLAN-INGESTION.md`) as `plans/BACKLOG_RECONCILED_2026-08-19.md` and
-ingested onto their board as **HOA-001 through HOA-009**, one commit
-(`825ce06`).
-
-`plans/IMPLEMENTATION_PLAN.md` is archived to
-`plans/archive/IMPLEMENTATION_PLAN_2026-08-19.md`, marked `SUPERSEDED` at the
-top rather than deleted (it keeps the measured balance runs and owner-decision
-rationale the tickets don't repeat). `AGENTS.md`'s two inbound references and
-the four ticket bodies that cite the old filename were repointed to the
-archived path.
-
-**One real engine gap found, then fixed upstream (1.1.2):** `kahnban ingest`
-had no label that set a ticket's `blocked_on` field — `depends_on` was the only
-frontmatter field ingest populated automatically (and only from an
-unresolvable dependency reference), so the "Blocked on: ..." line written for
-HOA-005 landed as ordinary prose and had to be patched into the ticket's
-frontmatter by hand. Fixed properly: `blocked_on` is now a recognized label
-(`Blocked on:`, `## Blocked on`, `blocker`, `on hold`, `waiting on`, …),
-deliberately kept distinct from `depends_on`'s "blocked by" (a ticket
-reference, resolved to an ID) since a blocking *reason* — a pending release, an
-owner decision — usually isn't itself a ticket. An unresolvable dependency
-reference now combines with an explicit `blocked_on` instead of overwriting it.
-See `adapters/PLAN-INGESTION.md`'s label table and 5 new tests in
-`tests/test_ingest.py`. HOA-005 itself was not re-ingested — its hand-fixed
-frontmatter is already correct and re-ingest is hash-idempotent, so nothing
-would change.
-
-Verified: `kahnban lint` is 0 violations on the 9 tickets, and
-`tools/run_all_tests.ps1 -Suite data_integrity_test` is still 37/37 through the
-board gate after the archive move. Pushed to `heirs_ancients` main (`e80e2f9`).
-
-## 4. Phase 4 — `citadel` portability smoke test
-
-`kahnban init --prefix CIT`, run one ticket through claim → verify → done.
-Acceptance: zero code changes required in the engine.
-
-## 5. CI (plan §8)
-
-Add a GitHub Actions matrix on `windows-latest` + `ubuntu-latest`, Python 3.10
-and 3.12, running `py -3 -m pytest -q`. The suite is platform-agnostic —
-junction-specific assertions are `skipif(os.name != "nt")` and POSIX gets
-directory symlinks — but it has only been executed on Windows so far, so expect
-to shake out one or two path assumptions on the first Linux run.
-
----
-
-## Working on the engine itself
-
-- **Dependency order:** `gitops` → `core` → `ingest`/`linter`/`status`/`worktree`
-  → `cli`/`mcp_server`. `core` deliberately owns the body helpers the linter and
-  ingest share (`section`, `checkboxes`, `parse_blast_radius`,
-  `extension_problems`, `replace_section`) so they can import `core` without a
-  cycle.
-- **Every new entry point is a `core.TicketDraft` producer.** Parse into drafts,
-  then hand them to `core.create_tickets` — never write ticket files directly,
-  and never set a checked acceptance box or a blast radius the source did not
-  declare.
-- **Every board write goes through `core.transition()`.** Do not add a second
-  writer; gates call it with `fm_updates` and a log entry.
-- **Regenerate lint fixtures** with `py -3 tests/fixtures/generate.py` after
-  changing a rule, then re-run `tests/test_linter.py`.
-- **Tests are slow because they are honest** — they create real git repos,
-  worktrees, and subprocesses in `tmp_path`. Run one file at a time while
-  iterating (`py -3 -m pytest tests/test_core.py -q`).
-- **No silent exceptions.** Failures raise; `cli.py` maps them to stderr plus
-  exit 1 (refusal) or 2 (config/IO).
-
-## Known rough edges
-
-- `core.py` is large (1,754 lines). If it grows further, the natural split is
-  gates (`ready`/`claim`/`verify`/`done`/`move`/`cleanup`) into a `gates.py` that
-  imports the primitives from `core`.
-- The cross-clone claim race is covered by two tests: the common path (the loser
-  pulls first and refuses without committing) and the narrow window where the
-  remote moves between pull and push, which is exercised by patching
-  `pull_ff_only` to a no-op. A true wall-clock race across clones is not
-  deterministically reproducible in a test.
-- `board.config.json` is not schema-validated beyond the keys the engine reads;
-  an unknown key is silently ignored (`ingest.section_aliases` is the exception —
-  unknown field names are rejected).
-- Ingest parsing is heuristic by design. It is accurate on plans written in the
-  documented shape and honest elsewhere: unparseable file lists produce no blast
-  radius and leave a note, so the gate refuses the ticket instead of trusting a
-  guess. If an adopter's plans use different vocabulary, extend
-  `ingest.section_aliases` rather than loosening the parser.
-- `kahnban new` now produces empty body sections instead of the template's
-  example text, because the examples were enough to pass the refinement gate.
+- Every board write goes through `core.transition()`; every new entry point produces
+  `core.TicketDraft`s.
+- Each gate change gets a "refuses X" test in `tests/test_factory_gates.py` or
+  `tests/test_spec_gates.py`, and the honest path must pass on every CI platform.
+- `py -3 -m pytest -q` takes about 5 minutes; run one file while iterating.
