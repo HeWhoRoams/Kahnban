@@ -163,6 +163,32 @@ def test_feature_tests_that_pass_without_the_change_are_refused(repo: Path) -> N
     assert (tree / "src" / "app.py").read_text(encoding="utf-8") == FIX["src/app.py"]
 
 
+def test_red_check_ignores_build_output_left_in_the_worktree(repo: Path) -> None:
+    # CI found stale bytecode making the reverted source look fixed (same size, same
+    # second); here an ignored build output plays that cache, deterministically.
+    config = strict_board(repo)
+    with (repo / ".gitignore").open("a", encoding="utf-8") as handle:
+        handle.write("cache/\n")
+    git(repo, "commit", "-qam", "ignore build output")
+    check = (
+        "import os, sys\n"
+        "if os.path.exists('cache/f.txt'):\n"
+        "    sys.exit(0 if open('cache/f.txt').read() == '2' else 1)\n"
+        "sys.path.insert(0, 'src')\n"
+        "from app import f\n"
+        "assert f() == 2, f()\n"
+    )
+    tree = claimed(config)
+    commit_work(tree, {"src/app.py": FIX["src/app.py"], "tests/check_app.py": check})
+    (tree / "cache").mkdir()
+    (tree / "cache" / "f.txt").write_text("2", encoding="utf-8")
+
+    result = core.verify(config, "TST-001")
+
+    assert result.passed, result.output
+    assert not (repo / ".worktrees" / ".red-TST-001").exists()
+
+
 # --- the frozen contract (probe D) -------------------------------------------
 
 

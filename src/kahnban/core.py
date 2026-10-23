@@ -1991,24 +1991,28 @@ def _proof_plan(
 
 
 def _red_run(
-    config: Config, tree: Path, base: str, source: Sequence[str], feature: str
+    config: Config,
+    ticket_id: str,
+    tip: str,
+    base: str,
+    source: Sequence[str],
+    feature: str,
 ) -> tuple[int, str]:
-    """Feature tests against the base version of the changed source files.
+    """Feature tests on the verified commit with its source files reverted to base.
 
-    Runs in the (verified clean) worktree and restores it from HEAD afterwards.
+    Runs in a throwaway worktree: in the coder's own worktree, bytecode or a build
+    cache keyed on file size and mtime can make the reverted source behave like
+    the new one, and the check would refuse honest work.
     """
-    gitops.run(tree, ["restore", f"--source={base}", "--worktree", "--", *source])
+    tree = config.project_root / ".worktrees" / f".red-{ticket_id}"
+    _remove_scratch_tree(config, tree)
+    gitops.run(config.project_root, ["worktree", "add", "--detach", str(tree), tip])
     try:
+        worktree.link_caches(config.project_root, tree, config.shared_caches)
+        gitops.run(tree, ["restore", f"--source={base}", "--worktree", "--", *source])
         return run_block(config, feature, tree)
     finally:
-        listed = gitops.run(
-            tree, ["ls-tree", "-r", "-z", "--name-only", "HEAD", "--", *source]
-        ).stdout
-        in_head = [path for path in listed.split("\0") if path]
-        if in_head:
-            gitops.run(tree, ["restore", "--source=HEAD", "--worktree", "--", *in_head])
-        for path in set(source) - set(in_head):
-            (tree / path).unlink(missing_ok=True)
+        _remove_scratch_tree(config, tree)
 
 
 def verify(
@@ -2151,7 +2155,9 @@ def verify(
             commands.append(reg_cmd)
 
         if exit_code == 0 and proof_base:
-            red_code, stage_output = _red_run(config, cwd, proof_base, source_paths, feat_cmd)
+            red_code, stage_output = _red_run(
+                config, ticket.ticket_id, tip, proof_base, source_paths, feat_cmd
+            )
             if red_code == 0:
                 exit_code = 1
                 stage_output += (
@@ -2503,8 +2509,8 @@ def reject(
     return result
 
 
-def _remove_merge_tree(config: Config, tree: Path) -> None:
-    """Remove a merge worktree, unlinking cache junctions before git touches it."""
+def _remove_scratch_tree(config: Config, tree: Path) -> None:
+    """Remove a scratch worktree, unlinking cache junctions before git touches it."""
     for cache in config.shared_caches:
         link = tree / cache.replace("\\", "/").strip("/")
         if worktree.is_link(link):
@@ -2513,7 +2519,7 @@ def _remove_merge_tree(config: Config, tree: Path) -> None:
         gitops.run(config.project_root, ["worktree", "remove", "--force", str(tree)], check=False)
     gitops.worktree_prune(config.project_root)
     if tree.exists():
-        raise KahnbanError(f"could not remove merge worktree {tree}; remove it by hand")
+        raise KahnbanError(f"could not remove scratch worktree {tree}; remove it by hand")
 
 
 def merge(
@@ -2549,7 +2555,7 @@ def merge(
         now = timestamp or datetime.now()
         base = gitops.rev_parse(config.project_root, default_branch)
         tree = config.project_root / ".worktrees" / f".merge-{ticket.ticket_id}"
-        _remove_merge_tree(config, tree)
+        _remove_scratch_tree(config, tree)
         gitops.run(config.project_root, ["worktree", "add", "--detach", str(tree), base])
         stages: list[tuple[str, str]] = []
         try:
@@ -2577,7 +2583,7 @@ def merge(
                 exit_code, output = run_block(config, reg_cmd, tree)
                 stages.append(("INTEGRATION: REGRESSION TESTS", output))
         finally:
-            _remove_merge_tree(config, tree)
+            _remove_scratch_tree(config, tree)
 
         command = f"merge {branch} onto {default_branch} {base[:12]}"
         output = "\n\n".join(f"=== {heading} ===\n{text}" for heading, text in stages)
