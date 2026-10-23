@@ -535,6 +535,13 @@ class Server:
         tool = TOOLS.get(name)
         if tool is None:
             raise _ToolInputError(f"unknown tool: {name}")
+        role = os.environ.get("KAHNBAN_ROLE", "").strip()
+        if role:  # a factory worker is held to its role on this surface too
+            from kahnban import guard
+
+            problem = guard.command_problem(role, TOOL_COMMANDS.get(name, name))
+            if problem:
+                return _content({"ok": False, "error": problem}, is_error=True)
         try:
             payload = tool(self.project_root, arguments)
         except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
@@ -937,6 +944,33 @@ TOOLS: dict[str, Callable[[Path, Mapping[str, Any]], dict[str, Any]]] = {
     "kanban_ticket_lease": tool_ticket_lease,
     "kanban_ticket_escalate": tool_ticket_escalate,
     "kanban_feedback": tool_ticket_reject,
+}
+
+
+# The CLI command each tool stands for, for the role check (see guard.ROLE_COMMANDS).
+TOOL_COMMANDS: dict[str, str] = {
+    "kanban_board_status": "status",
+    "kanban_ticket_get": "status",
+    "kanban_ticket_new": "new",
+    "kanban_plan_ingest": "ingest",
+    "kanban_capture": "capture",
+    "kanban_ticket_ready": "ready",
+    "kanban_ticket_claim": "claim",
+    "kanban_ticket_verify": "verify",
+    "kanban_ticket_done": "done",
+    "kanban_ticket_move": "move",
+    "kanban_cleanup": "cleanup",
+    "kanban_sync": "sync",
+    "kanban_session_status": "session",
+    "kanban_session_get": "session",
+    "kanban_session_update": "session",
+    "kanban_next": "next",
+    "kanban_ticket_approve": "approve",
+    "kanban_ticket_reject": "reject",
+    "kanban_ticket_merge": "merge",
+    "kanban_ticket_lease": "lease",
+    "kanban_ticket_escalate": "escalate",
+    "kanban_feedback": "reject",
 }
 
 

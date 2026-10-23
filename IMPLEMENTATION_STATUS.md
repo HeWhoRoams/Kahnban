@@ -39,7 +39,10 @@ built, what has been proven, and the limits that are known.
 
 - The contract, approval and integration records live in the ticket file, which an
   agent can edit; the guard blocks edits outside a worker's remit, but it matches
-  commands by text and is a tripwire, not a sandbox.
+  commands by text and is a tripwire, not a sandbox. The CLI and MCP server refuse
+  commands outside a worker's role on their own (`KAHNBAN_ROLE`), so that part does
+  not depend on the harness having hooks; a worker that unsets the variable is not
+  caught by it.
 - Reviewer identity is the name passed to `--reviewer`.
 - Leases are local files: they arbitrate workers on one machine.
 - `kahnban run` works one ticket at a time, and its retry counts reset per run.

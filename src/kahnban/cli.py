@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -995,6 +996,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not getattr(args, "command", None):
         parser.print_help()
         return EXIT_OK
+    role = os.environ.get("KAHNBAN_ROLE", "").strip()
+    if role and args.command != "guard":  # the hook itself runs with the role set
+        from kahnban import guard
+
+        command = args.command
+        if command == "spec":
+            command = f"spec {getattr(args, 'spec_action', None) or 'list'}"
+        problem = guard.command_problem(role, command)
+        if problem:
+            print(f"[FAIL] {problem} (KAHNBAN_ROLE={role})", file=sys.stderr)
+            return EXIT_REFUSED
     try:
         return int(args.handler(args))
     except core.ConfigError as error:

@@ -27,7 +27,9 @@ EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 # Commands that belong to the runner or a human, never to a worker. Approving a
 # spec is the one human gate in the whole flow.
 RUNNER_ONLY = {"move", "merge", "done", "cleanup", "lease", "unblock", "run", "init", "spec approve"}
-READ_ONLY = {"status", "lint", "next", "session", "escalate", "spec", "spec list", "spec coverage"}
+READ_ONLY = {
+    "status", "lint", "next", "session", "handoff", "escalate", "spec", "spec list", "spec coverage",
+}
 ROLE_COMMANDS = {
     "coder": READ_ONLY | {"verify", "learnings"},
     "qa_reviewer": READ_ONLY | {"approve", "reject", "learnings"},
@@ -111,8 +113,20 @@ def _bash_problem(role: str, command: str) -> str | None:
     if role == "qa_reviewer" and GIT_COMMIT.search(command):
         return "a reviewer does not commit"
     for subcommand in _kahnban_subcommands(command):
-        if subcommand in RUNNER_ONLY or subcommand not in ROLE_COMMANDS.get(role, set()):
-            return f"'kahnban {subcommand}' is not a {role}'s to run"
+        problem = command_problem(role, subcommand)
+        if problem:
+            return problem
+    return None
+
+
+def command_problem(role: str, command: str) -> str | None:
+    """Why a worker in ``role`` may not run ``kahnban <command>``, or None.
+
+    Shared by this hook, the CLI and the MCP server, so a worker is held to its
+    role whichever harness or surface it uses.
+    """
+    if command in RUNNER_ONLY or command not in ROLE_COMMANDS.get(role, set()):
+        return f"'kahnban {command}' is not a {role}'s to run"
     return None
 
 

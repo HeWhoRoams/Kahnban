@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import subprocess
 import sys
@@ -10,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, dispatcher, frontmatter, guard, learnings, linter, runner, skills
+from kahnban import core, dispatcher, frontmatter, guard, learnings, linter, mcp_server, runner, skills
 from kahnban.cli import main
 from conftest import git, write_ticket
 from test_factory_gates import CHECK, CHECK_APP, CRITERION, PY, claimed, factory_board, strict_board
@@ -206,6 +207,30 @@ def test_guard_keeps_a_coder_inside_its_worktree_and_blast_radius(repo: Path) ->
         {**env, "KAHNBAN_ROLE": "qa_reviewer"},
     )
     assert guard.decide({"tool_name": "Bash", "tool_input": {"command": "git push"}}, {}) is None
+
+
+def test_the_engine_holds_a_worker_to_its_role_on_every_surface(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # The Claude Code hook covers one harness; the engine itself covers the rest.
+    config = strict_board(repo)
+    claimed(config)
+    monkeypatch.setenv("KAHNBAN_ROLE", "coder")
+
+    assert main(["--project-root", str(repo), "done", "TST-001"]) == 1
+    assert "not a coder's to run" in capsys.readouterr().err
+    assert main(["--project-root", str(repo), "status"]) == 0
+
+    request = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+               "params": {"name": "kanban_ticket_merge", "arguments": {"ticket_id": "TST-001"}}}
+    out = io.StringIO()
+    mcp_server.Server(repo, stdin=io.StringIO(json.dumps(request) + "\n"), stdout=out).serve_forever()
+    reply = json.loads(out.getvalue().splitlines()[0])["result"]
+    assert reply["isError"] and "not a coder's to run" in reply["content"][0]["text"]
+
+    hook = {"tool_name": "Bash", "tool_input": {"command": "kahnban done TST-001"}}
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(hook)))
+    assert main(["guard"]) == 2  # the hook itself still runs with the role set
 
 
 def test_skills_install_adds_agents_and_one_guard_hook(tmp_path: Path) -> None:
