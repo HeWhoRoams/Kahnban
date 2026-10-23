@@ -21,6 +21,7 @@ The ready gate checks everything and lists every problem at once:
 ---
 config:
   flowchart:
+    useMaxWidth: false
     rankSpacing: 15
     wrappingWidth: 400
 ---
@@ -52,6 +53,7 @@ A ticket stays in `2-ready` until someone claims it, and it can only be claimed 
 ---
 config:
   flowchart:
+    useMaxWidth: false
     rankSpacing: 15
     wrappingWidth: 400
 ---
@@ -81,6 +83,7 @@ The coder works test-first inside the worktree and commits on `ticket/<ID>`. Boa
 ---
 config:
   flowchart:
+    useMaxWidth: false
     rankSpacing: 15
     wrappingWidth: 400
 ---
@@ -113,6 +116,7 @@ The ticket stays in `4-verifying` through two gates. Only its records change: fi
 ---
 config:
   flowchart:
+    useMaxWidth: false
     rankSpacing: 15
     wrappingWidth: 400
 ---
@@ -143,6 +147,7 @@ A reviewer who finds a problem runs `reject` instead of `approve`. That sends th
 ---
 config:
   flowchart:
+    useMaxWidth: false
     rankSpacing: 15
     wrappingWidth: 400
 ---
@@ -169,6 +174,11 @@ The approval and merge checks apply under `require_review` and `require_integrat
 `kahnban run` drives the board without a human in the loop. Each step it asks the dispatcher for the most urgent action, runs the gates itself, and starts an agent worker only for judgment work. When the action moves the board, the loop asks again:
 
 ```mermaid
+---
+config:
+  flowchart:
+    useMaxWidth: false
+---
 flowchart TD
   pick["dispatcher picks<br/>the next action"]
   pick -->|nothing to do| idle(["stop: report<br/>parked tickets"])
@@ -216,6 +226,11 @@ gitGraph
 Every way in reaches the same core, and the core is the only code that moves a ticket:
 
 ```mermaid
+---
+config:
+  flowchart:
+    useMaxWidth: false
+---
 flowchart TD
   ways["Ways in<br/>capture · new · ingest a plan or spec · spec approve"]
   clients["Clients<br/>kahnban CLI (including kahnban run) · MCP server"]
