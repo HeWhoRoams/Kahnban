@@ -7,8 +7,6 @@ and the next immediate shell command are never lost during mid-feature handoffs.
 
 from __future__ import annotations
 
-import os
-import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -16,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from kahnban import core, frontmatter, gitops
+from kahnban.fsutil import write_text_atomic
 
 SESSION_RELATIVE = Path(".agents") / "state" / "ACTIVE_SESSION.md"
 PLANS_SESSION_RELATIVE = Path("plans") / "ACTIVE_SESSION.md"
@@ -134,22 +133,6 @@ def get_session_path(project_root: Path) -> Path:
     if legacy.exists():
         return legacy
     return preferred
-
-
-def write_text_atomic(path: Path, text: str) -> None:
-    """Atomically write text to path using a sibling temporary file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp_path = path.parent / f".{path.name}.tmp.{os.getpid()}_{time.time_ns()}"
-    try:
-        temp_path.write_text(frontmatter.normalize_newlines(text), encoding="utf-8", newline="\n")
-        temp_path.replace(path)
-    except Exception:
-        if temp_path.exists():
-            try:
-                temp_path.unlink()
-            except OSError:
-                pass
-        raise
 
 
 def _clean_porcelain_path(line: str) -> str:

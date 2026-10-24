@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from kahnban import __version__
+from kahnban.fsutil import write_text_atomic
 
 FIELDS = ("id", "title", "status", "owner", "branch", "worktree", "updated", "column")
 
@@ -218,8 +219,6 @@ def write(
     markdown_path = plans_dir / "STATUS.md"
     json_path = plans_dir / "status.json"
     board_json_path = plans_dir / "board.json"
-
-    from kahnban.core import write_text_atomic
 
     write_text_atomic(
         markdown_path,

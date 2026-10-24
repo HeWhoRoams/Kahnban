@@ -20,93 +20,19 @@ from pathlib import Path
 from typing import Any
 
 from kahnban import exit_checks, frontmatter, roles, trust
+from kahnban.fsutil import write_text_atomic
+from kahnban.harnesses import (
+    AGENT_HARNESSES,
+    CURSOR_MDC_CONTENT,
+    HARNESS_HOOKS,
+    HOOK_FILES,
+    VSCODE_MCP_SERVER,
+    installed_commands,
+    merge_hooks,
+    write_agents,
+)
 
 TEMPLATES_SKILLS_DIR = Path(__file__).parent / "templates" / "skills"
-GUARD_COMMAND = "kahnban guard"
-# VS Code's mcp.json schema: a stdio server is "type": "stdio" plus command/args.
-VSCODE_MCP_SERVER = {
-    "type": "stdio",
-    "command": "python",
-    "args": ["-m", "kahnban.mcp_server", "--project-root", "${workspaceFolder}"],
-}
-GUARD_HOOK = {
-    "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
-    "hooks": [{"type": "command", "command": GUARD_COMMAND}],
-}
-STOP_COMMAND = "kahnban guard --stop"
-STOP_HOOK = {"hooks": [{"type": "command", "command": STOP_COMMAND}]}
-CLAUDE_HOOKS = (("PreToolUse", GUARD_HOOK, GUARD_COMMAND), ("Stop", STOP_HOOK, STOP_COMMAND))
-# Gemini CLI's settings.json uses the same shape under its own event and tool names.
-GEMINI_HOOKS = (
-    (
-        "BeforeTool",
-        {
-            "matcher": "write_file|replace|run_shell_command",
-            "hooks": [{"type": "command", "command": GUARD_COMMAND}],
-        },
-        GUARD_COMMAND,
-    ),
-    ("AfterAgent", STOP_HOOK, STOP_COMMAND),
-)
-# Cursor's hooks.json: one flat list of commands per event. Its stop hook re-prompts the
-# agent instead of blocking, so it is capped at two follow-ups.
-CURSOR_HOOKS = (
-    ("beforeShellExecution", {"command": GUARD_COMMAND}),
-    ("preToolUse", {"command": GUARD_COMMAND}),
-    ("stop", {"command": STOP_COMMAND, "loop_limit": 2}),
-)
-
-
-def _install_cursor_hooks(hooks_path: Path, messages: list[str]) -> None:
-    """Add the role guard to .cursor/hooks.json, keeping every existing hook."""
-    data: dict[str, Any] = {"version": 1}
-    if hooks_path.is_file():
-        try:
-            data = json.loads(hooks_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            messages.append(f"{hooks_path} is not valid JSON; add the '{GUARD_COMMAND}' hooks by hand.")
-            return
-    added = False
-    for event, hook in CURSOR_HOOKS:
-        entries = data.setdefault("hooks", {}).setdefault(event, [])
-        if not any(entry.get("command") == hook["command"] for entry in entries):
-            entries.append(hook)
-            added = True
-    if added:
-        from kahnban.core import write_text_atomic
-
-        hooks_path.parent.mkdir(parents=True, exist_ok=True)
-        write_text_atomic(hooks_path, json.dumps(data, indent=2) + "\n")
-
-
-def _install_guard_hook(
-    settings_path: Path, messages: list[str], hooks: tuple[tuple[str, dict[str, Any], str], ...] = CLAUDE_HOOKS
-) -> None:
-    """Add the role guard as pre-tool and stop hooks, keeping every existing setting."""
-    data: dict[str, Any] = {}
-    if settings_path.is_file():
-        try:
-            data = json.loads(settings_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            messages.append(
-                f"{settings_path} is not valid JSON; add the '{GUARD_COMMAND}' "
-                "PreToolUse hook by hand."
-            )
-            return
-    added = False
-    for event, hook, command in hooks:
-        entries = data.setdefault("hooks", {}).setdefault(event, [])
-        if not any(h.get("command") == command for entry in entries for h in entry.get("hooks", [])):
-            entries.append(hook)
-            added = True
-    if not added:
-        return
-    from kahnban.core import write_text_atomic
-
-    settings_path.parent.mkdir(parents=True, exist_ok=True)
-    write_text_atomic(settings_path, json.dumps(data, indent=2) + "\n")
-
-
 @dataclass(frozen=True)
 class SkillInfo:
     name: str
@@ -199,25 +125,6 @@ def list_skills(project_root: Path | None = None) -> list[SkillInfo]:
     return skills
 
 
-CURSOR_MDC_CONTENT = """---
-description: Kahnban Software Factory Rules & Matt Pocock Skills
-globs: *
-alwaysApply: true
----
-# Kahnban Engineering Protocols
-
-Always check `.agents/state/ACTIVE_SESSION.md` before starting work and synchronize it before handing off.
-For full end-to-end autonomous lifecycle execution, use `/factory-mode` (`.agents/skills/factory-mode/SKILL.md`).
-When working on features or bugfixes, strictly follow the 5-stage engineering pipeline:
-1. Backlog Intake: `.agents/skills/grill-with-docs/SKILL.md` (Domain alignment in GLOSSARY.md & ADR/)
-2. Specification: `.agents/specs/` and `.agents/skills/to-spec/SKILL.md`
-3. Granular Breakdown: `.agents/skills/to-tickets/SKILL.md` (1-3 files touched)
-4. TDD in Worktrees: Work inside `.worktrees/<ID>` and follow `.agents/skills/tdd/SKILL.md`
-5. Defensive Verification: Run `.agents/skills/code-review/SKILL.md` before `kahnban verify <ID>`
-6. Learning & Feedback: Run `/reflect` upon completing tickets and log patterns to `./learnings/`
-"""
-
-
 def install_skills(
     project_root: Path,
     *,
@@ -305,8 +212,8 @@ def install_skills(
         if not dry_run:
             claude_skills.mkdir(parents=True, exist_ok=True)
             _copy_tree_contents(agents_skills_dir, claude_skills)
-            _write_agents(root / ".claude" / "agents")
-            _install_guard_hook(root / ".claude" / "settings.json", messages)
+            write_agents(root / ".claude" / "agents")
+            merge_hooks(root / HOOK_FILES["claude"], "claude", messages)
             messages.append(
                 "Commit .claude/ so ticket worktrees inherit the agents and the guard hook."
             )
@@ -317,8 +224,8 @@ def install_skills(
         if not dry_run:
             gemini_skills.mkdir(parents=True, exist_ok=True)
             _copy_tree_contents(agents_skills_dir, gemini_skills)
-            _write_agents(root / ".gemini" / "agents", "gemini")
-            _install_guard_hook(root / ".gemini" / "settings.json", messages, GEMINI_HOOKS)
+            write_agents(root / ".gemini" / "agents", "gemini")
+            merge_hooks(root / HOOK_FILES["gemini"], "gemini", messages)
             messages.append("Commit .gemini/ so ticket worktrees inherit the agents and the guard hook.")
         configured_harnesses.append("gemini (.gemini/skills/, .gemini/agents/, guard hook)")
 
@@ -328,10 +235,9 @@ def install_skills(
         if not dry_run:
             cursor_rules.mkdir(parents=True, exist_ok=True)
             if not rule_file.exists():
-                from kahnban.core import write_text_atomic
                 write_text_atomic(rule_file, CURSOR_MDC_CONTENT)
-            _write_agents(root / ".cursor" / "agents", "cursor")
-            _install_cursor_hooks(root / ".cursor" / "hooks.json", messages)
+            write_agents(root / ".cursor" / "agents", "cursor")
+            merge_hooks(root / HOOK_FILES["cursor"], "cursor", messages)
             messages.append("Commit .cursor/ so ticket worktrees inherit the agents and the guard hook.")
         configured_harnesses.append("cursor (.cursor/rules/kanban.mdc, .cursor/agents/, guard hook)")
 
@@ -344,7 +250,6 @@ def install_skills(
         if not dry_run:
             vscode_dir.mkdir(parents=True, exist_ok=True)
             if not mcp_config.exists():
-                from kahnban.core import write_text_atomic
                 mcp_data = {"servers": {"kahnban": VSCODE_MCP_SERVER}}
                 write_text_atomic(mcp_config, json.dumps(mcp_data, indent=2))
         configured_harnesses.append("vscode (.vscode/mcp.json)")
@@ -387,7 +292,6 @@ def _fetch_pstack_upstream(
     """Fetch skills from cursor/plugins/pstack via GitHub API."""
     import json
     import urllib.request
-    from kahnban.core import write_text_atomic
 
     # First copy bundled core so project has the foundations
     _copy_bundled_skills(dest_dir, installed)
@@ -437,7 +341,6 @@ def _fetch_pstack_upstream(
 SKILL_REF = re.compile(r"(?:^|[\s`(])/([a-z][a-z0-9-]*)")
 KAHNBAN_COMMAND = re.compile(r"\bkahnban ([a-z][a-z-]*)(?: ([a-z][a-z-]*))?")
 HARNESS_SKILL_DIRS = (".claude/skills", ".gemini/skills", ".hermes/skills")
-AGENT_HARNESSES = ("claude", "gemini", "cursor")
 
 
 def check(project_root: Path | None = None) -> list[str]:
@@ -583,42 +486,22 @@ def _project_drift(root: Path, source: Path | None) -> list[str]:
 def _hook_problems(root: Path, harness: str) -> list[str]:
     """A harness with generated agents must also run the guard: without it the role is only advice."""
     fix = f"re-run 'kahnban skills install --harness {harness}'"
-    if harness == "cursor":
-        path, wanted = root / ".cursor" / "hooks.json", [(event, hook["command"]) for event, hook in CURSOR_HOOKS]
-        rule = root / ".cursor" / "rules" / "kanban.mdc"
-        extra = [] if rule.is_file() else [f".cursor/rules/kanban.mdc is missing; {fix}"]
-    else:
-        path = root / f".{harness}" / "settings.json"
-        wanted = [(event, command) for event, _, command in (CLAUDE_HOOKS if harness == "claude" else GEMINI_HOOKS)]
-        extra = []
+    rule = root / ".cursor" / "rules" / "kanban.mdc"
+    problems = [f".cursor/rules/kanban.mdc is missing; {fix}"] if harness == "cursor" and not rule.is_file() else []
+    path = root / HOOK_FILES[harness]
     label = path.relative_to(root).as_posix()
     try:
-        hooks = json.loads(path.read_text(encoding="utf-8")).get("hooks", {})
+        data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return [f"{label} is missing or not valid JSON, so the guard hooks are not installed; {fix}", *extra]
-    problems = list(extra)
-    for event, command in wanted:
-        commands = [
-            h.get("command")
-            for entry in hooks.get(event, [])
-            for h in ([entry] if harness == "cursor" else entry.get("hooks", []))
-        ]
-        if command not in commands:
-            problems.append(f"{label} has no {event} hook running '{command}'; {fix}")
+        return [f"{label} is missing or not valid JSON, so the guard hooks are not installed; {fix}", *problems]
+    for hook in HARNESS_HOOKS[harness]:
+        if hook.command not in installed_commands(harness, data, hook.event):
+            problems.append(f"{label} has no {hook.event} hook running '{hook.command}'; {fix}")
     return problems
 
 
 def _text(path: Path) -> str:
     return path.read_text(encoding="utf-8").replace("\r\n", "\n")
-
-
-def _write_agents(agents_dir: Path, harness: str = "claude") -> None:
-    """Render one native agent file per worker role from the role manifest."""
-    from kahnban.core import write_text_atomic
-
-    agents_dir.mkdir(parents=True, exist_ok=True)
-    for name in roles.workers():
-        write_text_atomic(agents_dir / f"{roles.agent_name(name)}.md", roles.agent_markdown(name, harness))
 
 
 def _copy_bundled_skills(target_dir: Path, recorded_names: list[str]) -> None:

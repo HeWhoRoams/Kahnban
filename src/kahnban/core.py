@@ -28,6 +28,7 @@ from datetime import datetime
 from pathlib import Path
 
 from kahnban import __version__, attempts, frontmatter, gitops, status, trust, worktree
+from kahnban.fsutil import write_text_atomic
 
 LOCK_NAME = ".claim.lock"
 LOCK_STALE_SECONDS = 300
@@ -402,22 +403,6 @@ class VerifyResult:
 
 def read_text(path: Path) -> str:
     return frontmatter.normalize_newlines(path.read_text(encoding="utf-8"))
-
-
-def write_text_atomic(path: Path, text: str) -> None:
-    path = Path(path).resolve()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp_path = path.with_suffix(f"{path.suffix}.tmp.{os.getpid()}.{time.time_ns()}")
-    try:
-        temp_path.write_text(frontmatter.normalize_newlines(text), encoding="utf-8", newline="\n")
-        temp_path.replace(path)
-    except Exception:
-        if temp_path.exists():
-            try:
-                temp_path.unlink()
-            except OSError:
-                pass
-        raise
 
 
 def write_text(path: Path, text: str) -> None:
