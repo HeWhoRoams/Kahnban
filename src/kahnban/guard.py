@@ -33,7 +33,6 @@ SHELL_TOOLS = {"Bash", "run_shell_command", "Shell"}
 READ_TOOLS = {"Read", "read_file", "ReadFile", "Grep", "Glob"}
 SECRET_REFUSAL = "the signing key is the runner's, not a worker's to read"
 PATH_KEYS = ("file_path", "notebook_path", "path", "target_file")
-# Which commands and files each role gets lives in templates/roles.json.
 OVERRIDE_FLAGS = {"--force", "--force-scope", "--force-overlap", "--abandon", "--no-verify"}
 GIT_FORBIDDEN = {"merge", "push", "rebase", "filter-branch", "update-ref"}
 KAHNBAN_GLOBAL_OPTIONS = {"--project-root", "--config"}

@@ -23,17 +23,7 @@ HARNESS_SKILL_DIRS = (".claude/skills", ".gemini/skills", ".hermes/skills")
 
 
 def audit(project_root: Path | None = None) -> list[str]:
-    """Everything that would break a skill-to-skill or role-to-skill handoff; empty when sound.
-
-    Checks the bundled skills, or a project's ``.agents/skills`` when it has one,
-    against the role manifest and the CLI: every ``/skill`` a skill or role names
-    exists and may be invoked by an agent, every role's preloaded skills only call
-    skills it also preloads, every ``kahnban`` command named anywhere exists, and a
-    role's own instructions name only commands the guard lets it run (or its gate).
-    A preloaded skill may name a gate such as ``claim`` or ``verify``, because an
-    interactive conductor runs those, but never a runner-only command. For a
-    project it also compares the harness copies and generated agent files.
-    """
+    """Everything that would break a skill or role handoff, or the project's generated files; empty when sound."""
     root = Path(project_root).resolve() if project_root else None
     source = root / ".agents" / "skills" if root and (root / ".agents" / "skills").is_dir() else None
     problems: list[str] = []
