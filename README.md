@@ -200,6 +200,9 @@ Workers are commands in `plans/board.config.json`. The prompt arrives on stdin, 
 "worker_timeout_sec": 3600,
 "max_attempts": 3,
 "autonomy": "unattended",
+"max_stop_nudges": 2,
+"strict_hooks": true,
+"require_signed_approvals": true,
 "lease_minutes": 30,
 "allowed_commands": ["pytest", "python -m pytest"]
 ```
@@ -271,7 +274,7 @@ Kahnban incorporates a pattern-aggregating self-improvement queue based on conti
 5. **Proven Verification** — `kahnban verify` runs the committed tip's feature, criterion and regression tests line by line, and under `require_proof` shows the feature tests fail without the change (Rule D4).
 6. **Domain Isolation** — claim-time blast-radius overlap refusal plus verify-time diff containment prevent merge conflicts (Rules D7, BL16).
 7. **Pattern-Aggregating Feedback** — friction and mistakes are captured into `./learnings/`, clustered into recurrence records, and promoted into structural defenses.
-8. **Relay Baton Handoffs** — every move rewrites the ticket's baton for whoever acts next (`.agents/handoffs/<ID>.json`, mirrored into the worktree as `.agents/HANDOFF.json`), with the event that caused it and the last verify results. Every move runs the `pre-transition` hook, which can veto it by exiting 2, and the `post-transition` hook; every refusal runs `on-refusal`; the named hooks (`post-ready`, `post-claim`, `post-verify`, `post-done`, `on-escalate`) still fire. Hooks live in `.kahnban/hooks/` and get the event as JSON on stdin.
+8. **Relay Baton Handoffs** — every move rewrites the ticket's baton for whoever acts next (`.agents/handoffs/<ID>.json`, mirrored into the worktree as `.agents/HANDOFF.json`), with the event that caused it and the last verify results. Every move runs the `pre-transition` hook, which can veto it by exiting 2, and the `post-transition` hook; `claim` asks the veto before it creates a worktree, so a vetoed claim leaves nothing behind; with `strict_hooks` (on for new boards) a veto hook that crashes or times out also refuses the move; every refusal, including the guard's, runs `on-refusal`; the named hooks (`post-ready`, `post-claim`, `post-verify`, `post-done`, `on-escalate`) still fire. Hooks live in `.kahnban/hooks/` and get the event as JSON on stdin.
 
 ---
 
@@ -285,7 +288,9 @@ Zero runtime dependencies. Test and line counts are left out on purpose: run `py
 | `specs` | spec drafts, the approval gate, requirement coverage |
 | `runner` | `kahnban run`: the factory loop and its workers |
 | `roles` | the role manifest (`templates/roles.json`) and everything rendered from it: role prompts, agent files, the guard's tables |
-| `guard` | the PreToolUse role guard for factory workers |
+| `guard` / `guard_shell` / `exit_checks` | the role guard for factory workers: what a tool call may do, how a shell line is read, and what a worker must have done before it stops |
+| `harnesses` / `skills_check` | per-harness agent files, hooks and rules; the lint that checks they agree with the skills and roles |
+| `attempts` / `trust` / `fsutil` | persisted retry counts, the skill/hook lock and signed approvals, atomic file writes |
 | `dispatcher` / `handoff` | `kahnban next` and the relay baton each role receives |
 | `ingest` | plans, specs and ideas into ticket drafts |
 | `linter` | board rules BL01–BL19 |
