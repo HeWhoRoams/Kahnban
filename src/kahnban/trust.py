@@ -7,9 +7,14 @@ without a re-lock. With ``require_signed_approvals`` an approval carries an HMAC
 the ticket, the reviewed tip and the reviewer, so a hand-edited ``reviewer:`` field
 cannot pass the merge or done gate.
 
-ponytail: the key is a file under .git (or ``KAHNBAN_SIGNING_KEY``). That stops edits
-to board files and forged frontmatter, not a worker allowed to read .git; give
-workers a sandbox without it, or keep the key in the runner's environment only.
+The key lives in a per-user directory outside the repository (or in
+``KAHNBAN_SIGNING_KEY``). A worker never signs: ``kahnban run`` strips the key from its
+environment, the worker's ``approve`` records no signature, and the runner countersigns once
+the review is in. The guard also refuses a worker's reads of the key.
+
+ponytail: the key file is readable by the same OS user the worker runs as. That stops forged
+frontmatter and a casual ``cat``, not a determined agent; run workers under another account
+or in a container if they must not be able to reach it.
 """
 
 from __future__ import annotations
@@ -24,6 +29,7 @@ from pathlib import Path
 LOCK = Path(".agents") / "skills.lock.json"
 LOCKED_DIRS = (Path(".agents") / "skills", Path(".kahnban") / "hooks")
 KEY_ENV = "KAHNBAN_SIGNING_KEY"
+KEY_DIR_ENV = "KAHNBAN_KEY_DIR"
 
 
 def _digest(path: Path) -> str:
@@ -67,16 +73,33 @@ def lock_problems(root: Path) -> list[str]:
     return problems
 
 
+def key_dir() -> Path:
+    """Where signing keys live: per user, outside every repository."""
+    override = os.environ.get(KEY_DIR_ENV, "").strip()
+    if override:
+        return Path(override)
+    if os.name == "nt":
+        base = Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming")
+    else:
+        base = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state")
+    return base / "kahnban" / "keys"
+
+
 def _key(root: Path) -> bytes:
     from_env = os.environ.get(KEY_ENV, "").strip()
     if from_env:
         return from_env.encode()
-    git_dir = root / ".git"
-    if not git_dir.is_dir():
-        raise ValueError(f"no signing key: set {KEY_ENV}, or run from a clone with a .git directory")
-    path = git_dir / "kahnban-signing.key"
+    name = hashlib.sha256(os.path.normcase(str(root.resolve())).encode()).hexdigest()[:16]
+    path = key_dir() / f"{name}.key"
     if not path.is_file():
-        path.write_text(secrets.token_hex(32), encoding="utf-8")
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        try:
+            descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        except FileExistsError:
+            pass
+        else:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                handle.write(secrets.token_hex(32))
     return path.read_text(encoding="utf-8").strip().encode()
 
 

@@ -206,6 +206,12 @@ def scaffold_board(repo: Path, config_overrides: dict | None = None) -> Path:
     return board_root
 
 
+@pytest.fixture(autouse=True)
+def _signing_keys_stay_in_the_sandbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KAHNBAN_KEY_DIR", str(tmp_path / "keys"))
+    monkeypatch.delenv("KAHNBAN_SIGNING_KEY", raising=False)
+
+
 @pytest.fixture()
 def repo(tmp_path: Path) -> Path:
     return init_repo(tmp_path / "scratch")

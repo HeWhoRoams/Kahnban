@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import attempts, core, dispatcher, frontmatter, gitops, worktree
+from kahnban import attempts, core, dispatcher, frontmatter, gitops, trust, worktree
 
 CODER = "coder-agent"
 INTEGRATOR = "integrator"
@@ -156,6 +156,8 @@ def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path
         if reviewed.column == config.in_progress_column:
             return "rejected by the reviewer"
         if str(fields.get("reviewer") or "").strip():
+            if config.require_signed_approvals:
+                core.countersign(config, ticket)
             return f"approved by {fields.get('reviewer')}"
         return f"reviewer exited {code} without approving or rejecting"
     if rec.action == "spec_and_refine":
@@ -254,7 +256,7 @@ def _work(
     ticket = rec.ticket_id or ""
     command = template.replace("{role}", role.replace("_", "-")).replace("{ticket}", ticket)
     env = {
-        **os.environ,
+        **{key: value for key, value in os.environ.items() if key != trust.KEY_ENV},
         "KAHNBAN_ROLE": role,
         "KAHNBAN_TICKET": ticket,
         "KAHNBAN_PROJECT_ROOT": str(config.project_root),

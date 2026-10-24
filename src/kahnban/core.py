@@ -2698,11 +2698,37 @@ def approve(
                 "approved_sha": tip,
                 "approval_sig": (
                     trust.sign(config.project_root, ticket.ticket_id, tip, reviewer)
-                    if config.require_signed_approvals
-                    else ""
+                    if config.require_signed_approvals and not os.environ.get("KAHNBAN_ROLE")
+                    else ""  # a worker does not sign; the runner countersigns once it has checked
                 ),
             },
             commit_message=f"kanban({ticket.ticket_id}): approved by {reviewer}",
+            timestamp=timestamp,
+        )
+        result.messages = [*lock_warnings, *result.messages]
+        return result
+
+
+def countersign(
+    config: Config, ticket_id: str, *, timestamp: datetime | None = None
+) -> TransitionResult:
+    """The runner signs an approval a worker recorded, once it matches the reviewed tip."""
+    with board_lock(config) as lock_warnings:
+        _require_board_branch(config)
+        ticket = _verifying_ticket(config, ticket_id, "countersign")
+        fields, _ = frontmatter.parse(ticket.text)
+        reviewer = str(fields.get("reviewer") or "").strip()
+        approved = str(fields.get("approved_sha") or "").strip()
+        tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
+        if not reviewer or approved != tip:
+            raise GateError(f"{ticket.ticket_id} has no approval of the current tip to countersign")
+        result = transition(
+            config,
+            ticket.ticket_id,
+            ticket.column,
+            log_entry=f"approval by {reviewer} countersigned by the runner at {tip[:12]}",
+            fm_updates={"approval_sig": trust.sign(config.project_root, ticket.ticket_id, tip, reviewer)},
+            commit_message=f"kanban({ticket.ticket_id}): approval countersigned",
             timestamp=timestamp,
         )
         result.messages = [*lock_warnings, *result.messages]
@@ -3014,6 +3040,7 @@ def init_board(
         "require_review": True,
         "require_integration": True,
         "require_spec": False,
+        "require_signed_approvals": True,
         "max_blast_radius_files": 3,
         "stale_after_days": 3,
         "allowed_commands": [],

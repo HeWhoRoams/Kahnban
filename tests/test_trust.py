@@ -85,3 +85,63 @@ def test_reinstalling_never_moves_an_existing_pin_unless_asked(tmp_path: Path) -
 
     skills.install_skills(tmp_path, harness="claude", relock=True)
     assert trust.lock_problems(tmp_path) == []
+
+
+def test_a_workers_approval_is_countersigned_by_the_runner(repo: Path, monkeypatch) -> None:
+    config = factory_board(repo, require_signed_approvals=True)
+    verified(config)
+
+    monkeypatch.setenv("KAHNBAN_ROLE", "qa_reviewer")
+    core.approve(config, "TST-001", "qa-reviewer")
+    assert not frontmatter.parse(core.find_ticket(config, "TST-001").text)[0].get("approval_sig")
+    with pytest.raises(core.GateError, match="unsigned"):
+        core.merge(config, "TST-001")
+
+    monkeypatch.delenv("KAHNBAN_ROLE")  # the runner is not a worker
+    core.countersign(config, "TST-001")
+    assert len(str(frontmatter.parse(core.find_ticket(config, "TST-001").text)[0]["approval_sig"])) == 64
+    assert core.merge(config, "TST-001").passed
+
+
+def test_the_key_lives_outside_the_repository_and_is_created_once(repo: Path) -> None:
+    first = trust.sign(repo, "TST-001", "abc", "qa")
+    keys = list(trust.key_dir().glob("*.key"))
+
+    assert len(keys) == 1 and repo not in keys[0].parents
+    assert trust.sign(repo, "TST-001", "abc", "qa") == first
+    assert trust.sign(repo, "TST-001", "abc", "someone-else") != first
+
+
+def test_the_guard_keeps_workers_away_from_the_key(repo: Path) -> None:
+    from kahnban import guard
+
+    trust.sign(repo, "TST-001", "abc", "qa")
+    key = str(next(trust.key_dir().glob("*.key")))
+    env = {"KAHNBAN_ROLE": "coder", "KAHNBAN_PROJECT_ROOT": str(repo)}
+    for command in (f"cat {key}", "echo $KAHNBAN_SIGNING_KEY", f"type '{key}'", f'bash -c "cat {key}"'):
+        payload = {"tool_name": "Bash", "tool_input": {"command": command}}
+        assert "signing key" in (guard.decide(payload, env) or ""), command
+    assert "signing key" in guard.decide({"tool_name": "Read", "tool_input": {"file_path": key}}, env)
+
+
+def test_new_boards_require_signed_approvals(repo: Path) -> None:
+    core.init_board(repo, prefix="TST")
+
+    assert core.load_config(repo).require_signed_approvals
+
+
+def test_a_signed_run_reaches_done_without_the_worker_ever_signing(repo: Path, tmp_path: Path) -> None:
+    from kahnban import runner
+    from test_factory_gates import CHECK_APP, PY
+    from test_factory_run import WORKER, ready_ticket
+
+    script = tmp_path / "worker.py"
+    script.write_text(WORKER.format(check_app=CHECK_APP), encoding="utf-8")
+    config = factory_board(repo, workers={"default": f"{PY} {script}"}, require_signed_approvals=True)
+    ready_ticket(config)
+
+    result = runner.run(config, max_steps=10, echo=lambda line: None)
+
+    assert core.find_ticket(config, "TST-001").column == "5-done", [s.outcome for s in result.steps]
+    log = core.section(frontmatter.parse(core.find_ticket(config, "TST-001").text)[1], "Log")
+    assert "countersigned by the runner" in log

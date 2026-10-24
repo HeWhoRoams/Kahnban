@@ -21,7 +21,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from kahnban import core, frontmatter, gitops, guard_shell, roles
+from kahnban import core, frontmatter, gitops, guard_shell, roles, trust
 
 # Tool names differ per harness: Claude Code, Gemini CLI, Cursor.
 EDIT_TOOLS = {
@@ -30,6 +30,8 @@ EDIT_TOOLS = {
     "StrReplace", "Delete", "EditNotebook",
 }
 SHELL_TOOLS = {"Bash", "run_shell_command", "Shell"}
+READ_TOOLS = {"Read", "read_file", "ReadFile", "Grep", "Glob"}
+SECRET_REFUSAL = "the signing key is the runner's, not a worker's to read"
 PATH_KEYS = ("file_path", "notebook_path", "path", "target_file")
 # Which commands and files each role gets lives in templates/roles.json.
 OVERRIDE_FLAGS = {"--force", "--force-scope", "--force-overlap", "--abandon", "--no-verify"}
@@ -103,6 +105,11 @@ def _edit_problem(role: str, path: Path, env: Mapping[str, str]) -> str | None:
     return None
 
 
+def _names_the_key(*texts: str) -> bool:
+    folder = os.path.normcase(str(trust.key_dir()))
+    return any(trust.KEY_ENV.lower() in text.lower() or folder in os.path.normcase(text) for text in texts)
+
+
 def _git_subcommand(words: list[str]) -> tuple[str, list[str]]:
     """The git subcommand in ``words`` and what follows it, skipping git's global options."""
     if not words or Path(words[0]).name.lower().removesuffix(".exe") != "git":
@@ -131,6 +138,8 @@ def _bash_problem(role: str, command: str, cwd: Path, env: Mapping[str, str]) ->
     except ValueError:  # unbalanced quoting: judge the words as they stand
         commands = [guard_shell.Simple(command.split(), command.split())]
     for item in commands:
+        if _names_the_key(*item.words):
+            return SECRET_REFUSAL
         flags = sorted(OVERRIDE_FLAGS & {word.split("=", 1)[0] for word in item.words})
         if flags:
             return f"override flags are for humans: {', '.join(flags)}"
@@ -170,6 +179,8 @@ def decide(payload: Mapping[str, Any], env: Mapping[str, str]) -> str | None:
     tool_input = payload.get("tool_input") or {}
     if not tool and "command" in payload:  # Cursor's beforeShellExecution has no tool name
         tool, tool_input = "Bash", {"command": payload["command"]}
+    if tool in READ_TOOLS and _names_the_key(*(str(value) for value in tool_input.values())):
+        return SECRET_REFUSAL
     if tool in EDIT_TOOLS:
         raw = next((tool_input[key] for key in PATH_KEYS if tool_input.get(key)), "")
         if not raw:
