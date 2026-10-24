@@ -65,25 +65,8 @@ def build_handoff_baton(
     ticket = core.find_ticket(config, ticket_id)
     fields, body = frontmatter.parse(ticket.text)
 
-    # Extract acceptance criteria items
-    criteria: list[str] = []
-    raw_criteria = core.section(body, "Acceptance criteria")
-    for line in raw_criteria.splitlines():
-        match = core.CHECKBOX_PATTERN.match(line)
-        if match:
-            text = line[match.end():].strip()
-            if text:
-                criteria.append(text)
-
-    # Extract blast radius
-    blast_radius = core.parse_blast_radius(body)
-
-    # Extract dual test commands
-    try:
-        feat_cmd, reg_cmd = core.parse_validation_commands(config, body)
-    except core.GateError:
-        feat_cmd = config.validation_command.strip()
-        reg_cmd = config.regression_command.strip() or feat_cmd
+    criteria = _criteria(body)
+    qa = _qa_contract(config, body, criteria)
 
     # Determine worktree path
     worktree_field = str(fields.get("worktree") or "").strip()
@@ -99,35 +82,17 @@ def build_handoff_baton(
         "ticket_file": ticket.path.resolve().as_posix(),
     }
 
-    qa = QAContract(
-        feature_test_command=feat_cmd,
-        regression_test_command=reg_cmd,
-        test_evidence_required=criteria,
-        blast_radius_files=blast_radius,
-    )
-
     title = str(fields.get("title") or ticket.ticket_id)
-    cmd = roles.command(assigned_role, ticket_id)
-    blocked = str(fields.get("blocked_on") or "")
-    if assigned_role == roles.HUMAN:
-        cmd = _human_command(ticket_id, blocked)
-
-    # Check existing baton for historical rejection records
     existing = read_handoff_baton(config.project_root, ticket_id)
-    verification_results = (
-        existing.verification_results if existing else VerificationResults()
-    )
-    prompt = (
-        _human_prompt(ticket_id, blocked)
-        if assigned_role == roles.HUMAN
-        else _prompt(
-            assigned_role,
-            ticket_id,
-            title,
-            worktree_field or f".worktrees/{ticket_id}",
-            qa,
-            verification_results.rejection_history,
-        )
+    verification_results = existing.verification_results if existing else VerificationResults()
+    next_action = _next_action(
+        assigned_role,
+        ticket_id,
+        title,
+        str(fields.get("blocked_on") or ""),
+        worktree_field or f".worktrees/{ticket_id}",
+        qa,
+        verification_results.rejection_history,
     )
 
     return HandoffBaton(
@@ -148,8 +113,50 @@ def build_handoff_baton(
             if isinstance(fields.get("design_docs"), list)
             else [],
         },
-        next_action={"command": cmd, "prompt": prompt},
+        next_action=next_action,
     )
+
+
+def _criteria(body: str) -> list[str]:
+    """The text of each acceptance-criteria checkbox."""
+    found: list[str] = []
+    for line in core.section(body, "Acceptance criteria").splitlines():
+        match = core.CHECKBOX_PATTERN.match(line)
+        if match and line[match.end():].strip():
+            found.append(line[match.end():].strip())
+    return found
+
+
+def _qa_contract(config: core.Config, body: str, criteria: list[str]) -> QAContract:
+    try:
+        feature_command, regression_command = core.parse_validation_commands(config, body)
+    except core.GateError:
+        feature_command = config.validation_command.strip()
+        regression_command = config.regression_command.strip() or feature_command
+    return QAContract(
+        feature_test_command=feature_command,
+        regression_test_command=regression_command,
+        test_evidence_required=criteria,
+        blast_radius_files=core.parse_blast_radius(body),
+    )
+
+
+def _next_action(
+    role: str,
+    ticket_id: str,
+    title: str,
+    blocked_on: str,
+    worktree: str,
+    qa: QAContract,
+    rejections: list[dict[str, Any]],
+) -> dict[str, str]:
+    """The command and prompt for whoever acts next: a person when the ticket is parked, else the role."""
+    if role == roles.HUMAN:
+        return {"command": _human_command(ticket_id, blocked_on), "prompt": _human_prompt(ticket_id, blocked_on)}
+    return {
+        "command": roles.command(role, ticket_id),
+        "prompt": _prompt(role, ticket_id, title, worktree, qa, rejections),
+    }
 
 
 class Stage:
