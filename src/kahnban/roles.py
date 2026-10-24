@@ -3,7 +3,7 @@
 ``templates/roles.json`` says, for each role, which ``kahnban`` commands it may
 run, which files it may edit, which skills it loads and what it is told to do.
 The guard, the prompts the runner and ``kahnban next`` hand out, the handoff
-baton and the Claude agent files are all rendered from it, so they cannot
+baton and the native agent files are all rendered from it, so they cannot
 disagree.
 """
 
@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable
+from dataclasses import dataclass, fields
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -23,8 +24,30 @@ QA_REVIEWER = "qa_reviewer"
 INTEGRATOR = "integrator"
 CURATOR = "curator"
 FACTS = {"worktree", "qa_contract", "branch"}  # what handoff.py can say about a ticket
-HUMAN = "human"  # who acts next on an escalated ticket
-NOBODY = "none"  # who acts next on a finished one
+HUMAN = "human"
+NOBODY = "none"
+
+
+@dataclass(frozen=True)
+class Role:
+    """One entry of ``roles.json``; an unknown key there is an error, not a silently ignored typo."""
+
+    name: str
+    title: str
+    description: str
+    intro: str
+    steps: tuple[str, ...]
+    finish: str
+    exit: str = ""
+    tools: str = ""
+    skills: tuple[str, ...] = ()
+    commands: tuple[str, ...] = ()
+    edits: str | tuple[str, ...] = ()  # "blast_radius", or the paths it may edit ({board} is the board root)
+    escalate_when: str | None = None
+    gate: str | None = None
+    command: str = ""
+    facts: tuple[str, ...] = ()
+    worker: bool = True
 
 
 @cache
@@ -32,13 +55,37 @@ def manifest() -> dict[str, Any]:
     return json.loads(MANIFEST.read_text(encoding="utf-8"))
 
 
-def role(name: str) -> dict[str, Any]:
-    return manifest()["roles"][name]
+def role(name: str) -> Role:
+    return _build(name, manifest()["roles"][name])
+
+
+def _build(name: str, spec: dict[str, Any]) -> Role:
+    known = {field.name for field in fields(Role)} - {"name"}
+    unknown = sorted(set(spec) - known)
+    if unknown:
+        raise ValueError(f"role {name}: unknown field(s) {', '.join(unknown)} (known: {', '.join(sorted(known))})")
+    values = {key: tuple(value) if isinstance(value, list) else value for key, value in spec.items()}
+    return Role(name=name, **values)
+
+
+def validate() -> list[str]:
+    """Every role that cannot be built from ``roles.json``, as messages."""
+    problems = []
+    for name, spec in manifest()["roles"].items():
+        try:
+            _build(name, spec)
+        except (TypeError, ValueError) as error:
+            problems.append(str(error))
+    return problems
+
+
+def all_roles() -> list[Role]:
+    return [role(name) for name in manifest()["roles"]]
 
 
 def workers() -> list[str]:
     """Roles that run as agents under ``kahnban run``; the integrator is the runner itself."""
-    return [name for name, spec in manifest()["roles"].items() if spec.get("worker", True)]
+    return [item.name for item in all_roles() if item.worker]
 
 
 def agent_name(name: str) -> str:
@@ -53,37 +100,35 @@ def commands(name: str) -> set[str]:
     """The ``kahnban`` subcommands a worker in this role may run; none for an unknown role."""
     if name not in workers():
         return set()
-    return set(manifest()["read_only"]) | set(role(name).get("commands", []))
+    return set(manifest()["read_only"]) | set(role(name).commands)
 
 
-def edits(name: str) -> str | list[str]:
+def edits(name: str) -> str | tuple[str, ...]:
     """``"blast_radius"``, or the paths a worker may edit (``{board}`` is the board root)."""
-    if name not in workers():
-        return []
-    return role(name).get("edits", [])
+    return role(name).edits if name in workers() else ()
 
 
 def command(name: str, ticket: str) -> str:
     """The one command this role's turn is about, or '' for a role without one."""
-    spec = manifest()["roles"].get(name, {})
-    return _fill(spec["command"], ticket) if spec.get("command") else ""
+    spec = role(name) if name in manifest()["roles"] else None
+    return _fill(spec.command, ticket) if spec and spec.command else ""
 
 
 def facts(name: str) -> list[str]:
     """Which ticket facts this role's prompt carries (``worktree``, ``qa_contract``, ``branch``)."""
-    return list(manifest()["roles"].get(name, {}).get("facts", []))
+    return list(role(name).facts) if name in manifest()["roles"] else []
 
 
 def finish(name: str, ticket: str = "") -> str:
-    return _fill(role(name)["finish"], ticket or PLACEHOLDER)
+    return _fill(role(name).finish, ticket or PLACEHOLDER)
 
 
 def prompt(name: str, *, ticket: str = "", title: str = "", facts: Iterable[str] = ()) -> str:
     """What an agent in this role is told, for one ticket (or none, for the curator)."""
     spec = role(name)
-    head = f"You are the Kahnban {spec['title']}"
+    head = f"You are the Kahnban {spec.title}"
     head += f" for {ticket}: '{title or ticket}'." if ticket else "."
-    lines = [f"{head} {_fill(spec['intro'], ticket or PLACEHOLDER)}"]
+    lines = [f"{head} {_fill(spec.intro, ticket or PLACEHOLDER)}"]
     lines += [f"- {fact}" for fact in facts]
     return "\n".join([*lines, "", *instructions(name, ticket)])
 
@@ -91,16 +136,16 @@ def prompt(name: str, *, ticket: str = "", title: str = "", facts: Iterable[str]
 def instructions(name: str, ticket: str = "") -> list[str]:
     spec = role(name)
     ref = ticket or PLACEHOLDER
-    lines = [f"{number}. {_fill(step, ref)}" for number, step in enumerate(spec["steps"], 1)]
-    if spec.get("escalate_when"):
+    lines = [f"{number}. {_fill(step, ref)}" for number, step in enumerate(spec.steps, 1)]
+    if spec.escalate_when:
         lines.append(
-            f"If {spec['escalate_when']}, do not guess: run "
+            f"If {spec.escalate_when}, do not guess: run "
             f"`kahnban escalate {ref} --reason \"<what has to change and why>\"` and stop."
         )
     lines.append(finish(name, ticket))
-    if spec.get("gate"):
+    if spec.gate:
         lines.append(
-            f"Next comes `{_fill(spec['gate'], ref)}`. If the factory runner started you, it runs "
+            f"Next comes `{_fill(spec.gate, ref)}`. If the factory runner started you, it runs "
             "that after you stop, so leave it alone; in an interactive session, run it yourself."
         )
     return lines
@@ -123,17 +168,16 @@ def agent_markdown(name: str, harness: str = "claude") -> str:
     """
     spec = role(name)
     native = AGENT_FORMATS[harness]
-    front = ["---", f"name: {agent_name(name)}", f"description: {spec['description']}"]
-    skills = spec.get("skills", [])
+    front = ["---", f"name: {agent_name(name)}", f"description: {spec.description}"]
     if native["tools"]:
-        front.append(f"tools: {spec['tools']}")
-    if native["preloads_skills"] and skills:
-        front += ["skills:", *(f"  - {skill}" for skill in skills)]
+        front.append(f"tools: {spec.tools}")
+    if native["preloads_skills"] and spec.skills:
+        front += ["skills:", *(f"  - {skill}" for skill in spec.skills)]
     front += native["extra"]
-    intro = f"You are the Kahnban {spec['title']}. {_fill(spec['intro'], PLACEHOLDER)}"
+    intro = f"You are the Kahnban {spec.title}. {_fill(spec.intro, PLACEHOLDER)}"
     body = [intro, ""]
-    if skills and not native["preloads_skills"]:
-        paths = ", ".join(f"`.agents/skills/{skill}/SKILL.md`" for skill in skills)
+    if spec.skills and not native["preloads_skills"]:
+        paths = ", ".join(f"`.agents/skills/{skill}/SKILL.md`" for skill in spec.skills)
         body += [f"Before you start, read and follow these skills: {paths}.", ""]
     return "\n".join([*front, "---", "", *body, *instructions(name), ""])
 

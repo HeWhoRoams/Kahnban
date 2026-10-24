@@ -44,7 +44,7 @@ def problem(role: str, env: Mapping[str, str]) -> str | None:
     """Why a worker in ``role`` may not stop yet, or None. Escalating is always a way out."""
     if role not in roles.workers():
         return None
-    name = roles.role(role).get("exit", "")
+    name = roles.role(role).exit
     check = CHECKS.get(name)
     if check is None:
         raise core.KahnbanError(f"role '{role}' names exit check '{name}', which does not exist")

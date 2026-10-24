@@ -32,7 +32,7 @@ def test_no_role_is_told_to_run_what_the_guard_refuses_it(board: Path) -> None:
     ):
         rec = dispatcher.resolve_next_action(config, preferred_role=preferred)
         assert rec.assigned_role == role
-        gate = (roles.role(role).get("gate") or "").split()[1:2]
+        gate = (roles.role(role).gate or "").split()[1:2]
         told = skills_check.named_commands(rec.prompt) - set(gate)
         assert told, f"{role}'s prompt names no command at all"
         assert {c: guard.command_problem(role, c) for c in told} == dict.fromkeys(told)
@@ -153,3 +153,12 @@ def test_every_worker_role_names_a_real_exit_check(monkeypatch) -> None:
     monkeypatch.setitem(manifest["roles"]["coder"], "exit", "tidy_desk")
 
     assert any("exit 'tidy_desk' is not one of" in problem for problem in skills_check.audit())
+
+
+def test_a_typo_in_roles_json_is_reported_instead_of_ignored(monkeypatch) -> None:
+    monkeypatch.setitem(roles.manifest()["roles"]["coder"], "exti", "committed_work")
+
+    problems = skills_check.audit()
+
+    assert any("role coder: unknown field(s) exti" in problem for problem in problems)
+    assert any("unknown field" in message for message in roles.validate())

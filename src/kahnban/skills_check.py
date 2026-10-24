@@ -63,26 +63,32 @@ def audit(project_root: Path | None = None) -> list[str]:
         check_refs(f"skill {name}", body)
         check_commands(f"skill {name}", body, None)
 
+    malformed = roles.validate()
+    problems += [f"roles.json: {message}" for message in malformed]
+    if malformed:
+        return problems  # nothing below can be judged until every role can be read
+
     manifest = roles.manifest()
     listed = [*manifest["read_only"], *manifest["runner_only"]]
-    listed += [c for spec in manifest["roles"].values() for c in spec.get("commands", [])]
+    listed += [command for spec in roles.all_roles() for command in spec.commands]
     for command in sorted({c.split()[0] for c in listed} - cli_commands):
         problems.append(f"roles.json: '{command}' is not a kahnban command")
 
-    for name, spec in manifest["roles"].items():
+    for spec in roles.all_roles():
+        name = spec.name
         where = f"role {name}"
-        worker = name in roles.workers()
-        gate = (spec.get("gate") or "").split()
+        worker = spec.worker
+        gate = (spec.gate or "").split()
         allowed = roles.commands(name) | ({gate[1]} if len(gate) > 1 else set()) if worker else None
-        text = "\n".join([spec["intro"], *roles.instructions(name)])
+        text = "\n".join([spec.intro, *roles.instructions(name)])
         check_refs(where, text)
         check_commands(where, text, allowed)
-        if worker and spec.get("exit") not in exit_checks.CHECKS:
-            problems.append(f"{where}: exit '{spec.get('exit')}' is not one of {', '.join(sorted(exit_checks.CHECKS))}")
-        for fact in sorted(set(spec.get("facts", [])) - roles.FACTS):
+        if worker and spec.exit not in exit_checks.CHECKS:
+            problems.append(f"{where}: exit '{spec.exit}' is not one of {', '.join(sorted(exit_checks.CHECKS))}")
+        for fact in sorted(set(spec.facts) - roles.FACTS):
             problems.append(f"{where}: fact '{fact}' is not one of {', '.join(sorted(roles.FACTS))}")
-        preloaded = set(spec.get("skills", []))
-        for skill in spec.get("skills", []):
+        preloaded = set(spec.skills)
+        for skill in spec.skills:
             if skill not in found:
                 problems.append(f"{where}: preloads {skill}, which is not an installed skill")
                 continue
