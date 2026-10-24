@@ -2146,17 +2146,11 @@ def branch_tip(config: Config, branch: str) -> str:
     return gitops.rev_parse(config.project_root, branch)
 
 
-def _signature_problem(config: Config, fields: Mapping[str, object], reviewer: str) -> str:
+def _signature_problem(config: Config, fields: Mapping[str, object]) -> str:
     """With ``require_signed_approvals``: why this approval is not the engine's own, or ''."""
     if not config.require_signed_approvals:
         return ""
-    return trust.signature_problem(
-        config.project_root,
-        str(fields.get("id") or ""),
-        str(fields.get("approved_sha") or "").strip(),
-        reviewer,
-        str(fields.get("approval_sig") or "").strip(),
-    )
+    return trust.signature_problem(config.project_root, trust.Approval.from_fields(fields))
 
 
 def _release_problems(
@@ -2179,7 +2173,7 @@ def _release_problems(
             problems.append(f"approved by its own owner '{owner}'")
         elif tip and str(fields.get("approved_sha") or "").strip() != tip:
             problems.append(f"{branch} moved after approval; reject it and re-verify")
-    if reviewer and (forged := _signature_problem(config, fields, reviewer)):
+    if reviewer and (forged := _signature_problem(config, fields)):
         problems.append(forged)
     if config.require_integration:
         integrated = str(fields.get("integrated_sha") or "").strip()
@@ -2742,7 +2736,7 @@ def approve(
                 "reviewer": reviewer,
                 "approved_sha": tip,
                 "approval_sig": (
-                    trust.sign(config.project_root, ticket.ticket_id, tip, reviewer)
+                    trust.sign(config.project_root, trust.Approval(ticket.ticket_id, tip, reviewer))
                     if config.require_signed_approvals and not os.environ.get("KAHNBAN_ROLE")
                     else ""  # a worker does not sign; the runner countersigns once it has checked
                 ),
@@ -2772,7 +2766,7 @@ def countersign(
             ticket.ticket_id,
             ticket.column,
             log_entry=f"approval by {reviewer} countersigned by the runner at {tip[:12]}",
-            fm_updates={"approval_sig": trust.sign(config.project_root, ticket.ticket_id, tip, reviewer)},
+            fm_updates={"approval_sig": trust.sign(config.project_root, trust.Approval(ticket.ticket_id, tip, reviewer))},
             commit_message=f"kanban({ticket.ticket_id}): approval countersigned",
             timestamp=timestamp,
         )
@@ -2869,7 +2863,7 @@ def merge(
                 f"{ticket.ticket_id} is not approved at {tip[:12]}; a reviewer runs "
                 f"'kahnban approve {ticket.ticket_id} --reviewer <name>' first"
             )
-        if reviewer and (forged := _signature_problem(config, fields, reviewer)):
+        if reviewer and (forged := _signature_problem(config, fields)):
             raise GateError(f"{ticket.ticket_id}: {forged}")
         _require_allowed_commands(config, ticket.ticket_id, body)
         feat_cmd, reg_cmd = parse_validation_commands(config, body)

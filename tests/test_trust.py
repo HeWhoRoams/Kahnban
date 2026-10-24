@@ -104,18 +104,18 @@ def test_a_workers_approval_is_countersigned_by_the_runner(repo: Path, monkeypat
 
 
 def test_the_key_lives_outside_the_repository_and_is_created_once(repo: Path) -> None:
-    first = trust.sign(repo, "TST-001", "abc", "qa")
+    first = trust.sign(repo, trust.Approval("TST-001", "abc", "qa"))
     keys = list(trust.key_dir().glob("*.key"))
 
     assert len(keys) == 1 and repo not in keys[0].parents
-    assert trust.sign(repo, "TST-001", "abc", "qa") == first
-    assert trust.sign(repo, "TST-001", "abc", "someone-else") != first
+    assert trust.sign(repo, trust.Approval("TST-001", "abc", "qa")) == first
+    assert trust.sign(repo, trust.Approval("TST-001", "abc", "someone-else")) != first
 
 
 def test_the_guard_keeps_workers_away_from_the_key(repo: Path) -> None:
     from kahnban import guard
 
-    trust.sign(repo, "TST-001", "abc", "qa")
+    trust.sign(repo, trust.Approval("TST-001", "abc", "qa"))
     key = str(next(trust.key_dir().glob("*.key")))
     env = {"KAHNBAN_ROLE": "coder", "KAHNBAN_PROJECT_ROOT": str(repo)}
     for command in (f"cat {key}", "echo $KAHNBAN_SIGNING_KEY", f"type '{key}'", f'bash -c "cat {key}"'):

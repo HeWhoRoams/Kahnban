@@ -24,6 +24,8 @@ import hmac
 import json
 import os
 import secrets
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
 LOCK = Path(".agents") / "skills.lock.json"
@@ -103,19 +105,38 @@ def _key(root: Path) -> bytes:
     return path.read_text(encoding="utf-8").strip().encode()
 
 
-def sign(root: Path, ticket_id: str, tip: str, reviewer: str) -> str:
-    message = f"{ticket_id}\n{tip}\n{reviewer.strip().lower()}".encode()
+@dataclass(frozen=True)
+class Approval:
+    """One reviewer's sign-off on one commit of one ticket."""
+
+    ticket_id: str
+    tip: str
+    reviewer: str
+    signature: str = ""
+
+    @classmethod
+    def from_fields(cls, fields: Mapping[str, object]) -> Approval:
+        return cls(
+            str(fields.get("id") or ""),
+            str(fields.get("approved_sha") or "").strip(),
+            str(fields.get("reviewer") or "").strip(),
+            str(fields.get("approval_sig") or "").strip(),
+        )
+
+
+def sign(root: Path, approval: Approval) -> str:
+    message = f"{approval.ticket_id}\n{approval.tip}\n{approval.reviewer.strip().lower()}".encode()
     return hmac.new(_key(root), message, hashlib.sha256).hexdigest()
 
 
-def signature_problem(root: Path, ticket_id: str, tip: str, reviewer: str, signature: str) -> str:
+def signature_problem(root: Path, approval: Approval) -> str:
     """Why this approval cannot be trusted, or ''."""
-    if not signature:
+    if not approval.signature:
         return "approval is unsigned; a reviewer re-runs 'kahnban approve' (require_signed_approvals)"
     try:
-        expected = sign(root, ticket_id, tip, reviewer)
+        expected = sign(root, approval)
     except ValueError as error:
         return str(error)
-    if not hmac.compare_digest(expected, signature):
+    if not hmac.compare_digest(expected, approval.signature):
         return "approval signature does not match the reviewer and tip; it was edited or forged"
     return ""
