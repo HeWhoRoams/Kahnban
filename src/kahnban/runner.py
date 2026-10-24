@@ -161,7 +161,7 @@ def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path
             return f"approved by {fields.get('reviewer')}"
         return f"reviewer exited {code} without approving or rejecting"
     if rec.action == "spec_and_refine":
-        if config.autonomy == "attended" and "ready" in config.human_gates:
+        if config.autonomy == core.Autonomy.ATTENDED and core.HumanGate.READY in config.human_gates:
             if not core.needs_human(config, core.find_ticket(config, ticket)):
                 core.ready(config, ticket)
                 return "confirmed by a human; passed the ready gate"

@@ -144,3 +144,10 @@ def test_the_guard_ignores_drive_and_folder_case_on_windows(repo: Path) -> None:
     assert "outside your worktree" in guard.decide(
         {"tool_name": "Write", "tool_input": {"file_path": str(repo / "src" / "app.py").upper()}}, env
     )
+
+
+def test_every_worker_role_names_a_real_exit_check(monkeypatch) -> None:
+    manifest = roles.manifest()
+    monkeypatch.setitem(manifest["roles"]["coder"], "exit", "tidy_desk")
+
+    assert any("exit 'tidy_desk' is not one of" in problem for problem in skills.check())

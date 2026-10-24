@@ -32,8 +32,24 @@ from kahnban import __version__, attempts, frontmatter, gitops, status, trust, w
 LOCK_NAME = ".claim.lock"
 LOCK_STALE_SECONDS = 300
 ARTIFACT_DIR = attempts.ARTIFACT_DIR
-AUTONOMY_MODES = ("unattended", "attended")
-HUMAN_GATES = {"ready", "merge"}
+
+
+class Autonomy:
+    """``autonomy`` in board.config.json: whether the runner may take every gate itself."""
+
+    UNATTENDED = "unattended"
+    ATTENDED = "attended"
+
+
+class HumanGate:
+    """The gates an attended run can hand to a person."""
+
+    READY = "ready"
+    MERGE = "merge"
+
+
+AUTONOMY_MODES = (Autonomy.UNATTENDED, Autonomy.ATTENDED)
+HUMAN_GATES = {HumanGate.READY, HumanGate.MERGE}
 TEMPLATE_NAME = "template.md"
 CONFIG_RELATIVE = Path("plans") / "board.config.json"
 
@@ -131,8 +147,8 @@ class Config:
     workers: Mapping[str, str] = field(default_factory=dict)
     worker_timeout_sec: int = 3600
     max_attempts: int = 3
-    autonomy: str = "unattended"
-    human_gates: tuple[str, ...] = ("merge",)
+    autonomy: str = Autonomy.UNATTENDED
+    human_gates: tuple[str, ...] = (HumanGate.MERGE,)
     require_signed_approvals: bool = False
 
     @property
@@ -302,8 +318,8 @@ def load_config(
         workers={str(k): str(v) for k, v in dict(raw.get("workers") or {}).items()},
         worker_timeout_sec=int(raw.get("worker_timeout_sec", 3600)),
         max_attempts=int(raw.get("max_attempts", 3)),
-        autonomy=str(raw.get("autonomy", "unattended")),
-        human_gates=tuple(str(gate) for gate in raw.get("human_gates") or ("merge",)),
+        autonomy=str(raw.get("autonomy", Autonomy.UNATTENDED)),
+        human_gates=tuple(str(gate) for gate in raw.get("human_gates") or (HumanGate.MERGE,)),
         require_signed_approvals=bool(raw.get("require_signed_approvals", False)),
     )
     if config.autonomy not in AUTONOMY_MODES:
@@ -2052,7 +2068,7 @@ def confirm(
                 "or 'merge' has anything to confirm"
             )
         mark = f"ready:{contract_hash(body)}"
-        if gate == "merge":
+        if gate == HumanGate.MERGE:
             tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
             if not tip:
                 raise GateError(f"{ticket.ticket_id} has no branch to confirm")
@@ -2073,18 +2089,18 @@ def confirm(
 
 def _human_gate(config: Config, column: str) -> str:
     if column in (config.backlog_column, config.refining_column):
-        return "ready"
-    return "merge" if column == config.verifying_column else ""
+        return HumanGate.READY
+    return HumanGate.MERGE if column == config.verifying_column else ""
 
 
 def needs_human(config: Config, ticket: Ticket) -> str:
     """The gate an attended run must hand to a human before taking it, or ''."""
     gate = _human_gate(config, ticket.column)
-    if config.autonomy != "attended" or gate not in config.human_gates:
+    if config.autonomy != Autonomy.ATTENDED or gate not in config.human_gates:
         return ""
     fields, body = frontmatter.parse(ticket.text)
     mark = str(fields.get("confirmed") or "").strip()
-    if gate == "ready":
+    if gate == HumanGate.READY:
         return "" if mark == f"ready:{contract_hash(body)}" else gate
     tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
     return "" if mark == f"merge:{tip}" else gate

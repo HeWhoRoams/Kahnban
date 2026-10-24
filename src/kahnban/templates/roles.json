@@ -4,6 +4,7 @@
   "roles": {
     "spec_analyst": {
       "title": "spec analyst",
+      "exit": "ready_gate_passes",
       "description": "Kahnban factory spec analyst. Turns one backlog or refining ticket into a gate-ready contract (criteria with tests, blast radius, validation). Started by `kahnban run`.",
       "tools": "Read, Edit, Write, Grep, Glob, Bash",
       "skills": ["to-tickets"],
@@ -24,6 +25,7 @@
     },
     "coder": {
       "title": "coder",
+      "exit": "committed_work",
       "description": "Kahnban factory coder. Implements one claimed ticket inside its worktree with TDD, touching only the ticket's blast radius. Started by `kahnban run`.",
       "tools": "Read, Edit, Write, Grep, Glob, Bash",
       "skills": ["tdd", "coder-agent", "unslop", "no-comments", "how", "why"],
@@ -43,6 +45,7 @@
     },
     "qa_reviewer": {
       "title": "QA reviewer",
+      "exit": "decision_recorded",
       "description": "Kahnban factory reviewer. Audits one verified ticket's diff and tests, then approves or rejects it. Never edits, commits or merges. Started by `kahnban run`.",
       "tools": "Read, Grep, Glob, Bash",
       "skills": ["qa-reviewer-agent"],
@@ -74,6 +77,7 @@
     },
     "curator": {
       "title": "curator",
+      "exit": "none",
       "description": "Kahnban learnings curator. Turns recurring entries in ./learnings/ into tickets for structural fixes. Never changes code directly.",
       "tools": "Read, Edit, Write, Grep, Glob, Bash",
       "skills": ["harvest-learnings"],

@@ -149,19 +149,28 @@ def build_handoff_baton(
     )
 
 
+class Stage:
+    REFINEMENT = "refinement"
+    IMPLEMENTATION = "implementation"
+    VERIFICATION = "verification"
+    CLOSURE = "closure"
+    ESCALATED = "escalated"
+    CLOSED = "closed"
+
+
 def next_role(config: core.Config, column: str, fields: dict[str, Any]) -> tuple[str, str]:
     """(role, stage) of whoever acts next on a ticket in ``column``."""
     if str(fields.get("blocked_on") or "").strip():
-        return "human", "escalated"
+        return roles.HUMAN, Stage.ESCALATED
     if column in (config.backlog_column, config.refining_column):
-        return "spec_analyst", "refinement"
+        return "spec_analyst", Stage.REFINEMENT
     if column in (config.ready_column, config.in_progress_column):
-        return "coder", "implementation"
+        return "coder", Stage.IMPLEMENTATION
     if column == config.verifying_column:
         if str(fields.get("reviewer") or "").strip():
-            return "integrator", "closure"
-        return "qa_reviewer", "verification"
-    return "none", "closed"
+            return "integrator", Stage.CLOSURE
+        return "qa_reviewer", Stage.VERIFICATION
+    return roles.NOBODY, Stage.CLOSED
 
 
 def refresh(

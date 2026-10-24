@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from kahnban import frontmatter, roles, trust
+from kahnban import exit_checks, frontmatter, roles, trust
 
 TEMPLATES_SKILLS_DIR = Path(__file__).parent / "templates" / "skills"
 GUARD_COMMAND = "kahnban guard"
@@ -497,6 +497,8 @@ def check(project_root: Path | None = None) -> list[str]:
         text = "\n".join([spec["intro"], *roles.instructions(name)])
         check_refs(where, text)
         check_commands(where, text, allowed)
+        if worker and spec.get("exit") not in {*exit_checks.CHECKS, "none"}:
+            problems.append(f"{where}: exit '{spec.get('exit')}' is not one of {', '.join(sorted(exit_checks.CHECKS))}")
         preloaded = set(spec.get("skills", []))
         for skill in spec.get("skills", []):
             if skill not in found:

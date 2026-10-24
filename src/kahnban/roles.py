@@ -17,6 +17,8 @@ from typing import Any
 
 MANIFEST = Path(__file__).parent / "templates" / "roles.json"
 PLACEHOLDER = "<ID>"
+HUMAN = "human"  # who acts next on an escalated ticket
+NOBODY = "none"  # who acts next on a finished one
 
 
 @cache

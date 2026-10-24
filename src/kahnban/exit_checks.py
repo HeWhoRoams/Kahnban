@@ -10,14 +10,14 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
-from kahnban import core, frontmatter, gitops
+from kahnban import core, frontmatter, gitops, roles
 
 Check = Callable[[core.Config, core.Ticket, dict, str, Mapping[str, str]], "str | None"]
 
 
 def problem(role: str, env: Mapping[str, str]) -> str | None:
     """Why a worker in ``role`` may not stop yet, or None. Escalating is always a way out."""
-    check = CHECKS.get(role)
+    check = CHECKS.get(roles.role(role).get("exit", "")) if role in roles.workers() else None
     if check is None:
         return None
     config = core.load_config(Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve())
@@ -52,8 +52,6 @@ def decision_recorded(
     config: core.Config, ticket: core.Ticket, fields: dict, body: str, env: Mapping[str, str]
 ) -> str | None:
     """A reviewer approves or rejects before stopping."""
-    from kahnban import roles
-
     if ticket.column == config.verifying_column and not str(fields.get("reviewer") or "").strip():
         return f"{ticket.ticket_id} is neither approved nor rejected. {roles.finish('qa_reviewer', ticket.ticket_id)}"
     return None
@@ -74,7 +72,7 @@ def ready_gate_passes(
 
 
 CHECKS: dict[str, Check] = {
-    "coder": committed_work,
-    "qa_reviewer": decision_recorded,
-    "spec_analyst": ready_gate_passes,
+    "committed_work": committed_work,
+    "decision_recorded": decision_recorded,
+    "ready_gate_passes": ready_gate_passes,
 }
