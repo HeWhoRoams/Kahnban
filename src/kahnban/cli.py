@@ -16,7 +16,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from kahnban import __version__, core, dispatcher, gitops, ingest, linter, session, skills, worktree
+from kahnban import __version__, core, dispatcher, gitops, ingest, linter, session, skills, trust, worktree
 
 EXIT_OK = 0
 EXIT_REFUSED = 1
@@ -555,6 +555,10 @@ def cmd_skills(args: argparse.Namespace) -> int:
             return EXIT_REFUSED
         print("[OK] skills, roles and generated agent files agree")
         return EXIT_OK
+    if action == "lock":
+        pinned = trust.write_lock(root)
+        print(f"[OK] pinned {pinned} skill and hook files in {trust.LOCK.as_posix()}" if pinned else "[WARN] nothing to pin")
+        return EXIT_OK
     if action == "list":
         available = skills.list_skills(root)
         if not available:
@@ -1016,6 +1020,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="check that skills, the role manifest and generated agent files agree (exit 1 if not)",
     )
     check_parser.set_defaults(handler=cmd_skills)
+
+    lock_parser = skills_sub.add_parser(
+        "lock", help="pin the SHA-256 of every installed skill and lifecycle hook (check fails on any change)"
+    )
+    lock_parser.set_defaults(handler=cmd_skills)
 
     skills_parser.set_defaults(handler=cmd_skills)
 

@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import __version__, frontmatter, gitops, status, worktree
+from kahnban import __version__, frontmatter, gitops, status, trust, worktree
 
 LOCK_NAME = ".claim.lock"
 LOCK_STALE_SECONDS = 300
@@ -133,6 +133,7 @@ class Config:
     max_attempts: int = 3
     autonomy: str = "unattended"
     human_gates: tuple[str, ...] = ("merge",)
+    require_signed_approvals: bool = False
 
     @property
     def board_path(self) -> Path:
@@ -303,6 +304,7 @@ def load_config(
         max_attempts=int(raw.get("max_attempts", 3)),
         autonomy=str(raw.get("autonomy", "unattended")),
         human_gates=tuple(str(gate) for gate in raw.get("human_gates") or ("merge",)),
+        require_signed_approvals=bool(raw.get("require_signed_approvals", False)),
     )
     if config.autonomy not in AUTONOMY_MODES:
         raise KahnbanError(f"autonomy must be one of {', '.join(AUTONOMY_MODES)}, not '{config.autonomy}'")
@@ -2127,6 +2129,19 @@ def branch_tip(config: Config, branch: str) -> str:
     return gitops.rev_parse(config.project_root, branch)
 
 
+def _signature_problem(config: Config, fields: Mapping[str, object], reviewer: str) -> str:
+    """With ``require_signed_approvals``: why this approval is not the engine's own, or ''."""
+    if not config.require_signed_approvals:
+        return ""
+    return trust.signature_problem(
+        config.project_root,
+        str(fields.get("id") or ""),
+        str(fields.get("approved_sha") or "").strip(),
+        reviewer,
+        str(fields.get("approval_sig") or "").strip(),
+    )
+
+
 def _release_problems(
     config: Config,
     fields: Mapping[str, object],
@@ -2147,6 +2162,8 @@ def _release_problems(
             problems.append(f"approved by its own owner '{owner}'")
         elif tip and str(fields.get("approved_sha") or "").strip() != tip:
             problems.append(f"{branch} moved after approval; reject it and re-verify")
+    if reviewer and (forged := _signature_problem(config, fields, reviewer)):
+        problems.append(forged)
     if config.require_integration:
         integrated = str(fields.get("integrated_sha") or "").strip()
         if not integrated:
@@ -2441,6 +2458,7 @@ def verify(
                     "verified_sha": tip,
                     "reviewer": "",
                     "approved_sha": "",
+                    "approval_sig": "",
                     "integrated_sha": "",
                 },
                 timestamp=now,
@@ -2703,7 +2721,15 @@ def approve(
             ticket.ticket_id,
             ticket.column,
             log_entry=entry,
-            fm_updates={"reviewer": reviewer, "approved_sha": tip},
+            fm_updates={
+                "reviewer": reviewer,
+                "approved_sha": tip,
+                "approval_sig": (
+                    trust.sign(config.project_root, ticket.ticket_id, tip, reviewer)
+                    if config.require_signed_approvals
+                    else ""
+                ),
+            },
             commit_message=f"kanban({ticket.ticket_id}): approved by {reviewer}",
             timestamp=timestamp,
         )
@@ -2743,6 +2769,7 @@ def reject(
                 "verified_sha": "",
                 "reviewer": "",
                 "approved_sha": "",
+                "approval_sig": "",
                 "integrated_sha": "",
             },
             timestamp=timestamp,
@@ -2799,6 +2826,8 @@ def merge(
                 f"{ticket.ticket_id} is not approved at {tip[:12]}; a reviewer runs "
                 f"'kahnban approve {ticket.ticket_id} --reviewer <name>' first"
             )
+        if reviewer and (forged := _signature_problem(config, fields, reviewer)):
+            raise GateError(f"{ticket.ticket_id}: {forged}")
         _require_allowed_commands(config, ticket.ticket_id, body)
         feat_cmd, reg_cmd = parse_validation_commands(config, body)
         messages = list(lock_warnings)

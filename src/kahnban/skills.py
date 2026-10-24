@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from kahnban import frontmatter, roles
+from kahnban import frontmatter, roles, trust
 
 TEMPLATES_SKILLS_DIR = Path(__file__).parent / "templates" / "skills"
 GUARD_COMMAND = "kahnban guard"
@@ -358,6 +358,11 @@ def install_skills(
             _copy_tree_contents(agents_skills_dir, hermes_skills)
         configured_harnesses.append("hermes (.hermes/skills/)")
 
+    if not dry_run:
+        pinned = trust.write_lock(root)
+        if pinned:
+            messages.append(f"Pinned {pinned} skill and hook files in {trust.LOCK.as_posix()}; commit it.")
+
     return SkillsResult(
         ok=True,
         source=source,
@@ -505,6 +510,7 @@ def check(project_root: Path | None = None) -> list[str]:
 
     if root:
         problems += _project_drift(root, source)
+        problems += trust.lock_problems(root)
     return problems
 
 
