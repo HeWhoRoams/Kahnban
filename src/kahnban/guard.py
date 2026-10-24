@@ -15,14 +15,13 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shlex
 import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from kahnban import core, frontmatter, gitops, roles
+from kahnban import core, frontmatter, gitops, guard_shell, roles
 
 # Tool names differ per harness: Claude Code, Gemini CLI, Cursor.
 EDIT_TOOLS = {
@@ -34,10 +33,7 @@ SHELL_TOOLS = {"Bash", "run_shell_command", "Shell"}
 PATH_KEYS = ("file_path", "notebook_path", "path", "target_file")
 # Which commands and files each role gets lives in templates/roles.json.
 OVERRIDE_FLAGS = {"--force", "--force-scope", "--force-overlap", "--abandon", "--no-verify"}
-GIT_FORBIDDEN = re.compile(
-    r"\bgit\b(?:\s+-C\s+\S+)?\s+(merge|push|rebase|reset\s+--hard|filter-branch|update-ref)\b"
-)
-GIT_COMMIT = re.compile(r"\bgit\b(?:\s+-C\s+\S+)?\s+commit\b")
+GIT_FORBIDDEN = {"merge", "push", "rebase", "filter-branch", "update-ref"}
 KAHNBAN_GLOBAL_OPTIONS = {"--project-root", "--config"}
 
 
@@ -107,19 +103,50 @@ def _edit_problem(role: str, path: Path, env: Mapping[str, str]) -> str | None:
     return None
 
 
-def _bash_problem(role: str, command: str) -> str | None:
-    tokens = set(command.split())
-    flags = sorted(OVERRIDE_FLAGS & {token.split("=", 1)[0] for token in tokens})
-    if flags:
-        return f"override flags are for humans: {', '.join(flags)}"
-    if GIT_FORBIDDEN.search(command):
-        return "merging, pushing and rewriting history is the runner's job"
-    if not roles.edits(role) and GIT_COMMIT.search(command):
-        return f"a {role} does not commit"
-    for subcommand in _kahnban_subcommands(command):
-        problem = command_problem(role, subcommand)
-        if problem:
-            return problem
+def _git_subcommand(words: list[str]) -> tuple[str, list[str]]:
+    """The git subcommand in ``words`` and what follows it, skipping git's global options."""
+    if not words or Path(words[0]).name.lower().removesuffix(".exe") != "git":
+        return "", []
+    takes_value = {"-c", "-C", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--super-prefix"}
+    index = 1
+    while index < len(words) and words[index].startswith("-"):
+        index += 2 if words[index] in takes_value else 1
+    return (words[index].lower(), words[index + 1 :]) if index < len(words) else ("", [])
+
+
+def _write_problem(role: str, target: str, cwd: Path, env: Mapping[str, str]) -> str | None:
+    if any(mark in target for mark in "$%~*?"):
+        return f"cannot tell where '{target}' writes; name the file"
+    path = Path(target)
+    path = (path if path.is_absolute() else cwd / path).resolve()
+    try:
+        return _edit_problem(role, path, env)
+    except core.KahnbanError as error:
+        return f"guard could not check this write ({error}); refusing"
+
+
+def _bash_problem(role: str, command: str, cwd: Path, env: Mapping[str, str]) -> str | None:
+    try:
+        commands = guard_shell.parse(command)
+    except ValueError:  # unbalanced quoting: judge the words as they stand
+        commands = [guard_shell.Simple(command.split(), command.split())]
+    for item in commands:
+        flags = sorted(OVERRIDE_FLAGS & {word.split("=", 1)[0] for word in item.words})
+        if flags:
+            return f"override flags are for humans: {', '.join(flags)}"
+        subcommand, rest = _git_subcommand(item.words)
+        if subcommand in GIT_FORBIDDEN or (subcommand == "reset" and "--hard" in rest):
+            return "merging, pushing and rewriting history is the runner's job"
+        if subcommand == "commit" and not roles.edits(role):
+            return f"a {role} does not commit"
+        for kahnban_command in _kahnban_subcommands(" ".join(item.raw)):
+            problem = command_problem(role, kahnban_command)
+            if problem:
+                return problem
+        for target in item.writes:
+            problem = _write_problem(role, target, cwd, env)
+            if problem:
+                return problem
     return None
 
 
@@ -155,7 +182,8 @@ def decide(payload: Mapping[str, Any], env: Mapping[str, str]) -> str | None:
         except core.KahnbanError as error:
             return f"guard could not check this edit ({error}); refusing"
     if tool in SHELL_TOOLS:
-        return _bash_problem(role, str(tool_input.get("command") or ""))
+        cwd = Path(str(payload.get("cwd") or env.get("KAHNBAN_WORKTREE") or "."))
+        return _bash_problem(role, str(tool_input.get("command") or ""), cwd, env)
     return None
 
 
