@@ -117,3 +117,30 @@ def test_passing_the_ready_gate_spends_the_confirmation(repo: Path) -> None:
     core.ready(config, "TST-001")
 
     assert not fields_of(config).get("confirmed")
+
+
+def test_a_merge_confirmation_does_not_survive_a_reject_and_reverify_at_the_same_tip(repo: Path) -> None:
+    from test_factory_gates import verified
+
+    config = factory_board(repo, autonomy="attended")
+    verified(config)
+    core.confirm(config, "TST-001")
+    assert core.needs_human(config, core.find_ticket(config, "TST-001")) == ""
+
+    core.approve(config, "TST-001", "qa-reviewer")
+    core.reject(config, "TST-001", "qa-reviewer", "tests look thin")
+    assert core.verify(config, "TST-001").passed  # same commits: the tip is unchanged
+
+    assert core.needs_human(config, core.find_ticket(config, "TST-001")) == "merge"
+
+
+def test_landing_a_ticket_spends_its_confirmation(repo: Path) -> None:
+    from test_factory_gates import verified
+
+    config = factory_board(repo, autonomy="attended")
+    verified(config)
+    core.confirm(config, "TST-001")
+    core.approve(config, "TST-001", "qa-reviewer")
+
+    assert core.merge(config, "TST-001").passed
+    assert not fields_of(config).get("confirmed")

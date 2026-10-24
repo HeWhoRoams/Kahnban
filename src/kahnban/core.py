@@ -2482,6 +2482,7 @@ def verify(
                     "approved_sha": "",
                     "approval_sig": "",
                     "integrated_sha": "",
+                    "confirmed": "",
                 },
                 timestamp=now,
                 verification=verification,
@@ -2819,6 +2820,7 @@ def reject(
                 "approved_sha": "",
                 "approval_sig": "",
                 "integrated_sha": "",
+                "confirmed": "",
             },
             timestamp=timestamp,
         )
@@ -2960,7 +2962,7 @@ def merge(
             log_entry="\n".join(
                 [f"integrated into {default_branch} | merge-commit: {merge_sha}", *detail]
             ),
-            fm_updates={"integrated_sha": merge_sha},
+            fm_updates={"integrated_sha": merge_sha, "confirmed": ""},
             commit_message=f"kanban({ticket.ticket_id}): integrated into {default_branch}",
             timestamp=now,
         )
