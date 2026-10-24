@@ -27,11 +27,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import __version__, frontmatter, gitops, status, trust, worktree
+from kahnban import __version__, attempts, frontmatter, gitops, status, trust, worktree
 
 LOCK_NAME = ".claim.lock"
 LOCK_STALE_SECONDS = 300
-ARTIFACT_DIR = ".artifacts"
+ARTIFACT_DIR = attempts.ARTIFACT_DIR
 AUTONOMY_MODES = ("unattended", "attended")
 HUMAN_GATES = {"ready", "merge"}
 TEMPLATE_NAME = "template.md"
@@ -1993,7 +1993,7 @@ def escalate(
         )
         result.messages = [*lock_warnings, *result.messages]
     drop_lease(config, ticket.ticket_id)
-    clear_attempts(config, ticket.ticket_id)
+    attempts.clear(config, ticket.ticket_id)
     try:
         from kahnban.hooks import run_hook
 
@@ -2028,7 +2028,7 @@ def unblock(
             timestamp=timestamp,
         )
         result.messages = [*lock_warnings, *result.messages]
-    clear_attempts(config, ticket.ticket_id)  # a human looked at it: start counting again
+    attempts.clear(config, ticket.ticket_id)  # a human looked at it: start counting again
     return result
 
 
@@ -2067,7 +2067,7 @@ def confirm(
             timestamp=timestamp,
         )
         result.messages = [*lock_warnings, *result.messages]
-    clear_attempts(config, ticket.ticket_id)
+    attempts.clear(config, ticket.ticket_id)
     return result
 
 
@@ -2088,35 +2088,6 @@ def needs_human(config: Config, ticket: Ticket) -> str:
         return "" if mark == f"ready:{contract_hash(body)}" else gate
     tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
     return "" if mark == f"merge:{tip}" else gate
-
-
-def _attempts_path(config: Config) -> Path:
-    return config.board_path / ARTIFACT_DIR / "attempts.json"
-
-
-def load_attempts(config: Config) -> dict[str, dict[str, object]]:
-    """Per ``action|ticket`` retry counts that survive between runs (short cron jobs)."""
-    try:
-        data = json.loads(_attempts_path(config).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    return data if isinstance(data, dict) else {}
-
-
-def save_attempts(config: Config, attempts: Mapping[str, object]) -> None:
-    path = _attempts_path(config)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    gitignore = path.parent / ".gitignore"
-    if not gitignore.exists():
-        gitignore.write_text("*\n", encoding="utf-8", newline="\n")
-    write_text_atomic(path, json.dumps(attempts, indent=2) + "\n")
-
-
-def clear_attempts(config: Config, ticket_id: str) -> None:
-    attempts = load_attempts(config)
-    kept = {key: value for key, value in attempts.items() if not key.endswith(f"|{ticket_id}")}
-    if kept != attempts:
-        save_attempts(config, kept)
 
 
 def ticket_branch(fields: Mapping[str, object], ticket_id: str) -> str:

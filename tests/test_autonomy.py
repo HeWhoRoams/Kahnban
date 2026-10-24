@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, guard, runner
+from kahnban import attempts, core, guard, runner
 from kahnban.cli import main
 from conftest import git, write_ticket
 from test_factory_gates import CHECK, CHECK_APP, CRITERION, PY, factory_board
@@ -78,12 +78,12 @@ def test_retry_counts_survive_between_runs(repo: Path) -> None:
     ready_ticket(config)
 
     runner.run(config, max_steps=1, echo=lambda line: None)
-    assert core.load_attempts(config)["claim_and_implement|TST-001"]["count"] == 1
+    assert attempts.load(config)["claim_and_implement|TST-001"].count == 1
 
     # A second run (a new cron tick) picks up the count and escalates on the next try.
     again = runner.run(config, max_steps=5, echo=lambda line: None)
     assert any(step.outcome.startswith("escalated") for step in again.steps)
-    assert core.load_attempts(config) == {}  # escalating hands the ticket to a human: counts reset
+    assert attempts.load(config) == {}  # escalating hands the ticket to a human: counts reset
 
 
 def test_invalid_autonomy_is_refused(repo: Path) -> None:

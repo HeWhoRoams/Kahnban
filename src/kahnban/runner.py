@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import core, dispatcher, frontmatter, gitops, worktree
+from kahnban import attempts, core, dispatcher, frontmatter, gitops, worktree
 
 CODER = "coder-agent"
 INTEGRATOR = "integrator"
@@ -77,7 +77,6 @@ def run(
     if not config.workers:
         raise RunStop(_NO_WORKER.format(role="any role"))
     result = RunResult(log_path=_log_path(config))
-    attempts = core.load_attempts(config)
     curated = False  # the curator gets one turn per run; then the board moves on
     for number in range(1, max_steps + 1):
         rec = dispatcher.resolve_next_action(config, skip_harvest=curated)
@@ -103,17 +102,13 @@ def run(
             )
             return result
         ticket = rec.ticket_id or ""
-        key = f"{rec.action}|{ticket}"
-        entry = attempts.setdefault(key, {"count": 0, "last": "none"})
-        entry["count"] = int(entry["count"]) + 1  # type: ignore[call-overload]
-        core.save_attempts(config, attempts)
-        if entry["count"] > config.max_attempts:  # type: ignore[operator]
+        entry = attempts.bump(config, rec.action, ticket, _progress(config, ticket))
+        if entry.count > config.max_attempts:
             reason = (
                 f"'{rec.action}' made no progress after {config.max_attempts} attempts; "
-                f"last: {entry['last']}"
+                f"last: {entry.last}"
             )
             core.escalate(config, ticket, reason[:300])
-            attempts = core.load_attempts(config)
             outcome = f"escalated: {reason}"
         else:
             try:
@@ -124,15 +119,23 @@ def run(
                 outcome = f"refused: {error}"
         # One line, details kept: a refusal's paths are on its continuation lines.
         summary = " ".join(part.strip() for part in outcome.splitlines() if part.strip())
-        attempts = core.load_attempts(config)  # a step may have cleared this ticket's counts
-        if key in attempts:
-            attempts[key]["last"] = summary.replace('"', "'")  # type: ignore[index]
-            core.save_attempts(config, attempts)
+        attempts.note(config, rec.action, ticket, summary.replace('"', "'"))
         result.steps.append(Step(number, rec.action, rec.ticket_id, outcome))
         echo(f"[{number}] {rec.action} {ticket}: {summary[:400]}")
     result.stopped = f"stopped after {max_steps} steps"
     result.parked = _parked(config)
     return result
+
+
+def _progress(config: core.Config, ticket_id: str) -> str:
+    """What moves when a ticket makes progress: its column, branch tip and verified commit."""
+    try:
+        ticket = core.find_ticket(config, ticket_id)
+        fields, _ = frontmatter.parse(ticket.text)
+    except (core.KahnbanError, frontmatter.FrontmatterError):
+        return ""
+    tip = core.branch_tip(config, core.ticket_branch(fields, ticket.ticket_id))
+    return f"{ticket.column}|{tip}|{fields.get('verified_sha') or ''}"
 
 
 def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path) -> str:
@@ -227,7 +230,7 @@ def _merge_and_close(config: core.Config, ticket: str) -> str:
         return f"integration tests failed (exit {merged.exit_code}); sent back"
     core.done(config, ticket)
     core.cleanup(config, ticket)
-    core.clear_attempts(config, ticket)
+    attempts.clear(config, ticket)
     return "merged, integration-tested, done and cleaned up"
 
 
