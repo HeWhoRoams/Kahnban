@@ -1242,7 +1242,7 @@ def _refresh_baton(
         return handoff.refresh(
             config,
             ticket_id,
-            event=event,
+            reason=event,
             verification=dict(verification) if verification is not None else None,
         )
     except (KahnbanError, frontmatter.FrontmatterError, OSError) as error:
@@ -1255,7 +1255,7 @@ def refresh_baton_strict(config: Config, ticket_id: str, event: str) -> Path | N
     from kahnban import handoff
 
     try:
-        return handoff.refresh(config, ticket_id, event=event)
+        return handoff.refresh(config, ticket_id, reason=event)
     except (frontmatter.FrontmatterError, OSError) as error:
         raise KahnbanError(f"handoff baton for {ticket_id} cannot be written: {error}") from error
 

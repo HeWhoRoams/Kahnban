@@ -180,12 +180,12 @@ def refresh(
     config: core.Config,
     ticket_id: str,
     *,
-    event: str,
+    reason: str,
     verification: dict[str, Any] | None = None,
 ) -> Path | None:
     """Rewrite the ticket's baton for whoever acts next; run on every board move.
 
-    ``event`` is why the ticket is where it is (the move's log entry, a refusal);
+    ``reason`` is why the ticket is where it is (the move's log entry, a refusal);
     ``verification`` is the outcome of the verify run that caused it, if any.
     """
     ticket = core.find_ticket(config, ticket_id)
@@ -197,7 +197,7 @@ def refresh(
         return None
     role, stage = next_role(config, ticket.column, fields)
     baton = build_handoff_baton(config, ticket_id, stage=stage, assigned_role=role)
-    baton.context["last_event"] = event.strip().splitlines()[0][:300] if event.strip() else ""
+    baton.context["last_event"] = reason.strip().splitlines()[0][:300] if reason.strip() else ""
     results = baton.verification_results
     if verification is not None:
         results.feature_tests_passed = bool(verification.get("feature_passed"))

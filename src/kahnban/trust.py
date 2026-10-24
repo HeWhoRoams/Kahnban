@@ -38,7 +38,7 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
-def collect(root: Path) -> dict[str, str]:
+def fingerprints(root: Path) -> dict[str, str]:
     """``{relative path: sha256}`` for every installed skill file and lifecycle hook."""
     return {
         path.relative_to(root).as_posix(): _digest(path)
@@ -50,7 +50,7 @@ def collect(root: Path) -> dict[str, str]:
 
 def write_lock(root: Path) -> int:
     """Pin what is installed now; returns how many files are pinned."""
-    files = collect(root)
+    files = fingerprints(root)
     if not files:
         return 0
     (root / LOCK).parent.mkdir(parents=True, exist_ok=True)
@@ -67,7 +67,7 @@ def lock_problems(root: Path) -> list[str]:
         pinned = json.loads(path.read_text(encoding="utf-8"))["files"]
     except (OSError, ValueError, KeyError, TypeError):
         return [f"{LOCK.as_posix()} is unreadable; re-run 'kahnban skills lock'"]
-    now = collect(root)
+    now = fingerprints(root)
     fix = "review the change, then run 'kahnban skills lock'"
     problems = [f"{name} changed since it was pinned; {fix}" for name in sorted(pinned.keys() & now.keys()) if pinned[name] != now[name]]
     problems += [f"{name} is not pinned; {fix}" for name in sorted(now.keys() - pinned.keys())]
