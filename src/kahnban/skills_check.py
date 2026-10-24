@@ -35,78 +35,92 @@ def audit(project_root: Path | None = None) -> list[str]:
     root = Path(project_root).resolve() if project_root else None
     source = root / ".agents" / "skills" if root and (root / ".agents" / "skills").is_dir() else None
     problems: list[str] = []
-    found = _read_skills(source or TEMPLATES_SKILLS_DIR, problems)
-    cli_commands = cli.command_names()
-
-    def blocked(name: str) -> bool:
-        return str(found[name][0].get("disable-model-invocation", "")).lower() == "true"
-
-    def check_refs(where: str, text: str) -> None:
-        for ref in sorted(set(SKILL_REF.findall(text))):
-            if ref not in found:
-                problems.append(f"{where}: /{ref} is not an installed skill")
-            elif blocked(ref):
-                problems.append(f"{where}: /{ref} sets disable-model-invocation, so no agent can call it")
-
-    def check_commands(where: str, text: str, allowed: set[str] | None) -> None:
-        for command in sorted(named_commands(text)):
-            if command.split()[0] not in cli_commands:
-                problems.append(f"{where}: 'kahnban {command}' is not a kahnban command")
-            elif allowed is not None and command not in allowed:
-                problems.append(f"{where}: tells the agent to run 'kahnban {command}', which the guard refuses it")
-
-    runner_only = roles.runner_only()
-
-    for name, (fields, body) in found.items():
-        if fields.get("name") != name:
-            problems.append(f"skill {name}: frontmatter name '{fields.get('name')}' must match its folder")
-        check_refs(f"skill {name}", body)
-        check_commands(f"skill {name}", body, None)
-
+    audit_ = _Audit(_read_skills(source or TEMPLATES_SKILLS_DIR, problems), problems)
+    audit_.skills()
     malformed = roles.validate()
     problems += [f"roles.json: {message}" for message in malformed]
     if malformed:
         return problems  # nothing below can be judged until every role can be read
-
-    manifest = roles.manifest()
-    listed = [*manifest["read_only"], *manifest["runner_only"]]
-    listed += [command for spec in roles.all_roles() for command in spec.commands]
-    for command in sorted({c.split()[0] for c in listed} - cli_commands):
-        problems.append(f"roles.json: '{command}' is not a kahnban command")
-
-    for spec in roles.all_roles():
-        name = spec.name
-        where = f"role {name}"
-        worker = spec.worker
-        gate = (spec.gate or "").split()
-        allowed = roles.commands(name) | ({gate[1]} if len(gate) > 1 else set()) if worker else None
-        text = "\n".join([spec.intro, *roles.instructions(name)])
-        check_refs(where, text)
-        check_commands(where, text, allowed)
-        if worker and spec.exit not in exit_checks.CHECKS:
-            problems.append(f"{where}: exit '{spec.exit}' is not one of {', '.join(sorted(exit_checks.CHECKS))}")
-        for fact in sorted(set(spec.facts) - roles.FACTS):
-            problems.append(f"{where}: fact '{fact}' is not one of {', '.join(sorted(roles.FACTS))}")
-        preloaded = set(spec.skills)
-        for skill in spec.skills:
-            if skill not in found:
-                problems.append(f"{where}: preloads {skill}, which is not an installed skill")
-                continue
-            if blocked(skill):
-                problems.append(f"{where}: preloads {skill}, which sets disable-model-invocation and so cannot be preloaded")
-            body = found[skill][1]
-            for ref in sorted(set(SKILL_REF.findall(body)) - preloaded):
-                problems.append(f"{where}: preloads {skill}, which calls /{ref}; preload /{ref} too")
-            if worker:
-                for command in sorted(named_commands(body) & runner_only):
-                    problems.append(
-                        f"{where}: preloads {skill}, which tells it to run 'kahnban {command}' (runner only)"
-                    )
-
+    audit_.roles()
     if root:
         problems += _project_drift(root, source)
         problems += trust.lock_problems(root)
     return problems
+
+
+class _Audit:
+    """The skill and role checks, which share the installed skills and the CLI's command names."""
+
+    def __init__(self, found: dict[str, tuple[dict[str, Any], str]], problems: list[str]) -> None:
+        self.found = found
+        self.problems = problems
+        self.cli_commands = cli.command_names()
+        self.runner_only = roles.runner_only()
+
+    def blocked(self, skill: str) -> bool:
+        return str(self.found[skill][0].get("disable-model-invocation", "")).lower() == "true"
+
+    def refs(self, where: str, text: str) -> None:
+        for ref in sorted(set(SKILL_REF.findall(text))):
+            if ref not in self.found:
+                self.problems.append(f"{where}: /{ref} is not an installed skill")
+            elif self.blocked(ref):
+                self.problems.append(f"{where}: /{ref} sets disable-model-invocation, so no agent can call it")
+
+    def commands(self, where: str, text: str, allowed: set[str] | None) -> None:
+        for command in sorted(named_commands(text)):
+            if command.split()[0] not in self.cli_commands:
+                self.problems.append(f"{where}: 'kahnban {command}' is not a kahnban command")
+            elif allowed is not None and command not in allowed:
+                self.problems.append(f"{where}: tells the agent to run 'kahnban {command}', which the guard refuses it")
+
+    def skills(self) -> None:
+        for name, (fields, body) in self.found.items():
+            if fields.get("name") != name:
+                self.problems.append(f"skill {name}: frontmatter name '{fields.get('name')}' must match its folder")
+            self.refs(f"skill {name}", body)
+            self.commands(f"skill {name}", body, None)
+
+    def roles(self) -> None:
+        manifest = roles.manifest()
+        listed = [*manifest["read_only"], *manifest["runner_only"]]
+        listed += [command for spec in roles.all_roles() for command in spec.commands]
+        for command in sorted({c.split()[0] for c in listed} - self.cli_commands):
+            self.problems.append(f"roles.json: '{command}' is not a kahnban command")
+        for spec in roles.all_roles():
+            self.role(spec)
+
+    def role(self, spec: roles.Role) -> None:
+        where = f"role {spec.name}"
+        gate = (spec.gate or "").split()
+        allowed = roles.commands(spec.name) | ({gate[1]} if len(gate) > 1 else set()) if spec.worker else None
+        text = "\n".join([spec.intro, *roles.instructions(spec.name)])
+        self.refs(where, text)
+        self.commands(where, text, allowed)
+        if spec.worker and spec.exit not in exit_checks.CHECKS:
+            self.problems.append(f"{where}: exit '{spec.exit}' is not one of {', '.join(sorted(exit_checks.CHECKS))}")
+        for fact in sorted(set(spec.facts) - roles.FACTS):
+            self.problems.append(f"{where}: fact '{fact}' is not one of {', '.join(sorted(roles.FACTS))}")
+        self.preloads(spec, where)
+
+    def preloads(self, spec: roles.Role, where: str) -> None:
+        preloaded = set(spec.skills)
+        for skill in spec.skills:
+            if skill not in self.found:
+                self.problems.append(f"{where}: preloads {skill}, which is not an installed skill")
+                continue
+            if self.blocked(skill):
+                self.problems.append(
+                    f"{where}: preloads {skill}, which sets disable-model-invocation and so cannot be preloaded"
+                )
+            body = self.found[skill][1]
+            for ref in sorted(set(SKILL_REF.findall(body)) - preloaded):
+                self.problems.append(f"{where}: preloads {skill}, which calls /{ref}; preload /{ref} too")
+            if spec.worker:
+                for command in sorted(named_commands(body) & self.runner_only):
+                    self.problems.append(
+                        f"{where}: preloads {skill}, which tells it to run 'kahnban {command}' (runner only)"
+                    )
 
 
 def named_commands(text: str) -> set[str]:
