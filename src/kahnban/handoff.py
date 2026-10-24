@@ -108,19 +108,26 @@ def build_handoff_baton(
 
     title = str(fields.get("title") or ticket.ticket_id)
     cmd = roles.command(assigned_role, ticket_id)
+    blocked = str(fields.get("blocked_on") or "")
+    if assigned_role == roles.HUMAN:
+        cmd = _human_command(ticket_id, blocked)
 
     # Check existing baton for historical rejection records
     existing = read_handoff_baton(config.project_root, ticket_id)
     verification_results = (
         existing.verification_results if existing else VerificationResults()
     )
-    prompt = _prompt(
-        assigned_role,
-        ticket_id,
-        title,
-        worktree_field or f".worktrees/{ticket_id}",
-        qa,
-        verification_results.rejection_history,
+    prompt = (
+        _human_prompt(ticket_id, blocked)
+        if assigned_role == roles.HUMAN
+        else _prompt(
+            assigned_role,
+            ticket_id,
+            title,
+            worktree_field or f".worktrees/{ticket_id}",
+            qa,
+            verification_results.rejection_history,
+        )
     )
 
     return HandoffBaton(
@@ -199,6 +206,25 @@ def refresh(
     elif ticket.column not in (config.verifying_column, config.done_column):
         results.feature_tests_passed = results.regression_tests_passed = False
     return write_handoff_baton(config.project_root, baton, worktree_dir=tree, write_root=has_agents)
+
+
+ATTENDED_REASON = "attended run:"
+
+
+def _human_command(ticket_id: str, blocked_on: str) -> str:
+    reason = blocked_on.removeprefix("human:").strip()
+    if reason.startswith(ATTENDED_REASON):
+        return f"kahnban confirm {ticket_id}"
+    return f'kahnban unblock {ticket_id} --reason "<what you decided>"'
+
+
+def _human_prompt(ticket_id: str, blocked_on: str) -> str:
+    """What a person is told when a ticket is parked for them."""
+    reason = blocked_on.removeprefix("human:").strip() or "no reason was recorded"
+    return (
+        f"{ticket_id} is waiting for a person: {reason}\n"
+        f"When you have decided, run `{_human_command(ticket_id, blocked_on)}`."
+    )
 
 
 def _prompt(

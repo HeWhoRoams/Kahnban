@@ -278,3 +278,21 @@ def test_a_move_survives_an_unwritable_baton_but_the_next_worker_is_not_started_
     assert any("handoff baton not refreshed" in message for message in claimed_result.messages)
     with pytest.raises(core.KahnbanError, match="cannot be written"):
         core.refresh_baton_strict(config, "TST-001", "starting the coder")
+
+
+def test_a_parked_ticket_tells_the_person_what_to_run(repo: Path) -> None:
+    from test_factory_run import ready_ticket
+
+    config = factory_board(repo)
+    (repo / ".agents").mkdir()
+    ready_ticket(config)
+
+    core.escalate(config, "TST-001", "which currency?")
+    parked = baton(repo)
+    assert parked.assigned_role == "human"
+    assert "which currency?" in parked.next_action["prompt"]
+    assert parked.next_action["command"].startswith("kahnban unblock TST-001 --reason")
+
+    core.unblock(config, "TST-001", "EUR")
+    core.escalate(config, "TST-001", f"{handoff.ATTENDED_REASON} review TST-001, then 'kahnban confirm TST-001'")
+    assert baton(repo).next_action["command"] == "kahnban confirm TST-001"

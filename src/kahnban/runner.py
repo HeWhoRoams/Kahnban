@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import attempts, core, dispatcher, exit_checks, frontmatter, gitops, trust, worktree
+from kahnban import attempts, core, dispatcher, exit_checks, frontmatter, gitops, handoff, trust, worktree
 
 CODER = "coder-agent"
 INTEGRATOR = "integrator"
@@ -185,7 +185,7 @@ def _await_human(config: core.Config, ticket: str) -> str:
     gate = core.needs_human(config, core.find_ticket(config, ticket))
     if not gate:
         return ""
-    reason = f"attended run: review {ticket}, then 'kahnban confirm {ticket}' to take the {gate} gate"
+    reason = f"{handoff.ATTENDED_REASON} review {ticket}, then 'kahnban confirm {ticket}' to take the {gate} gate"
     core.escalate(config, ticket, reason)
     return f"paused for a human before {gate}: run 'kahnban confirm {ticket}'"
 
