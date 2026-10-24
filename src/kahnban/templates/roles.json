@@ -1,6 +1,6 @@
 {
   "read_only": ["status", "lint", "next", "session", "handoff", "escalate", "spec", "spec list", "spec coverage"],
-  "runner_only": ["move", "merge", "done", "cleanup", "lease", "unblock", "run", "init", "spec approve"],
+  "runner_only": ["move", "merge", "done", "cleanup", "lease", "unblock", "confirm", "run", "init", "spec approve"],
   "roles": {
     "spec_analyst": {
       "title": "spec analyst",

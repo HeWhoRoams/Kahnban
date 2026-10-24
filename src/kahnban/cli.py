@@ -194,6 +194,11 @@ def cmd_escalate(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_confirm(args: argparse.Namespace) -> int:
+    _report(core.confirm(_load(args), args.ticket_id))
+    return EXIT_OK
+
+
 def cmd_unblock(args: argparse.Namespace) -> int:
     _report(core.unblock(_load(args), args.ticket_id, args.reason))
     return EXIT_OK
@@ -741,6 +746,14 @@ def build_parser() -> argparse.ArgumentParser:
     unblock_parser.add_argument("ticket_id")
     unblock_parser.add_argument("--reason", required=True, help="what was decided")
     unblock_parser.set_defaults(handler=cmd_unblock)
+
+    confirm_parser = subparsers.add_parser(
+        "confirm",
+        parents=[board],
+        help="a human signs off the next gate of an attended run (ready, or merge at the current tip)",
+    )
+    confirm_parser.add_argument("ticket_id")
+    confirm_parser.set_defaults(handler=cmd_confirm)
 
     spec_parser = subparsers.add_parser(
         "spec", parents=[board], help="specs: draft, approve (the human gate), check coverage"

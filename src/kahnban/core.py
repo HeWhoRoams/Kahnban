@@ -32,6 +32,8 @@ from kahnban import __version__, frontmatter, gitops, status, worktree
 LOCK_NAME = ".claim.lock"
 LOCK_STALE_SECONDS = 300
 ARTIFACT_DIR = ".artifacts"
+AUTONOMY_MODES = ("unattended", "attended")
+HUMAN_GATES = {"ready", "merge"}
 TEMPLATE_NAME = "template.md"
 CONFIG_RELATIVE = Path("plans") / "board.config.json"
 
@@ -129,6 +131,8 @@ class Config:
     workers: Mapping[str, str] = field(default_factory=dict)
     worker_timeout_sec: int = 3600
     max_attempts: int = 3
+    autonomy: str = "unattended"
+    human_gates: tuple[str, ...] = ("merge",)
 
     @property
     def board_path(self) -> Path:
@@ -297,7 +301,14 @@ def load_config(
         workers={str(k): str(v) for k, v in dict(raw.get("workers") or {}).items()},
         worker_timeout_sec=int(raw.get("worker_timeout_sec", 3600)),
         max_attempts=int(raw.get("max_attempts", 3)),
+        autonomy=str(raw.get("autonomy", "unattended")),
+        human_gates=tuple(str(gate) for gate in raw.get("human_gates") or ("merge",)),
     )
+    if config.autonomy not in AUTONOMY_MODES:
+        raise KahnbanError(f"autonomy must be one of {', '.join(AUTONOMY_MODES)}, not '{config.autonomy}'")
+    unknown = set(config.human_gates) - HUMAN_GATES
+    if unknown:
+        raise KahnbanError(f"human_gates may only hold {', '.join(sorted(HUMAN_GATES))}, not {', '.join(sorted(unknown))}")
     if check_version:
         require_engine_version(config)
     return config
@@ -1542,6 +1553,11 @@ def ready(
             f"{ticket.ticket_id} is in {ticket.column}; "
             f"'ready' applies to {config.refining_column}"
         )
+    if os.environ.get("KAHNBAN_ROLE") and needs_human(config, ticket):
+        raise GateError(
+            f"{ticket.ticket_id} waits for a human: this is an attended run, so a person "
+            f"reviews it and runs 'kahnban confirm {ticket.ticket_id}' before the ready gate"
+        )
     problems = ready_problems(config, ticket)
     if problems:
         raise GateError(
@@ -1975,6 +1991,7 @@ def escalate(
         )
         result.messages = [*lock_warnings, *result.messages]
     drop_lease(config, ticket.ticket_id)
+    clear_attempts(config, ticket.ticket_id)
     try:
         from kahnban.hooks import run_hook
 
@@ -2009,7 +2026,94 @@ def unblock(
             timestamp=timestamp,
         )
         result.messages = [*lock_warnings, *result.messages]
-        return result
+    clear_attempts(config, ticket.ticket_id)  # a human looked at it: start counting again
+    return result
+
+
+def confirm(
+    config: Config, ticket_id: str, *, timestamp: datetime | None = None
+) -> TransitionResult:
+    """``kahnban confirm`` — a human signs off the next gate of an attended run.
+
+    Before ``ready`` that is the refined ticket; in verifying it is the exact branch tip
+    that ``merge`` will land. The mark is tied to that tip, so new commits need a new one.
+    """
+    with board_lock(config) as lock_warnings:
+        _require_board_branch(config)
+        ticket = find_ticket(config, ticket_id)
+        fields, _ = frontmatter.parse(ticket.text)
+        gate = _human_gate(config, ticket.column)
+        if not gate:
+            raise GateError(
+                f"{ticket.ticket_id} is in {ticket.column}; only a ticket waiting for 'ready' "
+                "or 'merge' has anything to confirm"
+            )
+        mark = gate
+        if gate == "merge":
+            tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
+            if not tip:
+                raise GateError(f"{ticket.ticket_id} has no branch to confirm")
+            mark = f"merge:{tip}"
+        result = transition(
+            config,
+            ticket.ticket_id,
+            ticket.column,
+            log_entry=f"confirmed by a human for {gate}",
+            fm_updates={"confirmed": mark, "blocked_on": ""},
+            commit_message=f"kanban({ticket.ticket_id}): confirmed for {gate}",
+            timestamp=timestamp,
+        )
+        result.messages = [*lock_warnings, *result.messages]
+    clear_attempts(config, ticket.ticket_id)
+    return result
+
+
+def _human_gate(config: Config, column: str) -> str:
+    if column in (config.backlog_column, config.refining_column):
+        return "ready"
+    return "merge" if column == config.verifying_column else ""
+
+
+def needs_human(config: Config, ticket: Ticket) -> str:
+    """The gate an attended run must hand to a human before taking it, or ''."""
+    gate = _human_gate(config, ticket.column)
+    if config.autonomy != "attended" or gate not in config.human_gates:
+        return ""
+    fields, _ = frontmatter.parse(ticket.text)
+    mark = str(fields.get("confirmed") or "").strip()
+    if gate == "ready":
+        return "" if mark == "ready" else gate
+    tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
+    return "" if mark == f"merge:{tip}" else gate
+
+
+def _attempts_path(config: Config) -> Path:
+    return config.board_path / ARTIFACT_DIR / "attempts.json"
+
+
+def load_attempts(config: Config) -> dict[str, dict[str, object]]:
+    """Per ``action|ticket`` retry counts that survive between runs (short cron jobs)."""
+    try:
+        data = json.loads(_attempts_path(config).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def save_attempts(config: Config, attempts: Mapping[str, object]) -> None:
+    path = _attempts_path(config)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    gitignore = path.parent / ".gitignore"
+    if not gitignore.exists():
+        gitignore.write_text("*\n", encoding="utf-8", newline="\n")
+    write_text_atomic(path, json.dumps(attempts, indent=2) + "\n")
+
+
+def clear_attempts(config: Config, ticket_id: str) -> None:
+    attempts = load_attempts(config)
+    kept = {key: value for key, value in attempts.items() if not key.endswith(f"|{ticket_id}")}
+    if kept != attempts:
+        save_attempts(config, kept)
 
 
 def ticket_branch(fields: Mapping[str, object], ticket_id: str) -> str:

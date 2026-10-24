@@ -198,6 +198,7 @@ Workers are commands in `plans/board.config.json`. The prompt arrives on stdin, 
 "workers": {"default": "claude -p --agent kahnban-{role} --permission-mode acceptEdits"},
 "worker_timeout_sec": 3600,
 "max_attempts": 3,
+"autonomy": "unattended",
 "lease_minutes": 30,
 "allowed_commands": ["pytest", "python -m pytest"]
 ```
@@ -207,7 +208,8 @@ Choose the permission mode deliberately: a coder needs to run tests and `git com
 | Mechanism | What it does |
 | :--- | :--- |
 | Leases | `claim` (and `kahnban lease`) record who is working a ticket; `next` skips tickets with a live lease, and `run` renews the lease while its worker runs. An expired lease can be taken over, and the takeover is logged. |
-| Escalation | A ticket that comes back to the same action more than `max_attempts` times in one run is escalated: `blocked_on: human: <reason>`, the `on-escalate` hook fires, and `next` skips it until `kahnban unblock <ID> --reason "..."`. Workers can run `kahnban escalate` themselves instead of guessing. |
+| Escalation | A ticket that comes back to the same action more than `max_attempts` times (counted across runs in `.artifacts/attempts.json`, reset by `unblock`, `confirm` or escalation) is escalated: `blocked_on: human: <reason>`, the `on-escalate` hook fires, and `next` skips it until `kahnban unblock <ID> --reason "..."`. Workers can run `kahnban escalate` themselves instead of guessing. |
+| Autonomy | `"autonomy": "unattended"` (default) lets the runner take every gate. `"attended"` parks a ticket before each gate in `human_gates` (`merge` by default, optionally `ready`) with `blocked_on: human: ...`; a person reviews it and runs `kahnban confirm <ID>`. The `merge` confirmation is tied to the branch tip, so new commits need a new one, and no worker may run `confirm`. |
 | Timeouts | A worker that outlives `worker_timeout_sec` is killed along with every process it started, and nothing else. |
 | Role manifest | `templates/roles.json` defines each role once: the `kahnban` commands it may run, the files it may edit, the skills its agent preloads, and what it is told to do. The guard, the prompts `run` and `next` hand out, the handoff baton and the native agent files (`.claude/agents/`, `.gemini/agents/`, `.cursor/agents/`) are all rendered from it. Gemini CLI and Cursor have no `skills:` preload or tool allow-list, so their agent files tell the agent which skills to read first and the same guard hook (`BeforeTool`/`AfterAgent`, `beforeShellExecution`/`preToolUse`/`stop`) enforces the role. `kahnban skills check` fails when a skill or role names a missing skill, a skill no agent may invoke, or a command its role can't run, and when a project's agent files or harness skill copies have drifted. |
 | `kahnban guard` | A PreToolUse hook (installed by `skills install --harness claude`) that is a no-op unless `KAHNBAN_ROLE` is set. Inside a worker it blocks edits outside the role's remit (a coder: its worktree and blast radius; a reviewer: nothing) and blocks override flags, `git merge/push/rebase/reset --hard`, and `kahnban` commands outside the role. The CLI and the MCP server apply the same role table themselves whenever `KAHNBAN_ROLE` is set, so a harness without hooks is covered too. `kahnban guard --stop`, installed as a Stop hook, refuses once to let a worker stop before its role is done: a coder's work committed and inside the blast radius, a reviewer's approve or reject, a spec analyst's ticket passing `ready` (escalating always counts). It's a tripwire against mistakes, not a sandbox. |

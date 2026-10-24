@@ -13,7 +13,6 @@ import os
 import signal
 import subprocess
 import time
-from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -78,8 +77,7 @@ def run(
     if not config.workers:
         raise RunStop(_NO_WORKER.format(role="any role"))
     result = RunResult(log_path=_log_path(config))
-    attempts: Counter[tuple[str, str]] = Counter()
-    last_outcome: dict[tuple[str, str], str] = {}
+    attempts = core.load_attempts(config)
     curated = False  # the curator gets one turn per run; then the board moves on
     for number in range(1, max_steps + 1):
         rec = dispatcher.resolve_next_action(config, skip_harvest=curated)
@@ -105,14 +103,17 @@ def run(
             )
             return result
         ticket = rec.ticket_id or ""
-        # ponytail: attempts are counted per run; persist them if runs are short cron jobs
-        attempts[(rec.action, ticket)] += 1
-        if attempts[(rec.action, ticket)] > config.max_attempts:
+        key = f"{rec.action}|{ticket}"
+        entry = attempts.setdefault(key, {"count": 0, "last": "none"})
+        entry["count"] = int(entry["count"]) + 1  # type: ignore[call-overload]
+        core.save_attempts(config, attempts)
+        if entry["count"] > config.max_attempts:  # type: ignore[operator]
             reason = (
                 f"'{rec.action}' made no progress after {config.max_attempts} attempts; "
-                f"last: {last_outcome.get((rec.action, ticket), 'none')}"
+                f"last: {entry['last']}"
             )
             core.escalate(config, ticket, reason[:300])
+            attempts = core.load_attempts(config)
             outcome = f"escalated: {reason}"
         else:
             try:
@@ -123,7 +124,10 @@ def run(
                 outcome = f"refused: {error}"
         # One line, details kept: a refusal's paths are on its continuation lines.
         summary = " ".join(part.strip() for part in outcome.splitlines() if part.strip())
-        last_outcome[(rec.action, ticket)] = summary.replace('"', "'")
+        attempts = core.load_attempts(config)  # a step may have cleared this ticket's counts
+        if key in attempts:
+            attempts[key]["last"] = summary.replace('"', "'")  # type: ignore[index]
+            core.save_attempts(config, attempts)
         result.steps.append(Step(number, rec.action, rec.ticket_id, outcome))
         echo(f"[{number}] {rec.action} {ticket}: {summary[:400]}")
     result.stopped = f"stopped after {max_steps} steps"
@@ -134,7 +138,8 @@ def run(
 def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path) -> str:
     ticket = rec.ticket_id or ""
     if rec.action == "merge_and_close":
-        return _merge_and_close(config, ticket)
+        waiting = _await_human(config, ticket)
+        return waiting or _merge_and_close(config, ticket)
     if rec.action == "claim_and_implement":
         core.claim(config, ticket, CODER, create_worktree=True)
         return _implement(config, rec, log)
@@ -151,7 +156,14 @@ def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path
             return f"approved by {fields.get('reviewer')}"
         return f"reviewer exited {code} without approving or rejecting"
     if rec.action == "spec_and_refine":
+        if config.autonomy == "attended" and "ready" in config.human_gates:
+            if not core.needs_human(config, core.find_ticket(config, ticket)):
+                core.ready(config, ticket)
+                return "confirmed by a human; passed the ready gate"
         code, _ = _work(config, "spec_analyst", rec, config.project_root, log)
+        waiting = _await_human(config, ticket)
+        if waiting:
+            return waiting
         if core.find_ticket(config, ticket).column not in (
             config.backlog_column,
             config.refining_column,
@@ -161,6 +173,16 @@ def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path
         core.ready(config, ticket)
         return f"refined (worker exit {code}) and passed the ready gate"
     raise RunStop(f"runner has no handler for action '{rec.action}'")
+
+
+def _await_human(config: core.Config, ticket: str) -> str:
+    """In an attended run, park the ticket at a human gate; '' when the gate is open."""
+    gate = core.needs_human(config, core.find_ticket(config, ticket))
+    if not gate:
+        return ""
+    reason = f"attended run: review {ticket}, then 'kahnban confirm {ticket}' to take the {gate} gate"
+    core.escalate(config, ticket, reason)
+    return f"paused for a human before {gate}: run 'kahnban confirm {ticket}'"
 
 
 def _implement(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path) -> str:
@@ -205,6 +227,7 @@ def _merge_and_close(config: core.Config, ticket: str) -> str:
         return f"integration tests failed (exit {merged.exit_code}); sent back"
     core.done(config, ticket)
     core.cleanup(config, ticket)
+    core.clear_attempts(config, ticket)
     return "merged, integration-tested, done and cleaned up"
 
 
