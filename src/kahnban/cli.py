@@ -1052,7 +1052,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not getattr(args, "command", None):
         parser.print_help()
         return EXIT_OK
-    role = os.environ.get("KAHNBAN_ROLE", "").strip()
+    role = core.worker_role()
     if role and args.command != "guard":  # the hook itself runs with the role set
         from kahnban import guard
 

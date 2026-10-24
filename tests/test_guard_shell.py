@@ -226,3 +226,20 @@ def test_the_powershell_tool_gets_the_same_answers(env: dict[str, str]) -> None:
     assert "runner's" in (checking(env, "$env:KAHNBAN_ROLE = ''; kahnban ready TST-001", tool="PowerShell") or "")
     assert "runner's" in (checking(env, "Remove-Item Env:KAHNBAN_ROLE", tool="PowerShell") or "")
     assert checking(env, 'git commit -m "fix `"quoted`" text"', tool="PowerShell") is None
+
+
+def test_the_engine_reads_the_workers_role_in_one_place(monkeypatch) -> None:
+    from kahnban import core
+
+    monkeypatch.delenv("KAHNBAN_ROLE", raising=False)
+    assert core.worker_role() == ""
+    monkeypatch.setenv("KAHNBAN_ROLE", " coder ")
+    assert core.worker_role() == "coder"
+    monkeypatch.setenv("KAHNBAN_ROLE", "")
+    assert core.worker_role() == ""
+
+
+def test_a_command_that_clears_the_role_never_reaches_a_gate(env: dict[str, str]) -> None:
+    """The gates trust KAHNBAN_ROLE, so the guard is what keeps a worker from emptying it."""
+    for command in CLEARING_THE_ROLE[:4]:
+        assert "runner's" in (checking(env, command, role="spec_analyst") or ""), command

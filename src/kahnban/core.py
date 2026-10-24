@@ -33,6 +33,17 @@ from kahnban.fsutil import write_text_atomic
 LOCK_NAME = ".claim.lock"
 LOCK_STALE_SECONDS = 300
 ARTIFACT_DIR = attempts.ARTIFACT_DIR
+ENV_ROLE = "KAHNBAN_ROLE"
+
+
+def worker_role() -> str:
+    """The role of the factory worker this process runs under, or '' for a person.
+
+    The one place the engine reads it: ``ready``, ``approve`` and the attended gates all
+    treat a worker differently from a person, and the guard refuses any command that
+    would clear or change this variable.
+    """
+    return os.environ.get(ENV_ROLE, "").strip()
 
 
 class Autonomy:
@@ -1588,7 +1599,7 @@ def ready(
             f"{ticket.ticket_id} is in {ticket.column}; "
             f"'ready' applies to {config.refining_column}"
         )
-    if os.environ.get("KAHNBAN_ROLE") and needs_human(config, ticket):
+    if worker_role() and needs_human(config, ticket):
         raise GateError(
             f"{ticket.ticket_id} waits for a human: this is an attended run, so a person "
             f"reviews it and runs 'kahnban confirm {ticket.ticket_id}' before the ready gate"
@@ -2737,7 +2748,7 @@ def approve(
                 "approved_sha": tip,
                 "approval_sig": (
                     trust.sign(config.project_root, trust.Approval(ticket.ticket_id, tip, reviewer))
-                    if config.require_signed_approvals and not os.environ.get("KAHNBAN_ROLE")
+                    if config.require_signed_approvals and not worker_role()
                     else ""  # a worker does not sign; the runner countersigns once it has checked
                 ),
             },

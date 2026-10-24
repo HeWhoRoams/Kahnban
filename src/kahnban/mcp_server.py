@@ -535,7 +535,7 @@ class Server:
         tool = TOOLS.get(name)
         if tool is None:
             raise _ToolInputError(f"unknown tool: {name}")
-        role = os.environ.get("KAHNBAN_ROLE", "").strip()
+        role = core.worker_role()
         if role:  # a factory worker is held to its role on this surface too
             from kahnban import guard
 
