@@ -7,8 +7,7 @@ and complete execution prompt.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from pathlib import Path
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from kahnban import core, frontmatter, handoff, roles
@@ -199,7 +198,7 @@ def resolve_next_action(
                 roles.SPEC_ANALYST,
                 ticket=target.ticket_id,
                 title=t_title,
-                facts=[f"Ticket file: {core._relative(config, target.path)}"],
+                facts=[f"Ticket file: {core.relative_path(config, target.path)}"],
             ),
         )
 

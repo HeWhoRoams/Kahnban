@@ -12,7 +12,6 @@ from __future__ import annotations
 import os
 import stat
 import time
-import subprocess
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path

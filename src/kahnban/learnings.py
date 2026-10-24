@@ -97,7 +97,7 @@ class LearningRecord:
             for row in self.occurrences_table:
                 body_lines.append(row.to_markdown())
         else:
-            body_lines.append(f"| #1 | - | - | Initial observation |")
+            body_lines.append("| #1 | - | - | Initial observation |")
 
         body_lines.extend([
             "",

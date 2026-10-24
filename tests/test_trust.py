@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, frontmatter, skills, trust
+from kahnban import core, frontmatter, scaffold, skills, trust
 from kahnban.cli import main
 from conftest import git
 from test_factory_gates import factory_board, verified
@@ -125,7 +125,7 @@ def test_the_guard_keeps_workers_away_from_the_key(repo: Path) -> None:
 
 
 def test_new_boards_require_signed_approvals(repo: Path) -> None:
-    core.init_board(repo, prefix="TST")
+    scaffold.init_board(repo, prefix="TST")
 
     assert core.load_config(repo).require_signed_approvals
 

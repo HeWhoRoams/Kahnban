@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core
+from kahnban import core, scaffold
 from conftest import set_board_config
 
 
@@ -18,7 +18,7 @@ def repo(tmp_path: Path) -> Path:
     subprocess.run(["git", "init", str(r)], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(r), "config", "user.name", "QATest"], check=True)
     subprocess.run(["git", "-C", str(r), "config", "user.email", "qa@test.com"], check=True)
-    core.init_board(r, prefix="QAT")
+    scaffold.init_board(r, prefix="QAT")
     # These tests place tickets straight into in-progress to exercise tier
     # ordering; the red/green proof is covered in test_factory_gates.py.
     set_board_config(r, require_proof=False)

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, hooks
+from kahnban import core, hooks, scaffold
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def repo(tmp_path: Path) -> Path:
     subprocess.run(["git", "init", str(r)], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(r), "config", "user.name", "HookTest"], check=True)
     subprocess.run(["git", "-C", str(r), "config", "user.email", "hook@test.com"], check=True)
-    core.init_board(r, prefix="HOOK")
+    scaffold.init_board(r, prefix="HOOK")
     return r
 
 

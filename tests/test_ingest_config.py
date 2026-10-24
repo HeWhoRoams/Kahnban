@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, frontmatter, ingest
+from kahnban import core, frontmatter, ingest, scaffold
 from conftest import git
 
 PLAN = """# Programme
@@ -121,7 +121,7 @@ def test_init_writes_an_ingest_block(tmp_path: Path) -> None:
     from conftest import init_repo
 
     repo = init_repo(tmp_path / "adopter")
-    core.init_board(repo, prefix="ADO")
+    scaffold.init_board(repo, prefix="ADO")
 
     payload = json.loads(
         (repo / "plans" / "board.config.json").read_text(encoding="utf-8")

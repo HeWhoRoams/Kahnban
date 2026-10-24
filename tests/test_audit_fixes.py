@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import cli, core, dispatcher, frontmatter, gitops, handoff, linter, mcp_server, skills
+from kahnban import cli, core, dispatcher, frontmatter, gitops, handoff, linter, mcp_server, scaffold, skills
 from conftest import set_board_config
 
 
@@ -20,7 +20,7 @@ def repo(tmp_path: Path) -> Path:
     subprocess.run(["git", "init", "-b", "main", str(r)], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(r), "config", "user.name", "AuditTest"], check=True)
     subprocess.run(["git", "-C", str(r), "config", "user.email", "audit@test.com"], check=True)
-    core.init_board(r, prefix="AUD", agentic=True)
+    scaffold.init_board(r, prefix="AUD", agentic=True)
     return r
 
 

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, dispatcher, handoff
+from kahnban import core, dispatcher, handoff, scaffold
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def repo(tmp_path: Path) -> Path:
     subprocess.run(["git", "init", str(r)], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(r), "config", "user.name", "DispTest"], check=True)
     subprocess.run(["git", "-C", str(r), "config", "user.email", "disp@test.com"], check=True)
-    core.init_board(r, prefix="DISP")
+    scaffold.init_board(r, prefix="DISP")
     return r
 
 

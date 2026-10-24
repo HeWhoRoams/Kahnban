@@ -16,7 +16,6 @@ import hashlib
 import json
 import os
 import re
-import shutil
 import subprocess
 import random
 import time
@@ -27,333 +26,50 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import __version__, attempts, frontmatter, gitops, status, trust, worktree
+from kahnban import attempts, frontmatter, gitops, status, trust, worktree
 from kahnban.fsutil import write_text_atomic
+from kahnban.config import (  # noqa: F401  (re-exported: the rest of the package reads these as core.X)
+    AUTONOMY_MODES,
+    Autonomy,
+    CONFIG_RELATIVE,
+    Config,
+    ConfigError,
+    DEFAULT_COLUMNS,
+    DEFAULT_REQUIRED_HEADINGS,
+    DEFAULT_TEST_PATTERNS,
+    ENV_PROJECT_ROOT,
+    ENV_ROLE,
+    ENV_TICKET,
+    ENV_WORKTREE,
+    GateError,
+    HUMAN_GATES,
+    HumanGate,
+    KahnbanError,
+    LockError,
+    TicketNotFoundError,
+    _version_tuple,
+    find_project_root,
+    load_config,
+    project_root_from_env,
+    require_engine_version,
+    status_name,
+    worker_role,
+)
 
 LOCK_NAME = ".claim.lock"
 LOCK_STALE_SECONDS = 300
 ARTIFACT_DIR = attempts.ARTIFACT_DIR
-ENV_ROLE = "KAHNBAN_ROLE"
-ENV_TICKET = "KAHNBAN_TICKET"
-ENV_PROJECT_ROOT = "KAHNBAN_PROJECT_ROOT"
-ENV_WORKTREE = "KAHNBAN_WORKTREE"
 
 
-def project_root_from_env(env: Mapping[str, str]) -> Path:
-    """The project a worker was started for (``KAHNBAN_PROJECT_ROOT``), or the current directory."""
-    return Path(env.get(ENV_PROJECT_ROOT, ".")).resolve()
-
-
-def worker_role() -> str:
-    """The role of the factory worker this process runs under, or '' for a person.
-
-    The one place the engine reads it: ``ready``, ``approve`` and the attended gates all
-    treat a worker differently from a person, and the guard refuses any command that
-    would clear or change this variable.
-    """
-    return os.environ.get(ENV_ROLE, "").strip()
-
-
-class Autonomy:
-    """``autonomy`` in board.config.json: whether the runner may take every gate itself."""
-
-    UNATTENDED = "unattended"
-    ATTENDED = "attended"
-
-
-class HumanGate:
-    """The gates an attended run can hand to a person."""
-
-    READY = "ready"
-    MERGE = "merge"
-
-
-AUTONOMY_MODES = (Autonomy.UNATTENDED, Autonomy.ATTENDED)
-HUMAN_GATES = {HumanGate.READY, HumanGate.MERGE}
 TEMPLATE_NAME = "template.md"
-CONFIG_RELATIVE = Path("plans") / "board.config.json"
 
-DEFAULT_COLUMNS = (
-    "0-backlog",
-    "1-refining",
-    "2-ready",
-    "3-in-progress",
-    "4-verifying",
-    "5-done",
-)
-DEFAULT_REQUIRED_HEADINGS = (
-    "Problem",
-    "Acceptance criteria",
-    "Blast radius",
-    "Implementation notes",
-    "Validation",
-    "Log",
-)
 # What the ready gate freezes: the sections a ticket is judged against.
 CONTRACT_SECTIONS = ("Acceptance criteria", "Blast radius", "Validation")
 # The relay baton the engine writes into every worktree; never part of a change.
 HANDOFF_IN_WORKTREE = ".agents/HANDOFF.json"
-# Matched against the full path and the file name, case-insensitively.
-DEFAULT_TEST_PATTERNS = (
-    "tests/*",
-    "test/*",
-    "spec/*",
-    "*/tests/*",
-    "*/test/*",
-    "*/spec/*",
-    "*/__tests__/*",
-    "test_*",
-    "*_test.*",
-    "*.test.*",
-    "*.spec.*",
-    "*_spec.*",
-)
-
-
-class KahnbanError(RuntimeError):
-    """Base class for every Kahnban failure surfaced to a client."""
-
-
-class ConfigError(KahnbanError):
-    """Configuration is missing, malformed, or too old for this engine."""
-
-
-class TicketNotFoundError(KahnbanError):
-    """No ticket file matches the requested ID."""
-
-
-class GateError(KahnbanError):
-    """A transition was refused because a gate is not satisfied."""
-
-
-class LockError(KahnbanError):
-    """The board claim lock is held by another process."""
 
 
 # --- configuration ----------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class Config:
-    project_root: Path
-    path: Path
-    engine_min_version: str = "0.0.0"
-    id_prefix: str = "TKT"
-    board_root: str = "plans/tickets"
-    columns: tuple[str, ...] = DEFAULT_COLUMNS
-    done_column: str = "5-done"
-    wip_limit: int = 3
-    use_worktrees: bool = True
-    shared_caches: tuple[str, ...] = ()
-    validation_timeout_sec: int = 1800
-    log_output_max_bytes: int = 65536
-    required_headings: tuple[str, ...] = DEFAULT_REQUIRED_HEADINGS
-    validation_command: str = ""
-    regression_command: str = ""
-    design_doc_roots: tuple[str, ...] = ("plans",)
-    extensions: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
-    ingest: Mapping[str, object] = field(default_factory=dict)
-    allow_any_branch: bool = False
-    sync_remote: bool = True
-    require_proof: bool = False
-    require_review: bool = False
-    require_integration: bool = False
-    require_spec: bool = False
-    max_blast_radius_files: int = 0
-    stale_after_days: int = 0
-    test_patterns: tuple[str, ...] = DEFAULT_TEST_PATTERNS
-    allowed_commands: tuple[str, ...] = ()
-    lease_minutes: int = 30
-    workers: Mapping[str, str] = field(default_factory=dict)
-    worker_timeout_sec: int = 3600
-    max_attempts: int = 3
-    max_stop_nudges: int = 2
-    strict_hooks: bool = False
-    autonomy: str = Autonomy.UNATTENDED
-    human_gates: tuple[str, ...] = (HumanGate.MERGE,)
-    require_signed_approvals: bool = False
-
-    @property
-    def board_path(self) -> Path:
-        return self.project_root / self.board_root
-
-    @property
-    def plans_dir(self) -> Path:
-        return self.path.parent
-
-    @property
-    def archive_path(self) -> Path:
-        return self.board_path / "archive"
-
-    @property
-    def in_progress_column(self) -> str:
-        return self._column_at(3, "3-in-progress")
-
-    @property
-    def ready_column(self) -> str:
-        return self._column_at(2, "2-ready")
-
-    @property
-    def refining_column(self) -> str:
-        return self._column_at(1, "1-refining")
-
-    @property
-    def verifying_column(self) -> str:
-        return self._column_at(4, "4-verifying")
-
-    @property
-    def backlog_column(self) -> str:
-        return self._column_at(0, "0-backlog")
-
-    def _column_at(self, index: int, fallback: str) -> str:
-        if fallback in self.columns:
-            return fallback
-        if index < len(self.columns):
-            return self.columns[index]
-        raise ConfigError(f"config has no column at position {index}")
-
-    def column_index(self, column: str) -> int:
-        try:
-            return self.columns.index(column)
-        except ValueError as error:
-            raise ConfigError(f"unknown column: {column}") from error
-
-    def is_at_or_after(self, column: str, reference: str) -> bool:
-        return self.column_index(column) >= self.column_index(reference)
-
-    def status_for(self, column: str) -> str:
-        return status_name(column)
-
-
-def status_name(column: str) -> str:
-    """``3-in-progress`` -> ``in-progress``; ``archive`` -> ``archive``."""
-    head, separator, tail = column.partition("-")
-    if separator and head.isdigit():
-        return tail
-    return column
-
-
-def find_project_root(start: Path | None = None) -> Path:
-    """Walk up from ``start`` looking for ``plans/board.config.json``."""
-    current = (start or Path.cwd()).resolve()
-    for candidate in [current, *current.parents]:
-        if (candidate / CONFIG_RELATIVE).is_file():
-            return candidate
-    raise ConfigError(
-        f"no {CONFIG_RELATIVE.as_posix()} found in {current} or any parent; "
-        "run 'kahnban init' first"
-    )
-
-
-def _version_tuple(value: str) -> tuple[int, ...]:
-    parts: list[int] = []
-    for chunk in str(value).split("."):
-        digits = re.match(r"\d+", chunk.strip())
-        parts.append(int(digits.group()) if digits else 0)
-    return tuple(parts)
-
-
-def require_engine_version(config: Config) -> None:
-    required = _version_tuple(config.engine_min_version)
-    installed = _version_tuple(__version__)
-    if installed < required:
-        raise ConfigError(
-            f"board requires kahnban >= {config.engine_min_version} but "
-            f"{__version__} is installed.\n"
-            "Upgrade with: py -3 -m pip install --upgrade kahnban"
-        )
-
-
-def load_config(
-    project_root: Path | None = None,
-    config_path: Path | None = None,
-    *,
-    check_version: bool = True,
-) -> Config:
-    """Load ``board.config.json``, resolving the board to the main worktree.
-
-    A linked worktree contains its own checkout of ``plans/``; board state lives
-    only on the default branch in the main worktree (D2), so discovery hops
-    there when invoked from inside ``.worktrees/<ID>``.
-    """
-    if config_path is not None:
-        path = Path(config_path).resolve()
-        if not path.is_file():
-            raise ConfigError(f"config file not found: {path}")
-        root = Path(project_root).resolve() if project_root else path.parent.parent
-    else:
-        root = find_project_root(Path(project_root) if project_root else None)
-        if (root / ".git").exists():
-            main = gitops.main_worktree(root)
-            if main.resolve() != root.resolve() and (main / CONFIG_RELATIVE).is_file():
-                root = main.resolve()
-        path = root / CONFIG_RELATIVE
-
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as error:
-        raise ConfigError(f"{path}: invalid JSON ({error})") from error
-    except OSError as error:
-        raise ConfigError(f"{path}: cannot be read ({error})") from error
-    if not isinstance(raw, dict):
-        raise ConfigError(f"{path}: top level must be a JSON object")
-
-    columns = tuple(raw.get("columns") or DEFAULT_COLUMNS)
-    if not columns:
-        raise ConfigError(f"{path}: 'columns' must not be empty")
-    done_column = str(raw.get("done_column") or columns[-1])
-    if done_column not in columns:
-        raise ConfigError(f"{path}: done_column '{done_column}' is not in columns")
-
-    config = Config(
-        project_root=root,
-        path=path,
-        engine_min_version=str(raw.get("engine_min_version", "0.0.0")),
-        id_prefix=str(raw.get("id_prefix", "TKT")).upper(),
-        board_root=str(raw.get("board_root", "plans/tickets")),
-        columns=columns,
-        done_column=done_column,
-        wip_limit=int(raw.get("wip_limit", 3)),
-        use_worktrees=bool(raw.get("use_worktrees", True)),
-        shared_caches=tuple(raw.get("shared_caches") or ()),
-        validation_timeout_sec=int(raw.get("validation_timeout_sec", 1800)),
-        log_output_max_bytes=int(raw.get("log_output_max_bytes", 65536)),
-        required_headings=tuple(
-            raw.get("required_headings") or DEFAULT_REQUIRED_HEADINGS
-        ),
-        validation_command=str(raw.get("validation_command", "")),
-        regression_command=str(raw.get("regression_command", "")),
-        design_doc_roots=tuple(raw.get("design_doc_roots") or ("plans",)),
-        extensions=dict(raw.get("extensions") or {}),
-        ingest=dict(raw.get("ingest") or {}),
-        allow_any_branch=bool(raw.get("allow_any_branch", False)),
-        sync_remote=bool(raw.get("sync_remote", True)),
-        require_proof=bool(raw.get("require_proof", False)),
-        require_review=bool(raw.get("require_review", False)),
-        require_integration=bool(raw.get("require_integration", False)),
-        require_spec=bool(raw.get("require_spec", False)),
-        max_blast_radius_files=int(raw.get("max_blast_radius_files", 0)),
-        stale_after_days=int(raw.get("stale_after_days", 0)),
-        test_patterns=tuple(raw.get("test_patterns") or DEFAULT_TEST_PATTERNS),
-        allowed_commands=tuple(str(item) for item in raw.get("allowed_commands") or ()),
-        lease_minutes=int(raw.get("lease_minutes", 30)),
-        workers={str(k): str(v) for k, v in dict(raw.get("workers") or {}).items()},
-        worker_timeout_sec=int(raw.get("worker_timeout_sec", 3600)),
-        max_attempts=int(raw.get("max_attempts", 3)),
-        max_stop_nudges=int(raw.get("max_stop_nudges", 2)),
-        strict_hooks=bool(raw.get("strict_hooks", False)),
-        autonomy=str(raw.get("autonomy", Autonomy.UNATTENDED)),
-        human_gates=tuple(str(gate) for gate in raw.get("human_gates") or (HumanGate.MERGE,)),
-        require_signed_approvals=bool(raw.get("require_signed_approvals", False)),
-    )
-    if config.autonomy not in AUTONOMY_MODES:
-        raise KahnbanError(f"autonomy must be one of {', '.join(AUTONOMY_MODES)}, not '{config.autonomy}'")
-    unknown = set(config.human_gates) - HUMAN_GATES
-    if unknown:
-        raise KahnbanError(f"human_gates may only hold {', '.join(sorted(HUMAN_GATES))}, not {', '.join(sorted(unknown))}")
-    if check_version:
-        require_engine_version(config)
-    return config
 
 
 # --- tickets ----------------------------------------------------------------
@@ -1104,7 +820,7 @@ def sync(config: Config, *, timestamp: datetime | None = None) -> list[Path]:
 # --- the single transition writer -------------------------------------------
 
 
-def _relative(config: Config, path: Path) -> str:
+def relative_path(config: Config, path: Path) -> str:
     return Path(path).resolve().relative_to(config.project_root.resolve()).as_posix()
 
 
@@ -1210,17 +926,17 @@ def transition(
         destination.parent.mkdir(parents=True, exist_ok=True)
         gitops.mv(
             config.project_root,
-            Path(_relative(config, ticket.path)),
-            Path(_relative(config, destination)),
+            Path(relative_path(config, ticket.path)),
+            Path(relative_path(config, destination)),
         )
 
     projections = sync(config, timestamp=now)
     paths = [destination, *projections, *extra_paths]
-    rel_paths = [_relative(config, path) for path in paths]
+    rel_paths = [relative_path(config, path) for path in paths]
     gitops.add(config.project_root, rel_paths)
     commit_paths = list(rel_paths)
     if destination.resolve() != ticket.path.resolve():
-        commit_paths.append(_relative(config, ticket.path))
+        commit_paths.append(relative_path(config, ticket.path))
     message = commit_message or (
         f"kanban({ticket.ticket_id}): {ticket.column} -> {target_column}"
     )
@@ -1478,7 +1194,7 @@ def create_tickets(
         )
 
     projections = sync(config, timestamp=now)
-    commit_paths = [_relative(config, path) for path in (*written, *projections)]
+    commit_paths = [relative_path(config, path) for path in (*written, *projections)]
     gitops.add(
         config.project_root,
         commit_paths,
@@ -1557,7 +1273,7 @@ def update_ticket_body(
     projections = sync(config, timestamp=now)
     gitops.add(
         config.project_root,
-        [_relative(config, path) for path in (ticket.path, *projections)],
+        [relative_path(config, path) for path in (ticket.path, *projections)],
     )
     sha = gitops.commit(
         config.project_root, f"kanban({ticket.ticket_id}): refresh from source"
@@ -2469,14 +2185,14 @@ def verify(
             f"verify exit={exit_code} in {duration:.1f}s (cwd={cwd.name})",
             f"    $ {command}",
             _indent_output(_truncate(output, config.log_output_max_bytes)),
-            f"    full output: {_relative(config, artifact)}",
+            f"    full output: {relative_path(config, artifact)}",
         ]
         if messages:
             entry_lines.insert(1, "    " + "; ".join(messages))
         verification = {
             "feature_passed": feature_passed,
             "regression_passed": regression_passed,
-            "artifact": _relative(config, artifact),
+            "artifact": relative_path(config, artifact),
         }
 
         if exit_code == 0:
@@ -2538,7 +2254,7 @@ def verify(
         )
         text = frontmatter.append_log(text, log_line(entry, timestamp=now))
         write_text(ticket.path, text)
-        rel = _relative(config, ticket.path)
+        rel = relative_path(config, ticket.path)
         gitops.add(config.project_root, [rel])
         gitops.commit(
             config.project_root,
@@ -2936,7 +2652,7 @@ def merge(
         detail = [
             f"    $ {command}",
             _indent_output(_truncate(output, config.log_output_max_bytes)),
-            f"    full output: {_relative(config, artifact)}",
+            f"    full output: {relative_path(config, artifact)}",
         ]
         if exit_code != 0:
             text = frontmatter.append_log(
@@ -2947,7 +2663,7 @@ def merge(
                 ),
             )
             write_text(ticket.path, text)
-            rel = _relative(config, ticket.path)
+            rel = relative_path(config, ticket.path)
             gitops.add(config.project_root, [rel])
             gitops.commit(
                 config.project_root,
@@ -2956,7 +2672,7 @@ def merge(
             )
             reason = (
                 f"merge refused: integration tests exit={exit_code}; "
-                f"full output: {_relative(config, artifact)}"
+                f"full output: {relative_path(config, artifact)}"
             )
             _refresh_baton(config, ticket.ticket_id, reason, messages)
             _report_refusal(config, ticket.ticket_id, "merge", reason)
@@ -3073,176 +2789,3 @@ def cleanup(
 # --- board scaffolding ------------------------------------------------------
 
 
-def init_board(
-    project_root: Path,
-    *,
-    prefix: str,
-    columns: Sequence[str] = DEFAULT_COLUMNS,
-    wip_limit: int = 3,
-    validation_command: str = "",
-    use_worktrees: bool = True,
-    agentic: bool = False,
-    commit: bool = True,
-    timestamp: datetime | None = None,
-) -> list[Path]:
-    """``kahnban init`` — scaffold the Layer 0 storage contract and commit it."""
-    root = Path(project_root).resolve()
-    if not gitops.is_repo(root):
-        raise ConfigError(f"{root} is not a git repository; run 'git init' first")
-    config_path = root / CONFIG_RELATIVE
-    if config_path.exists():
-        raise ConfigError(f"board already initialized: {config_path}")
-
-    payload = {
-        "engine_min_version": __version__,
-        "id_prefix": prefix.upper(),
-        "board_root": "plans/tickets",
-        "columns": list(columns),
-        "done_column": columns[-1],
-        "wip_limit": wip_limit,
-        "use_worktrees": use_worktrees,
-        "shared_caches": [],
-        "validation_timeout_sec": 1800,
-        "log_output_max_bytes": 65536,
-        "required_headings": list(DEFAULT_REQUIRED_HEADINGS),
-        "validation_command": validation_command,
-        "require_proof": True,
-        "require_review": True,
-        "require_integration": True,
-        "require_spec": False,
-        "require_signed_approvals": True,
-        "strict_hooks": True,
-        "max_blast_radius_files": 3,
-        "stale_after_days": 3,
-        "allowed_commands": [],
-        "design_doc_roots": ["plans"],
-        "extensions": {},
-        "ingest": {"heading_level": None, "section_aliases": {}},
-    }
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_path.write_text(
-        json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n"
-    )
-    written = [config_path]
-
-    board_root = root / "plans" / "tickets"
-    for column in [*columns, "archive"]:
-        directory = board_root / column
-        directory.mkdir(parents=True, exist_ok=True)
-        keep = directory / ".gitkeep"
-        write_text_atomic(keep, "")
-        written.append(keep)
-
-    template_source = Path(__file__).parent / "templates" / "ticket.md"
-    template_target = board_root / TEMPLATE_NAME
-    shutil.copyfile(template_source, template_target)
-    written.append(template_target)
-
-    if agentic:
-        templates_dir = Path(__file__).parent / "templates"
-
-        # 1. .agents/AGENTS.md
-        agents_dir = root / ".agents"
-        agents_dir.mkdir(parents=True, exist_ok=True)
-        agents_md = agents_dir / "AGENTS.md"
-        shutil.copyfile(templates_dir / "agents.md", agents_md)
-        written.append(agents_md)
-
-        # 2. .agents/state/ACTIVE_SESSION.md
-        state_dir = agents_dir / "state"
-        state_dir.mkdir(parents=True, exist_ok=True)
-        active_sess = state_dir / "ACTIVE_SESSION.md"
-        shutil.copyfile(templates_dir / "active_session.md", active_sess)
-
-        # 3. .agents/specs/
-        specs_dir = agents_dir / "specs"
-        specs_dir.mkdir(parents=True, exist_ok=True)
-        specs_keep = specs_dir / ".gitkeep"
-        write_text_atomic(specs_keep, "")
-        written.append(specs_keep)
-
-        # 4. .agents/templates/
-        agent_templates_dir = agents_dir / "templates"
-        agent_templates_dir.mkdir(parents=True, exist_ok=True)
-        for src_name, dst_name in (
-            ("spec.md", "spec-template.md"),
-            ("ticket.md", "ticket-template.md"),
-            ("active_session.md", "active-session-template.md"),
-            ("glossary.md", "glossary-template.md"),
-            ("adr.md", "adr-template.md"),
-        ):
-            src_f = templates_dir / src_name
-            dst_f = agent_templates_dir / dst_name
-            if src_f.exists():
-                shutil.copyfile(src_f, dst_f)
-                written.append(dst_f)
-
-        # 5. Root GLOSSARY.md
-        glossary_file = root / "GLOSSARY.md"
-        if not glossary_file.exists():
-            shutil.copyfile(templates_dir / "glossary.md", glossary_file)
-            written.append(glossary_file)
-
-        # 6. Root ADR/
-        adr_dir = root / "ADR"
-        adr_dir.mkdir(parents=True, exist_ok=True)
-        adr_keep = adr_dir / ".gitkeep"
-        write_text_atomic(adr_keep, "")
-        written.append(adr_keep)
-        first_adr = adr_dir / "0001-record-architecture-decisions.md"
-        if not first_adr.exists():
-            shutil.copyfile(templates_dir / "adr.md", first_adr)
-            written.append(first_adr)
-
-        # 7. .agents/skills/ (Self-contained Matt Pocock engineering pipeline)
-        from kahnban import skills
-        skills.install_skills(root, harness="agents", source="bundled")
-        skills_dst = agents_dir / "skills"
-        if skills_dst.is_dir():
-            for p in sorted(skills_dst.rglob("*")):
-                if p.is_file():
-                    written.append(p)
-
-        # 8. ./learnings/ (Pattern-aggregating self-improvement queue)
-        learnings_dir = root / "learnings"
-        learnings_dir.mkdir(parents=True, exist_ok=True)
-        learnings_archive = learnings_dir / "archive"
-        learnings_archive.mkdir(parents=True, exist_ok=True)
-        learnings_keep = learnings_dir / ".gitkeep"
-        write_text_atomic(learnings_keep, "")
-        written.append(learnings_keep)
-        archive_keep = learnings_archive / ".gitkeep"
-        write_text_atomic(archive_keep, "")
-        written.append(archive_keep)
-
-    gitignore = root / ".gitignore"
-    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
-    additions = [
-        entry
-        for entry in (
-            ".worktrees/",
-            "plans/tickets/.artifacts/",
-            "plans/tickets/.claim.lock",
-            ".agents/state/",
-            ".agents/handoffs/",
-            HANDOFF_IN_WORKTREE,
-            "__pycache__/",
-            "*.pyc",
-        )
-        if entry not in existing
-    ]
-    if additions:
-        prefix_text = existing if existing.endswith("\n") or not existing else existing + "\n"
-        gitignore.write_text(
-            prefix_text + "\n".join(additions) + "\n", encoding="utf-8", newline="\n"
-        )
-        written.append(gitignore)
-
-    config = load_config(root, config_path, check_version=False)
-    written.extend(sync(config, timestamp=timestamp))
-
-    if commit:
-        rel_paths = [_relative(config, path) for path in written]
-        gitops.add(root, rel_paths)
-        gitops.commit(root, f"kanban: initialize board ({prefix.upper()})", paths=rel_paths)
-    return written

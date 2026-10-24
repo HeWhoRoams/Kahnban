@@ -23,6 +23,7 @@ from kahnban import (
     ingest,
     linter,
     roles,
+    scaffold,
     session,
     skills,
     skills_check,
@@ -345,7 +346,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
 
 def cmd_init(args: argparse.Namespace) -> int:
     root = Path(args.project_root) if args.project_root else Path.cwd()
-    written = core.init_board(
+    written = scaffold.init_board(
         root,
         prefix=args.prefix,
         wip_limit=args.wip_limit,
@@ -529,7 +530,7 @@ def cmd_next(args: argparse.Namespace) -> int:
         print(json.dumps(rec.to_dict(), indent=2, default=str))
         return EXIT_OK
 
-    print(f"\n=== Kahnban Situational Next Action ===")
+    print("\n=== Kahnban Situational Next Action ===")
     print(f"Action:         {rec.action.upper()}")
     print(f"Assigned Role:  {rec.assigned_role}")
     if rec.ticket_id:

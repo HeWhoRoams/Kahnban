@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from kahnban import cli, core
+from kahnban import cli, core, scaffold
 from conftest import git
 
 
@@ -16,7 +16,7 @@ def test_init_board_agentic(tmp_path: Path) -> None:
     git(repo, "config", "user.email", "agent@example.com")
     git(repo, "config", "user.name", "Agent")
 
-    written = core.init_board(repo, prefix="HOA", agentic=True)
+    written = scaffold.init_board(repo, prefix="HOA", agentic=True)
 
     # 1. Kanban board files
     assert (repo / "plans" / "board.config.json").exists()
@@ -104,7 +104,7 @@ def test_init_existing_repo_non_destructive(tmp_path: Path) -> None:
     git(repo, "commit", "-m", "feat: existing app codebase")
 
     # Run init into existing repo
-    written = core.init_board(repo, prefix="APP", agentic=True)
+    written = scaffold.init_board(repo, prefix="APP", agentic=True)
 
     # 1. Existing files intact
     assert (src / "app.py").read_text(encoding="utf-8") == "print('hello')"

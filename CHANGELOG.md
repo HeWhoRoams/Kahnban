@@ -22,4 +22,4 @@
 - It is a tripwire, not a sandbox: `python -c` and a worker running as the same OS user still get through.
 
 ### Internal
-- New modules: `attempts`, `exit_checks`, `fsutil`, `guard_shell`, `harnesses`, `skills_check`, `trust`. `trust.collect` is now `fingerprints`, `handoff.refresh(event=)` is `reason=`, and `skills.check` is `skills_check.audit`.
+- New modules: `attempts`, `config` (split out of `core`, which re-exports it), `exit_checks`, `fsutil`, `guard_shell`, `harnesses`, `scaffold` (`init_board` moved here from `core`), `skills_check`, `trust`. `core._relative` is now `core.relative_path`. `trust.collect` is now `fingerprints`, `handoff.refresh(event=)` is `reason=`, and `skills.check` is `skills_check.audit`.

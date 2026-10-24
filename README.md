@@ -284,7 +284,8 @@ Zero runtime dependencies. Test and line counts are left out on purpose: run `py
 
 | Module | Owns |
 | :--- | :--- |
-| `core` | config, the single `transition()` writer, every gate (ready, claim, verify, approve, reject, merge, done), leases, escalation |
+| `core` | the single `transition()` writer, every gate (ready, claim, verify, approve, reject, merge, done), leases, escalation |
+| `config` / `scaffold` | `board.config.json` and the errors every gate raises (`core` re-exports them); `kahnban init` |
 | `specs` | spec drafts, the approval gate, requirement coverage |
 | `runner` | `kahnban run`: the factory loop and its workers |
 | `roles` | the role manifest (`templates/roles.json`) and everything rendered from it: role prompts, agent files, the guard's tables |
