@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from kahnban import core, dispatcher, guard, learnings, roles, skills
+from kahnban import core, dispatcher, guard, learnings, roles, skills, skills_check
 from kahnban.cli import main
 from conftest import write_ticket
 
 
 def test_the_bundled_skills_roles_and_cli_agree() -> None:
-    assert skills.check() == []
+    assert skills_check.audit() == []
 
 
 def test_no_role_is_told_to_run_what_the_guard_refuses_it(board: Path) -> None:
@@ -33,7 +33,7 @@ def test_no_role_is_told_to_run_what_the_guard_refuses_it(board: Path) -> None:
         rec = dispatcher.resolve_next_action(config, preferred_role=preferred)
         assert rec.assigned_role == role
         gate = (roles.role(role).get("gate") or "").split()[1:2]
-        told = skills._named_commands(rec.prompt) - set(gate)
+        told = skills_check.named_commands(rec.prompt) - set(gate)
         assert told, f"{role}'s prompt names no command at all"
         assert {c: guard.command_problem(role, c) for c in told} == dict.fromkeys(told)
         assert roles.finish(role, rec.ticket_id or "") in rec.prompt
@@ -152,4 +152,4 @@ def test_every_worker_role_names_a_real_exit_check(monkeypatch) -> None:
     manifest = roles.manifest()
     monkeypatch.setitem(manifest["roles"]["coder"], "exit", "tidy_desk")
 
-    assert any("exit 'tidy_desk' is not one of" in problem for problem in skills.check())
+    assert any("exit 'tidy_desk' is not one of" in problem for problem in skills_check.audit())

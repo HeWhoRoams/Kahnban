@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import guard, roles, skills
+from kahnban import guard, roles, skills, skills_check
 
 GOLDEN = Path(__file__).parent / "golden" / "agents"
 HARNESSES = ("claude", "gemini", "cursor")
@@ -44,7 +44,7 @@ def test_installed_agent_files_equal_the_golden_copy(tmp_path: Path) -> None:
 
 def test_check_notices_a_harness_whose_guard_hooks_are_gone(tmp_path: Path) -> None:
     skills.install_skills(tmp_path, harness="all")
-    assert skills.check(tmp_path) == []
+    assert skills_check.audit(tmp_path) == []
 
     claude = tmp_path / ".claude" / "settings.json"
     data = json.loads(claude.read_text(encoding="utf-8"))
@@ -57,7 +57,7 @@ def test_check_notices_a_harness_whose_guard_hooks_are_gone(tmp_path: Path) -> N
     cursor.write_text(json.dumps(data), encoding="utf-8")
     (tmp_path / ".cursor" / "rules" / "kanban.mdc").unlink()
 
-    report = "\n".join(skills.check(tmp_path))
+    report = "\n".join(skills_check.audit(tmp_path))
     assert ".claude/settings.json has no Stop hook running 'kahnban guard --stop'" in report
     assert ".gemini/settings.json is missing or not valid JSON" in report
     assert ".cursor/hooks.json has no beforeShellExecution hook running 'kahnban guard'" in report

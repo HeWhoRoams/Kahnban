@@ -16,7 +16,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from kahnban import __version__, core, dispatcher, gitops, ingest, linter, session, skills, trust, worktree
+from kahnban import __version__, core, dispatcher, gitops, ingest, linter, session, skills, skills_check, trust, worktree
 
 EXIT_OK = 0
 EXIT_REFUSED = 1
@@ -547,7 +547,7 @@ def cmd_skills(args: argparse.Namespace) -> int:
 
     action = getattr(args, "skills_action", None)
     if action == "check":
-        problems = skills.check(root)
+        problems = skills_check.audit(root)
         for problem in problems:
             print(f"  - {problem}", file=sys.stderr)
         if problems:
@@ -615,6 +615,16 @@ def _board_options() -> argparse.ArgumentParser:
     common.add_argument("--project-root", default=argparse.SUPPRESS, help=ROOT_HELP)
     common.add_argument("--config", default=argparse.SUPPRESS, help=CONFIG_HELP)
     return common
+
+
+def command_names() -> set[str]:
+    """The subcommands ``kahnban`` accepts."""
+    return {
+        name
+        for action in build_parser()._actions
+        if isinstance(action, argparse._SubParsersAction)
+        for name in action.choices
+    }
 
 
 def build_parser() -> argparse.ArgumentParser:
