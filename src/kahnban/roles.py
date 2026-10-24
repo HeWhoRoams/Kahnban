@@ -101,6 +101,14 @@ def instructions(name: str, ticket: str = "") -> list[str]:
     return lines
 
 
+# What each harness's agent file can say natively; the rest the guard hook enforces.
+AGENT_FORMATS: dict[str, dict[str, Any]] = {
+    "claude": {"tools": True, "preloads_skills": True, "extra": []},
+    "gemini": {"tools": False, "preloads_skills": False, "extra": ["kind: local"]},
+    "cursor": {"tools": False, "preloads_skills": False, "extra": []},
+}
+
+
 def agent_markdown(name: str, harness: str = "claude") -> str:
     """The native agent file for one worker role.
 
@@ -109,17 +117,17 @@ def agent_markdown(name: str, harness: str = "claude") -> str:
     holds them to the role's commands and files in every harness.
     """
     spec = role(name)
+    native = AGENT_FORMATS[harness]
     front = ["---", f"name: {agent_name(name)}", f"description: {spec['description']}"]
     skills = spec.get("skills", [])
-    if harness == "claude":
+    if native["tools"]:
         front.append(f"tools: {spec['tools']}")
-        if skills:
-            front += ["skills:", *(f"  - {skill}" for skill in skills)]
-    elif harness == "gemini":
-        front.append("kind: local")
+    if native["preloads_skills"] and skills:
+        front += ["skills:", *(f"  - {skill}" for skill in skills)]
+    front += native["extra"]
     intro = f"You are the Kahnban {spec['title']}. {_fill(spec['intro'], PLACEHOLDER)}"
     body = [intro, ""]
-    if skills and harness != "claude":
+    if skills and not native["preloads_skills"]:
         paths = ", ".join(f"`.agents/skills/{skill}/SKILL.md`" for skill in skills)
         body += [f"Before you start, read and follow these skills: {paths}.", ""]
     return "\n".join([*front, "---", "", *body, *instructions(name), ""])
