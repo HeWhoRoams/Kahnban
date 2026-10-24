@@ -148,6 +148,7 @@ def install_skills(
     installed_skills: list[str] = []
     configured_harnesses: list[str] = []
     messages: list[str] = []
+    drift_before = {} if dry_run else trust.drift(root)
 
     agents_skills_dir = root / ".agents" / "skills"
 
@@ -266,6 +267,9 @@ def install_skills(
                 messages.append(f"Pinned {pinned} skill and hook files in {trust.LOCK.as_posix()}; commit it.")
         else:
             # An existing pin is a decision a person made: report what changed, never move it.
+            after = trust.drift(root)
+            for name in sorted(drift_before.keys() - after.keys()):
+                messages.append(f"Restored {name} to the bundled version (it had {drift_before[name]}).")
             messages.extend(f"[WARN] {problem}" for problem in trust.lock_problems(root))
 
     return SkillsResult(

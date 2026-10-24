@@ -77,6 +77,14 @@ def run(
     than ``max_attempts`` times is escalated to a human and skipped."""
     if not config.workers:
         raise RunStop(_NO_WORKER.format(role="any role"))
+    drifted = trust.lock_problems(config.project_root)
+    if drifted and config.strict_hooks:
+        raise RunStop(
+            "pinned skills or hooks changed since 'kahnban skills lock', so the run will not start:\n"
+            + "\n".join(f"  - {problem}" for problem in drifted)
+        )
+    for problem in drifted:
+        echo(f"[WARN] {problem}")
     result = RunResult(log_path=_log_path(config))
     curated = False  # the curator gets one turn per run; then the board moves on
     for number in range(1, max_steps + 1):

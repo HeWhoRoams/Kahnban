@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from kahnban import trust
+
 HOOKS_DIR_NAME = ".kahnban/hooks"
 FALLBACK_HOOKS_DIR_NAME = "plans/hooks"
 
@@ -69,6 +71,17 @@ def run_hook(
             ticket_id=ticket_id,
             executed=False,
             messages=[f"no hook found for {event}"],
+        )
+    pin_problem = trust.verify_file(project_root, script)
+    if pin_problem and _strict(project_root):
+        return HookResult(
+            event=event,
+            ticket_id=ticket_id,
+            executed=True,
+            script_path=str(script),
+            exit_code=1,
+            stderr=f"hook {event} not run: {pin_problem}",
+            messages=[f"hook {event} not run: {pin_problem}"],
         )
 
     env = os.environ.copy()
@@ -135,7 +148,7 @@ def run_hook(
             exit_code=completed.returncode,
             stdout=completed.stdout or "",
             stderr=completed.stderr or "",
-            messages=[f"hook {event} executed (exit {completed.returncode})"],
+            messages=[f"hook {event} executed (exit {completed.returncode})", *([f"[WARN] {pin_problem}"] if pin_problem else [])],
         )
     except subprocess.TimeoutExpired as expired:
         return HookResult(
@@ -158,3 +171,13 @@ def run_hook(
             stderr=str(ex),
             messages=[f"hook {event} failed to execute: {ex}"],
         )
+
+
+def _strict(project_root: Path) -> bool:
+    """Whether the board asks hooks to fail closed (``strict_hooks``); a board that cannot be read is lenient."""
+    try:
+        from kahnban import core
+
+        return core.load_config(project_root, check_version=False).strict_hooks
+    except Exception:
+        return False

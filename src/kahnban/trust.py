@@ -31,7 +31,7 @@ from pathlib import Path
 from kahnban.fsutil import write_text_atomic
 
 LOCK = Path(".agents") / "skills.lock.json"
-LOCKED_DIRS = (Path(".agents") / "skills", Path(".kahnban") / "hooks")
+LOCKED_DIRS = (Path(".agents") / "skills", Path(".kahnban") / "hooks", Path("plans") / "hooks")
 KEY_ENV = "KAHNBAN_SIGNING_KEY"
 KEY_DIR_ENV = "KAHNBAN_KEY_DIR"
 
@@ -59,21 +59,61 @@ def write_lock(root: Path) -> int:
     return len(files)
 
 
-def lock_problems(root: Path) -> list[str]:
-    """Files that changed, appeared or vanished since they were pinned; empty when sound or unpinned."""
-    path = root / LOCK
-    if not path.is_file():
-        return []
+FIX = "review the change, then run 'kahnban skills lock'"
+
+
+def _pinned(root: Path) -> dict[str, str] | None:
+    """The pinned ``{path: sha256}`` map, or None when there is no lock (or it cannot be read)."""
     try:
-        pinned = json.loads(path.read_text(encoding="utf-8"))["files"]
+        files = json.loads((root / LOCK).read_text(encoding="utf-8"))["files"]
     except (OSError, ValueError, KeyError, TypeError):
-        return [f"{LOCK.as_posix()} is unreadable; re-run 'kahnban skills lock'"]
+        return None
+    return files if isinstance(files, dict) else None
+
+
+def drift(root: Path) -> dict[str, str]:
+    """Pinned files that ``changed``, are ``unpinned`` or are ``gone``; empty when sound or unpinned."""
+    if not (root / LOCK).is_file():
+        return {}
+    pinned = _pinned(root)
+    if pinned is None:
+        return {LOCK.as_posix(): "unreadable"}
     now = fingerprints(root)
-    fix = "review the change, then run 'kahnban skills lock'"
-    problems = [f"{name} changed since it was pinned; {fix}" for name in sorted(pinned.keys() & now.keys()) if pinned[name] != now[name]]
-    problems += [f"{name} is not pinned; {fix}" for name in sorted(now.keys() - pinned.keys())]
-    problems += [f"{name} was pinned but is gone; {fix}" for name in sorted(pinned.keys() - now.keys())]
-    return problems
+    found = {name: "changed" for name in pinned.keys() & now.keys() if pinned[name] != now[name]}
+    found |= {name: "unpinned" for name in now.keys() - pinned.keys()}
+    found |= {name: "gone" for name in pinned.keys() - now.keys()}
+    return dict(sorted(found.items()))
+
+
+def lock_problems(root: Path) -> list[str]:
+    """The drift in words, for ``skills check``."""
+    said = {
+        "changed": "changed since it was pinned",
+        "unpinned": "is not pinned",
+        "gone": "was pinned but is gone",
+    }
+    return [
+        f"{LOCK.as_posix()} is unreadable; re-run 'kahnban skills lock'"
+        if kind == "unreadable"
+        else f"{name} {said[kind]}; {FIX}"
+        for name, kind in drift(root).items()
+    ]
+
+
+def verify_file(root: Path, script: Path) -> str:
+    """Why one file about to run does not match the lock, or '' (also when nothing is locked)."""
+    pinned = _pinned(root)
+    if pinned is None:
+        return ""
+    try:
+        name = script.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return ""
+    if not any(Path(name).is_relative_to(directory) for directory in LOCKED_DIRS):
+        return ""
+    if name not in pinned:
+        return f"{name} is not pinned; {FIX}"
+    return "" if pinned[name] == _digest(script) else f"{name} changed since it was pinned; {FIX}"
 
 
 def key_dir() -> Path:
