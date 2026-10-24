@@ -576,6 +576,35 @@ def _project_drift(root: Path, source: Path | None) -> list[str]:
                 problems.append(
                     f".{harness}/agents/{path.name} is missing or stale; re-run 'kahnban skills install'"
                 )
+        problems += _hook_problems(root, harness)
+    return problems
+
+
+def _hook_problems(root: Path, harness: str) -> list[str]:
+    """A harness with generated agents must also run the guard: without it the role is only advice."""
+    fix = f"re-run 'kahnban skills install --harness {harness}'"
+    if harness == "cursor":
+        path, wanted = root / ".cursor" / "hooks.json", [(event, hook["command"]) for event, hook in CURSOR_HOOKS]
+        rule = root / ".cursor" / "rules" / "kanban.mdc"
+        extra = [] if rule.is_file() else [f".cursor/rules/kanban.mdc is missing; {fix}"]
+    else:
+        path = root / f".{harness}" / "settings.json"
+        wanted = [(event, command) for event, _, command in (CLAUDE_HOOKS if harness == "claude" else GEMINI_HOOKS)]
+        extra = []
+    label = path.relative_to(root).as_posix()
+    try:
+        hooks = json.loads(path.read_text(encoding="utf-8")).get("hooks", {})
+    except (OSError, ValueError):
+        return [f"{label} is missing or not valid JSON, so the guard hooks are not installed; {fix}", *extra]
+    problems = list(extra)
+    for event, command in wanted:
+        commands = [
+            h.get("command")
+            for entry in hooks.get(event, [])
+            for h in ([entry] if harness == "cursor" else entry.get("hooks", []))
+        ]
+        if command not in commands:
+            problems.append(f"{label} has no {event} hook running '{command}'; {fix}")
     return problems
 
 
