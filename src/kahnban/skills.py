@@ -20,6 +20,7 @@ from typing import Any
 from kahnban import frontmatter, trust
 from kahnban.fsutil import write_text_atomic
 from kahnban.harnesses import (
+    AGENT_HARNESSES,
     CURSOR_MDC_CONTENT,
     HOOK_FILES,
     VSCODE_MCP_SERVER,
@@ -121,6 +122,77 @@ def list_skills(project_root: Path | None = None) -> list[SkillInfo]:
     return skills
 
 
+def _install_source(
+    root: Path,
+    skills_dir: Path,
+    source: str,
+    dry_run: bool,
+    installed: list[str],
+    messages: list[str],
+) -> None:
+    """Put the chosen skills into ``.agents/skills/``: bundled, upstream through npx, or pstack."""
+    if source in ("mattpocock", "upstream"):
+        messages.append("Installing extended skills from upstream mattpocock/skills...")
+        if not dry_run:
+            skills_dir.mkdir(parents=True, exist_ok=True)
+            npx_bin = shutil.which("npx")
+            if npx_bin:
+                try:
+                    cmd = [npx_bin, "skills@latest", "add", "mattpocock/skills", "--yes"]
+                    res = subprocess.run(cmd, cwd=root, capture_output=True, text=True, timeout=120)
+                    if res.returncode == 0:
+                        messages.append("Successfully added mattpocock/skills via npx skills.")
+                    else:
+                        messages.append(f"npx skills returned code {res.returncode}; falling back to bundled.")
+                        _copy_bundled_skills(skills_dir, installed)
+                except Exception as ex:
+                    messages.append(f"npx execution failed ({ex}); falling back to bundled.")
+                    _copy_bundled_skills(skills_dir, installed)
+            else:
+                messages.append("npx not found in PATH; falling back to bundled skills.")
+                _copy_bundled_skills(skills_dir, installed)
+    elif source == "pstack" or source.startswith("pstack:"):
+        messages.append(f"Installing skills from {source}...")
+        if not dry_run:
+            skills_dir.mkdir(parents=True, exist_ok=True)
+            _fetch_pstack_upstream(skills_dir, source, installed, messages)
+        else:
+            if TEMPLATES_SKILLS_DIR.is_dir():
+                installed.extend(d.name for d in TEMPLATES_SKILLS_DIR.iterdir() if d.is_dir())
+    else:
+        # Default: bundled
+        if not dry_run:
+            _copy_bundled_skills(skills_dir, installed)
+        else:
+            if TEMPLATES_SKILLS_DIR.is_dir():
+                installed.extend(d.name for d in TEMPLATES_SKILLS_DIR.iterdir() if d.is_dir())
+
+
+def _configure_agent_harness(
+    root: Path, name: str, skills_dir: Path, messages: list[str], dry_run: bool
+) -> str:
+    """Skills, native agent files and the guard hooks for one harness; returns the summary line."""
+    folder = root / f".{name}"
+    parts = [f".{name}/agents/", "guard hook"]
+    if name != "cursor":  # Cursor reads .agents/skills through its rule instead of a copy
+        parts.insert(0, f".{name}/skills/")
+    if name == "cursor":
+        parts.insert(0, ".cursor/rules/kanban.mdc")
+    if not dry_run:
+        if name != "cursor":
+            (folder / "skills").mkdir(parents=True, exist_ok=True)
+            _copy_tree_contents(skills_dir, folder / "skills")
+        else:
+            rule = folder / "rules" / "kanban.mdc"
+            rule.parent.mkdir(parents=True, exist_ok=True)
+            if not rule.exists():
+                write_text_atomic(rule, CURSOR_MDC_CONTENT)
+        write_agents(folder / "agents", name)
+        merge_hooks(root / HOOK_FILES[name], name, messages, stop_nudges(root))
+        messages.append(f"Commit .{name}/ so ticket worktrees inherit the agents and the guard hook.")
+    return f"{name} ({', '.join(parts)})"
+
+
 def install_skills(
     project_root: Path,
     *,
@@ -153,95 +225,22 @@ def install_skills(
 
     agents_skills_dir = root / ".agents" / "skills"
 
-    # Step 1: Install source into .agents/skills/
-    if source in ("mattpocock", "upstream"):
-        messages.append("Installing extended skills from upstream mattpocock/skills...")
-        if not dry_run:
-            agents_skills_dir.mkdir(parents=True, exist_ok=True)
-            npx_bin = shutil.which("npx")
-            if npx_bin:
-                try:
-                    cmd = [npx_bin, "skills@latest", "add", "mattpocock/skills", "--yes"]
-                    res = subprocess.run(cmd, cwd=root, capture_output=True, text=True, timeout=120)
-                    if res.returncode == 0:
-                        messages.append("Successfully added mattpocock/skills via npx skills.")
-                    else:
-                        messages.append(f"npx skills returned code {res.returncode}; falling back to bundled.")
-                        _copy_bundled_skills(agents_skills_dir, installed_skills)
-                except Exception as ex:
-                    messages.append(f"npx execution failed ({ex}); falling back to bundled.")
-                    _copy_bundled_skills(agents_skills_dir, installed_skills)
-            else:
-                messages.append("npx not found in PATH; falling back to bundled skills.")
-                _copy_bundled_skills(agents_skills_dir, installed_skills)
-    elif source == "pstack" or source.startswith("pstack:"):
-        messages.append(f"Installing skills from {source}...")
-        if not dry_run:
-            agents_skills_dir.mkdir(parents=True, exist_ok=True)
-            _fetch_pstack_upstream(agents_skills_dir, source, installed_skills, messages)
-        else:
-            if TEMPLATES_SKILLS_DIR.is_dir():
-                installed_skills.extend(d.name for d in TEMPLATES_SKILLS_DIR.iterdir() if d.is_dir())
-    else:
-        # Default: bundled
-        if not dry_run:
-            _copy_bundled_skills(agents_skills_dir, installed_skills)
-        else:
-            if TEMPLATES_SKILLS_DIR.is_dir():
-                installed_skills.extend(d.name for d in TEMPLATES_SKILLS_DIR.iterdir() if d.is_dir())
+    _install_source(root, agents_skills_dir, source, dry_run, installed_skills, messages)
 
     configured_harnesses.append("agents (.agents/skills/)")
 
     # Step 2: Configure target harness(es)
     harness_norm = harness.strip().lower()
-    should_configure_claude = harness_norm in ("claude", "all") or (
-        harness_norm == "auto" and (root / ".claude").is_dir()
-    )
-    should_configure_gemini = harness_norm in ("gemini", "all") or (
-        harness_norm == "auto" and (root / ".gemini").is_dir()
-    )
-    should_configure_cursor = harness_norm in ("cursor", "all") or (
-        harness_norm == "auto" and (root / ".cursor").is_dir()
-    )
+    def wanted(name: str) -> bool:
+        return harness_norm in (name, "all") or (harness_norm == "auto" and (root / f".{name}").is_dir())
 
-    if should_configure_claude:
-        claude_skills = root / ".claude" / "skills"
-        if not dry_run:
-            claude_skills.mkdir(parents=True, exist_ok=True)
-            _copy_tree_contents(agents_skills_dir, claude_skills)
-            write_agents(root / ".claude" / "agents")
-            merge_hooks(root / HOOK_FILES["claude"], "claude", messages, stop_nudges(root))
-            messages.append(
-                "Commit .claude/ so ticket worktrees inherit the agents and the guard hook."
+    for name in AGENT_HARNESSES:
+        if wanted(name):
+            configured_harnesses.append(
+                _configure_agent_harness(root, name, agents_skills_dir, messages, dry_run)
             )
-        configured_harnesses.append("claude (.claude/skills/, .claude/agents/, guard hook)")
 
-    if should_configure_gemini:
-        gemini_skills = root / ".gemini" / "skills"
-        if not dry_run:
-            gemini_skills.mkdir(parents=True, exist_ok=True)
-            _copy_tree_contents(agents_skills_dir, gemini_skills)
-            write_agents(root / ".gemini" / "agents", "gemini")
-            merge_hooks(root / HOOK_FILES["gemini"], "gemini", messages, stop_nudges(root))
-            messages.append("Commit .gemini/ so ticket worktrees inherit the agents and the guard hook.")
-        configured_harnesses.append("gemini (.gemini/skills/, .gemini/agents/, guard hook)")
-
-    if should_configure_cursor:
-        cursor_rules = root / ".cursor" / "rules"
-        rule_file = cursor_rules / "kanban.mdc"
-        if not dry_run:
-            cursor_rules.mkdir(parents=True, exist_ok=True)
-            if not rule_file.exists():
-                write_text_atomic(rule_file, CURSOR_MDC_CONTENT)
-            write_agents(root / ".cursor" / "agents", "cursor")
-            merge_hooks(root / HOOK_FILES["cursor"], "cursor", messages, stop_nudges(root))
-            messages.append("Commit .cursor/ so ticket worktrees inherit the agents and the guard hook.")
-        configured_harnesses.append("cursor (.cursor/rules/kanban.mdc, .cursor/agents/, guard hook)")
-
-    should_configure_vscode = harness_norm in ("vscode", "all") or (
-        harness_norm == "auto" and (root / ".vscode").is_dir()
-    )
-    if should_configure_vscode:
+    if wanted("vscode"):
         vscode_dir = root / ".vscode"
         mcp_config = vscode_dir / "mcp.json"
         if not dry_run:
@@ -251,10 +250,7 @@ def install_skills(
                 write_text_atomic(mcp_config, json.dumps(mcp_data, indent=2))
         configured_harnesses.append("vscode (.vscode/mcp.json)")
 
-    should_configure_hermes = harness_norm in ("hermes", "all") or (
-        harness_norm == "auto" and (root / ".hermes").is_dir()
-    )
-    if should_configure_hermes:
+    if wanted("hermes"):
         hermes_skills = root / ".hermes" / "skills"
         if not dry_run:
             hermes_skills.mkdir(parents=True, exist_ok=True)
