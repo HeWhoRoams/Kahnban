@@ -25,6 +25,8 @@
     },
     "coder": {
       "title": "coder",
+      "command": "kahnban claim {ticket} --worktree --owner coder-agent",
+      "facts": ["worktree", "qa_contract"],
       "exit": "committed_work",
       "description": "Kahnban factory coder. Implements one claimed ticket inside its worktree with TDD, touching only the ticket's blast radius. Started by `kahnban run`.",
       "tools": "Read, Edit, Write, Grep, Glob, Bash",
@@ -45,6 +47,8 @@
     },
     "qa_reviewer": {
       "title": "QA reviewer",
+      "command": "kahnban approve {ticket} --reviewer qa-reviewer",
+      "facts": ["qa_contract", "branch"],
       "exit": "decision_recorded",
       "description": "Kahnban factory reviewer. Audits one verified ticket's diff and tests, then approves or rejects it. Never edits, commits or merges. Started by `kahnban run`.",
       "tools": "Read, Grep, Glob, Bash",
@@ -64,6 +68,8 @@
     },
     "integrator": {
       "title": "integrator",
+      "command": "kahnban merge {ticket} && kahnban done {ticket}",
+      "facts": ["branch"],
       "worker": false,
       "description": "Lands one approved ticket through the merge queue. Under `kahnban run` the runner does this itself.",
       "intro": "You land exactly one ticket that a reviewer approved.",

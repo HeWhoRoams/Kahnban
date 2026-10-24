@@ -17,6 +17,7 @@ from typing import Any
 
 MANIFEST = Path(__file__).parent / "templates" / "roles.json"
 PLACEHOLDER = "<ID>"
+FACTS = {"worktree", "qa_contract", "branch"}  # what handoff.py can say about a ticket
 HUMAN = "human"  # who acts next on an escalated ticket
 NOBODY = "none"  # who acts next on a finished one
 
@@ -55,6 +56,17 @@ def edits(name: str) -> str | list[str]:
     if name not in workers():
         return []
     return role(name).get("edits", [])
+
+
+def command(name: str, ticket: str) -> str:
+    """The one command this role's turn is about, or '' for a role without one."""
+    spec = manifest()["roles"].get(name, {})
+    return _fill(spec["command"], ticket) if spec.get("command") else ""
+
+
+def facts(name: str) -> list[str]:
+    """Which ticket facts this role's prompt carries (``worktree``, ``qa_contract``, ``branch``)."""
+    return list(manifest()["roles"].get(name, {}).get("facts", []))
 
 
 def finish(name: str, ticket: str = "") -> str:

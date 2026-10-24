@@ -107,11 +107,7 @@ def build_handoff_baton(
     )
 
     title = str(fields.get("title") or ticket.ticket_id)
-    cmd = {
-        "coder": f"kahnban claim {ticket_id} --worktree --owner coder-agent",
-        "qa_reviewer": f"kahnban approve {ticket_id} --reviewer qa-reviewer",
-        "integrator": f"kahnban merge {ticket_id} && kahnban done {ticket_id}",
-    }.get(assigned_role, "")
+    cmd = roles.command(assigned_role, ticket_id)
 
     # Check existing baton for historical rejection records
     existing = read_handoff_baton(config.project_root, ticket_id)
@@ -217,16 +213,17 @@ def _prompt(
     if role not in roles.manifest()["roles"]:
         return ""
     facts = [f"Rejected by {entry.get('author')}: {entry.get('feedback')}" for entry in rejections]
-    if role == "coder":
-        facts.append(f"Worktree: {worktree}")
-    if role in ("coder", "qa_reviewer"):
-        facts += [
-            f"Blast radius: {', '.join(qa.blast_radius_files) or 'none declared'}",
-            f"Feature tests: `{qa.feature_test_command}`",
-            f"Regression tests: `{qa.regression_test_command}`",
-        ]
-    if role in ("qa_reviewer", "integrator"):
-        facts.append(f"Branch: ticket/{ticket_id}")
+    for key in roles.facts(role):
+        if key == "worktree":
+            facts.append(f"Worktree: {worktree}")
+        elif key == "qa_contract":
+            facts += [
+                f"Blast radius: {', '.join(qa.blast_radius_files) or 'none declared'}",
+                f"Feature tests: `{qa.feature_test_command}`",
+                f"Regression tests: `{qa.regression_test_command}`",
+            ]
+        elif key == "branch":
+            facts.append(f"Branch: ticket/{ticket_id}")
     return roles.prompt(role, ticket=ticket_id, title=title, facts=facts)
 
 

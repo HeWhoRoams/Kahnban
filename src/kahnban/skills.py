@@ -499,6 +499,8 @@ def check(project_root: Path | None = None) -> list[str]:
         check_commands(where, text, allowed)
         if worker and spec.get("exit") not in {*exit_checks.CHECKS, "none"}:
             problems.append(f"{where}: exit '{spec.get('exit')}' is not one of {', '.join(sorted(exit_checks.CHECKS))}")
+        for fact in sorted(set(spec.get("facts", [])) - roles.FACTS):
+            problems.append(f"{where}: fact '{fact}' is not one of {', '.join(sorted(roles.FACTS))}")
         preloaded = set(spec.get("skills", []))
         for skill in spec.get("skills", []):
             if skill not in found:
