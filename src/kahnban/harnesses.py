@@ -34,15 +34,17 @@ class HookEvent:
     options: dict[str, Any] = field(default_factory=dict)  # extra keys such as Cursor's loop_limit
 
 
+# Every tool call goes through the guard (no matcher for Claude Code, ".*" for Gemini CLI): it
+# also refuses reads of the signing key, and a harness that renames a tool cannot slip past it.
 # Claude Code and Gemini CLI nest commands under a matcher; Cursor's hooks.json is a flat list.
 # Cursor's stop hook re-prompts the agent instead of blocking, so it is capped at two follow-ups.
 HARNESS_HOOKS: dict[str, tuple[HookEvent, ...]] = {
     "claude": (
-        HookEvent("PreToolUse", GUARD_COMMAND, "Edit|Write|MultiEdit|NotebookEdit|Bash"),
+        HookEvent("PreToolUse", GUARD_COMMAND),
         HookEvent("Stop", STOP_COMMAND),
     ),
     "gemini": (
-        HookEvent("BeforeTool", GUARD_COMMAND, "write_file|replace|run_shell_command"),
+        HookEvent("BeforeTool", GUARD_COMMAND, ".*"),
         HookEvent("AfterAgent", STOP_COMMAND),
     ),
     "cursor": (
@@ -73,8 +75,33 @@ def installed_commands(harness: str, data: dict[str, Any], event: str) -> list[s
     return [h.get("command") for entry in entries for h in entry.get("hooks", [])]
 
 
+def entry_for(harness: str, data: dict[str, Any], hook: HookEvent) -> dict[str, Any] | None:
+    """The entry in a harness config that runs ``hook``'s command for its event, if any."""
+    for entry in data.get("hooks", {}).get(hook.event, []):
+        commands = [entry.get("command")] if harness == "cursor" else [h.get("command") for h in entry.get("hooks", [])]
+        if hook.command in commands:
+            return entry
+    return None
+
+
+def is_current(harness: str, entry: dict[str, Any], hook: HookEvent) -> bool:
+    """Whether an installed entry still matches the table (tool matcher, Cursor's extra keys)."""
+    if harness == "cursor":
+        return all(entry.get(key) == value for key, value in hook.options.items())
+    return (entry.get("matcher") or "") == hook.matcher
+
+
+def _refresh(harness: str, entry: dict[str, Any], hook: HookEvent) -> None:
+    if harness == "cursor":
+        entry.update(hook.options)
+    elif hook.matcher:
+        entry["matcher"] = hook.matcher
+    else:
+        entry.pop("matcher", None)
+
+
 def merge_hooks(path: Path, harness: str, messages: list[str]) -> None:
-    """Add the guard and stop hooks to ``path``, keeping every setting and hook already there."""
+    """Add the guard and stop hooks to ``path``, bringing an older entry up to date and keeping the rest."""
     data: dict[str, Any] = {"version": 1} if harness == "cursor" else {}
     if path.is_file():
         try:
@@ -84,8 +111,12 @@ def merge_hooks(path: Path, harness: str, messages: list[str]) -> None:
             return
     added = False
     for hook in HARNESS_HOOKS[harness]:
-        if hook.command not in installed_commands(harness, data, hook.event):
+        entry = entry_for(harness, data, hook)
+        if entry is None:
             data.setdefault("hooks", {}).setdefault(hook.event, []).append(_entry(harness, hook))
+            added = True
+        elif not is_current(harness, entry, hook):
+            _refresh(harness, entry, hook)
             added = True
     if added:
         path.parent.mkdir(parents=True, exist_ok=True)

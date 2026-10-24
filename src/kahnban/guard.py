@@ -30,7 +30,11 @@ EDIT_TOOLS = {
     "StrReplace", "Delete", "EditNotebook",
 }
 SHELL_TOOLS = {"Bash", "run_shell_command", "Shell", "PowerShell"}
-READ_TOOLS = {"Read", "read_file", "ReadFile", "Grep", "Glob"}
+READ_TOOLS = {
+    "Read", "NotebookRead", "Grep", "Glob", "LS",
+    "read_file", "read_many_files", "glob", "search_file_content", "grep_search", "list_directory",
+    "ReadFile",
+}
 SECRET_REFUSAL = "the signing key is the runner's, not a worker's to read"
 PATH_KEYS = ("file_path", "notebook_path", "path", "target_file")
 OVERRIDE_FLAGS = {"--force", "--force-scope", "--force-overlap", "--abandon", "--no-verify"}

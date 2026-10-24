@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from kahnban import cli, exit_checks, frontmatter, roles, trust
-from kahnban.harnesses import AGENT_HARNESSES, HARNESS_HOOKS, HOOK_FILES, installed_commands
+from kahnban.harnesses import AGENT_HARNESSES, HARNESS_HOOKS, HOOK_FILES, entry_for, is_current
 from kahnban.skills import TEMPLATES_SKILLS_DIR
 
 SKILL_REF = re.compile(r"(?:^|[\s`(])/([a-z][a-z0-9-]*)")
@@ -151,8 +151,11 @@ def _hook_problems(root: Path, harness: str) -> list[str]:
     except (OSError, ValueError):
         return [f"{label} is missing or not valid JSON, so the guard hooks are not installed; {fix}", *problems]
     for hook in HARNESS_HOOKS[harness]:
-        if hook.command not in installed_commands(harness, data, hook.event):
+        entry = entry_for(harness, data, hook)
+        if entry is None:
             problems.append(f"{label} has no {hook.event} hook running '{hook.command}'; {fix}")
+        elif not is_current(harness, entry, hook):
+            problems.append(f"{label} runs '{hook.command}' for {hook.event} with an out-of-date matcher; {fix}")
     return problems
 
 
