@@ -1132,6 +1132,8 @@ def _check_veto(config: Config, ticket: Ticket, target_column: str, log_entry: s
     """Run the ``pre-transition`` hook: exit 2 vetoes the move; with ``strict_hooks`` so does any failure."""
     from kahnban import hooks
 
+    if ticket.column == target_column:  # escalate, unblock, confirm: a way out is never vetoed
+        return
     event = {"from": ticket.column, "to": target_column, "log_entry": log_entry}
     veto = hooks.run_hook(
         config.project_root, "pre-transition", ticket.ticket_id, column=target_column, payload=event
@@ -1271,24 +1273,29 @@ def refresh_baton_strict(config: Config, ticket_id: str, event: str) -> Path | N
         raise KahnbanError(f"handoff baton for {ticket_id} cannot be written: {error}") from error
 
 
-def _report_refusal(config: Config, ticket_id: str, gate: str, reason: str) -> None:
+def _report_refusal(
+    config: Config, ticket_id: str, gate: str, reason: str, kind: str = "GateError"
+) -> None:
     """Run the ``on-refusal`` hook: every gate that says no says so the same way."""
     from kahnban import hooks
 
     hooks.run_hook(
-        config.project_root, "on-refusal", ticket_id, payload={"gate": gate, "reason": reason}
+        config.project_root,
+        "on-refusal",
+        ticket_id,
+        payload={"gate": gate, "reason": reason, "kind": kind},
     )
 
 
 def _refusals_reported(gate: Callable[..., Any]) -> Callable[..., Any]:
-    """Fire ``on-refusal`` whenever ``gate`` raises :class:`GateError`, then re-raise."""
+    """Fire ``on-refusal`` whenever ``gate`` raises a :class:`KahnbanError`, then re-raise."""
 
     @functools.wraps(gate)
     def wrapper(config: Config, ticket_id: str, *args: Any, **kwargs: Any) -> Any:
         try:
             return gate(config, ticket_id, *args, **kwargs)
-        except GateError as error:
-            _report_refusal(config, ticket_id, gate.__name__, str(error))
+        except KahnbanError as error:
+            _report_refusal(config, ticket_id, gate.__name__, str(error), type(error).__name__)
             raise
 
     return wrapper
@@ -2760,6 +2767,7 @@ def approve(
         return result
 
 
+@_refusals_reported
 def countersign(
     config: Config, ticket_id: str, *, timestamp: datetime | None = None
 ) -> TransitionResult:

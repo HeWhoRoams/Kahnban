@@ -213,14 +213,40 @@ def test_strict_hooks_refuse_a_move_when_the_veto_hook_itself_fails(repo: Path) 
     ready_ticket(config)
     (hook_dir(repo) / "pre-transition.py").write_text("raise SystemExit(1)\n", encoding="utf-8")
 
-    core.claim(config, "TST-001", "coder", create_worktree=False)  # lenient by default: a broken hook only reports
-    core.escalate(config, "TST-001", "park it")
-    core.unblock(config, "TST-001", "back")
-
     strict = core.load_config(repo)
     object.__setattr__(strict, "strict_hooks", True)
     with pytest.raises(core.GateError, match="strict_hooks is on"):
-        core.escalate(strict, "TST-001", "park it again")
+        core.claim(strict, "TST-001", "coder", create_worktree=False)
+    assert not (repo / ".worktrees" / "TST-001").exists()
+
+    core.claim(config, "TST-001", "coder", create_worktree=False)  # lenient by default: a broken hook only reports
+
+
+def test_a_way_out_is_never_vetoed_not_even_by_a_broken_hook_under_strict_hooks(repo: Path) -> None:
+    from test_factory_run import ready_ticket
+
+    config = factory_board(repo, autonomy="attended")
+    ready_ticket(config)
+    (hook_dir(repo) / "pre-transition.py").write_text("raise SystemExit(1)\n", encoding="utf-8")
+    strict = core.load_config(repo)
+    object.__setattr__(strict, "strict_hooks", True)
+
+    core.escalate(strict, "TST-001", "which currency?")
+    core.unblock(strict, "TST-001", "EUR")
+    with pytest.raises(core.GateError, match="strict_hooks is on"):
+        core.claim(strict, "TST-001", "coder", create_worktree=False)  # a column move still is
+
+
+def test_refusals_of_every_error_type_reach_on_refusal(repo: Path) -> None:
+    config = factory_board(repo)
+    (hook_dir(repo) / "on-refusal.py").write_text(LOG_REFUSALS, encoding="utf-8")
+
+    with pytest.raises(core.KahnbanError):  # a missing ticket is a plain KahnbanError, not a GateError
+        core.countersign(config, "TST-404")
+
+    lines = [json.loads(line) for line in (repo / "refusals.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert {line["gate"] for line in lines} == {"countersign"}
+    assert all(line["kind"] for line in lines)
 
 
 def test_every_command_that_can_refuse_tells_the_on_refusal_hook(repo: Path) -> None:
