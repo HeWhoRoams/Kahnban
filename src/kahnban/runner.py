@@ -258,6 +258,48 @@ def _merge_and_close(config: core.Config, ticket: str) -> str:
     return "merged, integration-tested, done and cleaned up"
 
 
+def _worker_env(config: core.Config, role: str, ticket: str, cwd: Path, log: Path) -> dict[str, str]:
+    """The worker's environment: ours, minus the signing key, plus who it is and what it works on."""
+    return {
+        **{key: value for key, value in os.environ.items() if key != trust.KEY_ENV},
+        "KAHNBAN_GUARD_LOG": str(guard_log_path(log)),
+        core.ENV_ROLE: role,
+        core.ENV_TICKET: ticket,
+        core.ENV_PROJECT_ROOT: str(config.project_root),
+        core.ENV_WORKTREE: str(cwd),
+    }
+
+
+def _communicate(
+    process: subprocess.Popen[str], prompt: str, timeout_sec: int, heartbeat: Callable[[], None] | None
+) -> tuple[int, str]:
+    """Feed the prompt, renew the lease while the worker runs, and kill it (exit 124) at the deadline."""
+    deadline = time.monotonic() + timeout_sec
+    pending: str | None = prompt
+    while True:
+        try:
+            output, _ = process.communicate(
+                input=pending, timeout=min(HEARTBEAT_SEC, max(deadline - time.monotonic(), 0.1))
+            )
+            return process.returncode, output or ""
+        except subprocess.TimeoutExpired:
+            pending = None
+            if time.monotonic() >= deadline:
+                _kill_tree(process)
+                output, _ = process.communicate()
+                return 124, (output or "") + f"\nTIMEOUT after {timeout_sec}s"
+            if heartbeat:
+                heartbeat()
+
+
+def _record(log: Path, role: str, ticket: str, command: str, code: int, output: str) -> None:
+    with log.open("a", encoding="utf-8", errors="replace") as handle:
+        handle.write(
+            f"\n=== {datetime.now().isoformat(timespec='seconds')} {role} {ticket} "
+            f"exit={code} ===\n$ {command}\n{output}\n"
+        )
+
+
 def _work(
     config: core.Config,
     role: str,
@@ -280,14 +322,7 @@ def _work(
         core.refresh_baton_strict(config, ticket, f"starting the {role}")
     exit_checks.reset_nudges(config, role, ticket)
     command = template.replace("{role}", role.replace("_", "-")).replace("{ticket}", ticket)
-    env = {
-        **{key: value for key, value in os.environ.items() if key != trust.KEY_ENV},
-        "KAHNBAN_GUARD_LOG": str(guard_log_path(log)),
-        core.ENV_ROLE: role,
-        core.ENV_TICKET: ticket,
-        core.ENV_PROJECT_ROOT: str(config.project_root),
-        core.ENV_WORKTREE: str(cwd),
-    }
+    env = _worker_env(config, role, ticket, cwd, log)
     # The command comes from board.config.json (the adopter's own config), so a
     # shell is fine; the prompt goes over stdin, never argv.
     process = subprocess.Popen(
@@ -303,30 +338,8 @@ def _work(
         env=env,
         start_new_session=os.name != "nt",
     )
-    deadline = time.monotonic() + config.worker_timeout_sec
-    pending: str | None = rec.prompt
-    while True:
-        try:
-            output, _ = process.communicate(
-                input=pending, timeout=min(HEARTBEAT_SEC, max(deadline - time.monotonic(), 0.1))
-            )
-            code = process.returncode
-            break
-        except subprocess.TimeoutExpired:
-            pending = None
-            if time.monotonic() >= deadline:
-                _kill_tree(process)
-                output, _ = process.communicate()
-                output = (output or "") + f"\nTIMEOUT after {config.worker_timeout_sec}s"
-                code = 124
-                break
-            if heartbeat:
-                heartbeat()
-    with log.open("a", encoding="utf-8", errors="replace") as handle:
-        handle.write(
-            f"\n=== {datetime.now().isoformat(timespec='seconds')} {role} {ticket} "
-            f"exit={code} ===\n$ {command}\n{output or ''}\n"
-        )
+    code, output = _communicate(process, rec.prompt, config.worker_timeout_sec, heartbeat)
+    _record(log, role, ticket, command, code, output)
     if code == 124:
         raise core.KahnbanError(f"{role} worker timed out after {config.worker_timeout_sec}s")
     if code != 0:
