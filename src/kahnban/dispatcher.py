@@ -59,11 +59,11 @@ def resolve_next_action(
     for target in verifying_tickets:
         fields, body = frontmatter.parse(target.text)
         approved = bool(str(fields.get("reviewer") or "").strip())
-        if approved and preferred_role not in (None, "integrator"):
+        if approved and preferred_role not in (None, roles.INTEGRATOR):
             continue
-        if not approved and preferred_role not in (None, "qa_reviewer", "reviewer"):
+        if not approved and preferred_role not in (None, roles.QA_REVIEWER, "reviewer"):
             continue
-        role = "integrator" if approved else "qa_reviewer"
+        role = roles.INTEGRATOR if approved else roles.QA_REVIEWER
         baton = handoff.build_handoff_baton(
             config,
             target.ticket_id,
@@ -93,7 +93,7 @@ def resolve_next_action(
         t for t in open_tickets
         if t.column == config.in_progress_column and not core.live_lease(config, t.ticket_id)
     ]
-    if in_progress_tickets and (preferred_role in (None, "coder", "resume")) and (preferred_role != "claim"):
+    if in_progress_tickets and (preferred_role in (None, roles.CODER, "resume")) and (preferred_role != "claim"):
         target = in_progress_tickets[0]
         fields, body = frontmatter.parse(target.text)
         wt = str(fields.get("worktree") or "")
@@ -102,7 +102,7 @@ def resolve_next_action(
         baton = handoff.read_handoff_baton(root, target.ticket_id)
         if not baton:
             baton = handoff.build_handoff_baton(
-                config, target.ticket_id, stage="implementation", assigned_role="coder"
+                config, target.ticket_id, stage="implementation", assigned_role=roles.CODER
             )
 
         is_revision = bool(baton.verification_results.rejection_history)
@@ -115,7 +115,7 @@ def resolve_next_action(
 
         return DispatchRecommendation(
             action=action_name,
-            assigned_role="coder",
+            assigned_role=roles.CODER,
             ticket_id=target.ticket_id,
             ticket_title=str(fields.get('title') or target.ticket_id),
             column=target.column,
@@ -132,15 +132,15 @@ def resolve_next_action(
     from kahnban import learnings
 
     recurring = learnings.recurring(root)
-    if recurring and not skip_harvest and preferred_role in (None, "curator"):
+    if recurring and not skip_harvest and preferred_role in (None, roles.CURATOR):
         count = len(recurring)
         return DispatchRecommendation(
             action="harvest_learnings",
-            assigned_role="curator",
+            assigned_role=roles.CURATOR,
             summary=f"{count} recurring learning pattern(s) in ./learnings/ need a structural fix.",
             command="kahnban learnings list && /harvest-learnings",
             prompt=roles.prompt(
-                "curator",
+                roles.CURATOR,
                 facts=[
                     "Recurring patterns: "
                     + ", ".join(f"{r.id} ({r.occurrences}x, {r.severity})" for r in recurring)
@@ -160,15 +160,15 @@ def resolve_next_action(
             active_paths
         )
     ]
-    if available and (preferred_role in (None, "coder", "claim")):
+    if available and (preferred_role in (None, roles.CODER, "claim")):
         target = available[0]
         fields, body = frontmatter.parse(target.text)
         baton = handoff.build_handoff_baton(
-            config, target.ticket_id, stage="implementation", assigned_role="coder"
+            config, target.ticket_id, stage="implementation", assigned_role=roles.CODER
         )
         return DispatchRecommendation(
             action="claim_and_implement",
-            assigned_role="coder",
+            assigned_role=roles.CODER,
             ticket_id=target.ticket_id,
             ticket_title=str(fields.get('title') or target.ticket_id),
             column=target.column,
@@ -183,20 +183,20 @@ def resolve_next_action(
     refining_tickets = [t for t in open_tickets if t.column == config.refining_column]
     backlog_tickets = [t for t in open_tickets if t.column == config.backlog_column]
     intake_candidates = refining_tickets or backlog_tickets
-    if intake_candidates and (preferred_role in (None, "spec_analyst")):
+    if intake_candidates and (preferred_role in (None, roles.SPEC_ANALYST)):
         target = intake_candidates[0]
         fields, body = frontmatter.parse(target.text)
         t_title = str(fields.get("title") or target.ticket_id)
         return DispatchRecommendation(
             action="spec_and_refine",
-            assigned_role="spec_analyst",
+            assigned_role=roles.SPEC_ANALYST,
             ticket_id=target.ticket_id,
             ticket_title=t_title,
             column=target.column,
             summary=f"Ticket {target.ticket_id} requires refinement and acceptance criteria.",
             command=f"kahnban ready {target.ticket_id}",
             prompt=roles.prompt(
-                "spec_analyst",
+                roles.SPEC_ANALYST,
                 ticket=target.ticket_id,
                 title=t_title,
                 facts=[f"Ticket file: {core._relative(config, target.path)}"],

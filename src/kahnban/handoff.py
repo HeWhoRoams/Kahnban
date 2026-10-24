@@ -36,7 +36,7 @@ class HandoffBaton:
     ticket_id: str = ""
     title: str = ""
     stage: str = "implementation"  # refinement, implementation, verification, closure
-    assigned_role: str = "coder"  # spec_analyst, coder, qa_reviewer, integrator, curator
+    assigned_role: str = roles.CODER  # spec_analyst, coder, qa_reviewer, integrator, curator
     harness: str = "auto"
     paths: dict[str, str] = field(default_factory=dict)
     qa_contract: QAContract = field(default_factory=QAContract)
@@ -58,7 +58,7 @@ def build_handoff_baton(
     ticket_id: str,
     *,
     stage: str = "implementation",
-    assigned_role: str = "coder",
+    assigned_role: str = roles.CODER,
     harness: str = "auto",
 ) -> HandoffBaton:
     """Build a structured relay baton from ticket markdown and board state."""
@@ -166,13 +166,13 @@ def next_role(config: core.Config, column: str, fields: dict[str, Any]) -> tuple
     if str(fields.get("blocked_on") or "").strip():
         return roles.HUMAN, Stage.ESCALATED
     if column in (config.backlog_column, config.refining_column):
-        return "spec_analyst", Stage.REFINEMENT
+        return roles.SPEC_ANALYST, Stage.REFINEMENT
     if column in (config.ready_column, config.in_progress_column):
-        return "coder", Stage.IMPLEMENTATION
+        return roles.CODER, Stage.IMPLEMENTATION
     if column == config.verifying_column:
         if str(fields.get("reviewer") or "").strip():
-            return "integrator", Stage.CLOSURE
-        return "qa_reviewer", Stage.VERIFICATION
+            return roles.INTEGRATOR, Stage.CLOSURE
+        return roles.QA_REVIEWER, Stage.VERIFICATION
     return roles.NOBODY, Stage.CLOSED
 
 
@@ -309,7 +309,7 @@ def read_handoff_baton(project_root: Path, ticket_id: str) -> HandoffBaton | Non
             ticket_id=data.get("ticket_id", ticket_id),
             title=data.get("title", ""),
             stage=data.get("stage", "implementation"),
-            assigned_role=data.get("assigned_role", "coder"),
+            assigned_role=data.get("assigned_role", roles.CODER),
             harness=data.get("harness", "auto"),
             paths=data.get("paths", {}),
             qa_contract=qa,
@@ -327,7 +327,7 @@ def record_rejection_feedback(
     ticket_id: str,
     feedback: str,
     *,
-    author: str = "qa_reviewer",
+    author: str = roles.QA_REVIEWER,
 ) -> HandoffBaton | None:
     """Record QA or Code Review rejection feedback into baton for the coder agent."""
     baton = read_handoff_baton(project_root, ticket_id)
@@ -339,10 +339,10 @@ def record_rejection_feedback(
     }
     baton.verification_results.rejection_history.append(entry)
     baton.stage = "implementation"
-    baton.assigned_role = "coder"
+    baton.assigned_role = roles.CODER
     worktree = baton.paths.get("worktree_root", "")
     baton.next_action["prompt"] = _prompt(
-        "coder",
+        roles.CODER,
         ticket_id,
         baton.title,
         worktree or f".worktrees/{ticket_id}",

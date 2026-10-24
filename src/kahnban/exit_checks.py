@@ -7,29 +7,56 @@ and the runner still checks the board itself after the worker exits.
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from kahnban import attempts, core, frontmatter, gitops, learnings, roles
 from kahnban.fsutil import exclusive, write_text_atomic
 
-Check = Callable[[core.Config, "core.Ticket | None", dict, str, Mapping[str, str]], "str | None"]
+
+@dataclass(frozen=True)
+class ExitContext:
+    """What a check may look at: the board, the worker's environment and its ticket (none for the curator)."""
+
+    config: core.Config
+    env: Mapping[str, str]
+    ticket: core.Ticket | None = None
+    fields: Mapping[str, object] = field(default_factory=dict)
+    body: str = ""
+
+
+Check = Callable[[ExitContext], "str | None"]
+
+
+def needs_ticket(check: Callable[[ExitContext, core.Ticket], str | None]) -> Check:
+    """Turn a check on one ticket into a check that has nothing to say when the worker has none."""
+
+    @functools.wraps(check)
+    def guarded(ctx: ExitContext) -> str | None:
+        return None if ctx.ticket is None else check(ctx, ctx.ticket)
+
+    return guarded
 
 
 def problem(role: str, env: Mapping[str, str]) -> str | None:
     """Why a worker in ``role`` may not stop yet, or None. Escalating is always a way out."""
-    check = CHECKS.get(roles.role(role).get("exit", "")) if role in roles.workers() else None
-    if check is None:
+    if role not in roles.workers():
         return None
-    config = core.load_config(Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve())
-    wanted = env.get("KAHNBAN_TICKET", "")
+    name = roles.role(role).get("exit", "")
+    check = CHECKS.get(name)
+    if check is None:
+        raise core.KahnbanError(f"role '{role}' names exit check '{name}', which does not exist")
+    config = core.load_config(core.project_root_from_env(env))
+    wanted = env.get(core.ENV_TICKET, "")
     if not wanted:  # a board-wide role such as the curator
-        return check(config, None, {}, "", env)
+        return check(ExitContext(config, env))
     ticket = core.find_ticket(config, wanted)
     fields, body = frontmatter.parse(ticket.text)
     if str(fields.get("blocked_on") or "").strip():
         return None
-    return check(config, ticket, fields, body, env)
+    return check(ExitContext(config, env, ticket, fields, body))
 
 
 def _nudges(config: core.Config, role: str, ticket: str) -> Path:
@@ -38,8 +65,8 @@ def _nudges(config: core.Config, role: str, ticket: str) -> Path:
 
 def spend_nudge(role: str, env: Mapping[str, str]) -> bool:
     """Use one of the worker's ``max_stop_nudges``; False once they are spent (the runner then decides)."""
-    config = core.load_config(Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve())
-    path = _nudges(config, role, env.get("KAHNBAN_TICKET", ""))
+    config = core.load_config(core.project_root_from_env(env))
+    path = _nudges(config, role, env.get(core.ENV_TICKET, ""))
     with exclusive(path.with_suffix(".lock")):
         try:
             used = int(path.read_text(encoding="utf-8"))
@@ -58,44 +85,40 @@ def reset_nudges(config: core.Config, role: str, ticket: str) -> None:
         path.unlink(missing_ok=True)
 
 
-def committed_work(
-    config: core.Config, ticket: core.Ticket, fields: dict, body: str, env: Mapping[str, str]
-) -> str | None:
+@needs_ticket
+def committed_work(ctx: ExitContext, ticket: core.Ticket) -> str | None:
     """A coder leaves every change committed, inside the blast radius, with a commit on its branch."""
-    if ticket is None:
-        return None
-    tree = Path(env.get("KAHNBAN_WORKTREE", "")).resolve()
-    branch = core.ticket_branch(fields, ticket.ticket_id)
+    tree = Path(ctx.env.get(core.ENV_WORKTREE, "")).resolve()
+    branch = core.ticket_branch(ctx.fields, ticket.ticket_id)
     try:
-        core.require_clean_tip(config, tree, branch)
+        core.require_clean_tip(ctx.config, tree, branch)
     except core.GateError as error:
         return str(error)
-    offenders, _ = core.diff_scope_problems(config, ticket, fields, core.parse_blast_radius(body))
+    offenders, _ = core.diff_scope_problems(ctx.config, ticket, ctx.fields, core.parse_blast_radius(ctx.body))
     if offenders:
         return f"{branch} changes files outside the blast radius: {', '.join(offenders)}"
-    default = gitops.default_branch(config.project_root)
+    default = gitops.default_branch(ctx.config.project_root)
     ahead = gitops.run(tree, ["rev-list", "--count", f"{default}..HEAD"]).stdout.strip()
     if ahead == "0":
         return f"{branch} has no commits yet: finish the work and commit it, or escalate"
     return None
 
 
-def decision_recorded(
-    config: core.Config, ticket: core.Ticket, fields: dict, body: str, env: Mapping[str, str]
-) -> str | None:
+@needs_ticket
+def decision_recorded(ctx: ExitContext, ticket: core.Ticket) -> str | None:
     """A reviewer approves or rejects before stopping."""
-    if ticket is not None and ticket.column == config.verifying_column and not str(fields.get("reviewer") or "").strip():
-        return f"{ticket.ticket_id} is neither approved nor rejected. {roles.finish('qa_reviewer', ticket.ticket_id)}"
+    undecided = ticket.column == ctx.config.verifying_column and not str(ctx.fields.get("reviewer") or "").strip()
+    if undecided:
+        return f"{ticket.ticket_id} is neither approved nor rejected. {roles.finish(roles.QA_REVIEWER, ticket.ticket_id)}"
     return None
 
 
-def ready_gate_passes(
-    config: core.Config, ticket: core.Ticket, fields: dict, body: str, env: Mapping[str, str]
-) -> str | None:
+@needs_ticket
+def ready_gate_passes(ctx: ExitContext, ticket: core.Ticket) -> str | None:
     """A spec analyst leaves the ticket in a state the ready gate accepts."""
-    if ticket is None or ticket.column not in (config.backlog_column, config.refining_column):
+    if ticket.column not in (ctx.config.backlog_column, ctx.config.refining_column):
         return None
-    problems = core.ready_problems(config, ticket)
+    problems = core.ready_problems(ctx.config, ticket)
     if problems:
         return f"'kahnban ready {ticket.ticket_id}' would refuse it:\n" + "\n".join(
             f"  - {item}" for item in problems
@@ -103,11 +126,9 @@ def ready_gate_passes(
     return None
 
 
-def learnings_processed(
-    config: core.Config, ticket: core.Ticket | None, fields: dict, body: str, env: Mapping[str, str]
-) -> str | None:
+def learnings_processed(ctx: ExitContext) -> str | None:
     """The curator stops once no recurring learning is left without a fix ticket."""
-    left = learnings.recurring(config.project_root)
+    left = learnings.recurring(ctx.config.project_root)
     if not left:
         return None
     return (

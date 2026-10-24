@@ -322,3 +322,23 @@ def test_a_parked_ticket_tells_the_person_what_to_run(repo: Path) -> None:
     core.unblock(config, "TST-001", "EUR")
     core.escalate(config, "TST-001", f"{handoff.ATTENDED_REASON} review TST-001, then 'kahnban confirm TST-001'")
     assert baton(repo).next_action["command"] == "kahnban confirm TST-001"
+
+
+def test_a_role_naming_an_unknown_exit_check_is_an_error_not_a_free_pass(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from kahnban import roles
+
+    factory_board(repo)
+    monkeypatch.setitem(roles.manifest()["roles"]["coder"], "exit", "tidy_desk")
+    env = {"KAHNBAN_PROJECT_ROOT": str(repo), "KAHNBAN_TICKET": "TST-001"}
+
+    with pytest.raises(core.KahnbanError, match="exit check 'tidy_desk'"):
+        exit_checks.problem("coder", env)
+
+
+def test_a_check_on_a_ticket_has_nothing_to_say_to_a_worker_without_one(repo: Path) -> None:
+    config = factory_board(repo)
+    context = exit_checks.ExitContext(config, {})
+
+    assert exit_checks.committed_work(context) is None
+    assert exit_checks.decision_recorded(context) is None
+    assert exit_checks.ready_gate_passes(context) is None

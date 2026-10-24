@@ -14,9 +14,12 @@ import sys
 from contextlib import AbstractContextManager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 from kahnban.fsutil import exclusive, write_text_atomic
+
+if TYPE_CHECKING:
+    from kahnban.core import Config
 
 ARTIFACT_DIR = ".artifacts"
 
@@ -28,7 +31,7 @@ class Attempt:
     fingerprint: str = ""
 
 
-def artifact_dir(config: Any) -> Path:
+def artifact_dir(config: Config) -> Path:
     """The board's git-ignored scratch directory for run state."""
     directory = config.board_path / ARTIFACT_DIR
     directory.mkdir(parents=True, exist_ok=True)
@@ -38,7 +41,7 @@ def artifact_dir(config: Any) -> Path:
     return directory
 
 
-def _path(config: Any) -> Path:
+def _path(config: Config) -> Path:
     return config.board_path / ARTIFACT_DIR / "attempts.json"
 
 
@@ -69,11 +72,11 @@ def _write(path: Path, attempts: dict[str, Attempt]) -> None:
     write_text_atomic(path, json.dumps(data, indent=2) + "\n")
 
 
-def load(config: Any) -> dict[str, Attempt]:
+def load(config: Config) -> dict[str, Attempt]:
     return _read(_path(config))
 
 
-def bump(config: Any, action: str, ticket: str, fingerprint: str) -> Attempt:
+def bump(config: Config, action: str, ticket: str, fingerprint: str) -> Attempt:
     """Count one more try at ``action``; a changed ``fingerprint`` means progress, so restart at one."""
     artifact_dir(config)
     path = _path(config)
@@ -88,7 +91,7 @@ def bump(config: Any, action: str, ticket: str, fingerprint: str) -> Attempt:
         return entry
 
 
-def note(config: Any, action: str, ticket: str, last: str) -> None:
+def note(config: Config, action: str, ticket: str, last: str) -> None:
     """Remember how the latest try ended, unless the ticket's counts were cleared meanwhile."""
     path = _path(config)
     with _locked(path):
@@ -98,7 +101,7 @@ def note(config: Any, action: str, ticket: str, last: str) -> None:
             _write(path, attempts)
 
 
-def clear(config: Any, ticket_id: str) -> None:
+def clear(config: Config, ticket_id: str) -> None:
     """Forget a ticket's counts: a human or the gates have moved it on."""
     path = _path(config)
     if not path.exists():

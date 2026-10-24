@@ -18,10 +18,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import attempts, core, dispatcher, exit_checks, frontmatter, gitops, handoff, trust, worktree
+from kahnban import attempts, core, dispatcher, exit_checks, frontmatter, gitops, handoff, roles, trust, worktree
 
 CODER = "coder-agent"
-INTEGRATOR = "integrator"
+INTEGRATOR = roles.INTEGRATOR
 HEARTBEAT_SEC = 60
 
 
@@ -92,7 +92,7 @@ def run(
         if rec.action == "harvest_learnings":
             curated = True
             try:
-                code, _ = _work(config, "curator", rec, config.project_root, result.log_path)
+                code, _ = _work(config, roles.CURATOR, rec, config.project_root, result.log_path)
                 outcome = f"curator turn finished (exit {code})"
             except RunStop:
                 raise
@@ -172,7 +172,7 @@ def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path
         core.lease(config, ticket, CODER)
         return _implement(config, rec, log)
     if rec.action == "review_and_gate":
-        code, _ = _work(config, "qa_reviewer", rec, config.project_root, log)
+        code, _ = _work(config, roles.QA_REVIEWER, rec, config.project_root, log)
         reviewed = core.find_ticket(config, ticket)
         fields, _ = frontmatter.parse(reviewed.text)
         if reviewed.column == config.in_progress_column:
@@ -187,7 +187,7 @@ def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path
             if not core.needs_human(config, core.find_ticket(config, ticket)):
                 core.ready(config, ticket)
                 return "confirmed by a human; passed the ready gate"
-        code, _ = _work(config, "spec_analyst", rec, config.project_root, log)
+        code, _ = _work(config, roles.SPEC_ANALYST, rec, config.project_root, log)
         waiting = _await_human(config, ticket)
         if waiting:
             return waiting
@@ -221,7 +221,7 @@ def _implement(config: core.Config, rec: dispatcher.DispatchRecommendation, log:
     try:
         code, _ = _work(
             config,
-            "coder",
+            roles.CODER,
             rec,
             tree,
             log,
@@ -283,10 +283,10 @@ def _work(
     env = {
         **{key: value for key, value in os.environ.items() if key != trust.KEY_ENV},
         "KAHNBAN_GUARD_LOG": str(guard_log_path(log)),
-        "KAHNBAN_ROLE": role,
-        "KAHNBAN_TICKET": ticket,
-        "KAHNBAN_PROJECT_ROOT": str(config.project_root),
-        "KAHNBAN_WORKTREE": str(cwd),
+        core.ENV_ROLE: role,
+        core.ENV_TICKET: ticket,
+        core.ENV_PROJECT_ROOT: str(config.project_root),
+        core.ENV_WORKTREE: str(cwd),
     }
     # The command comes from board.config.json (the adopter's own config), so a
     # shell is fine; the prompt goes over stdin, never argv.

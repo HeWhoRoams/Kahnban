@@ -34,6 +34,14 @@ LOCK_NAME = ".claim.lock"
 LOCK_STALE_SECONDS = 300
 ARTIFACT_DIR = attempts.ARTIFACT_DIR
 ENV_ROLE = "KAHNBAN_ROLE"
+ENV_TICKET = "KAHNBAN_TICKET"
+ENV_PROJECT_ROOT = "KAHNBAN_PROJECT_ROOT"
+ENV_WORKTREE = "KAHNBAN_WORKTREE"
+
+
+def project_root_from_env(env: Mapping[str, str]) -> Path:
+    """The project a worker was started for (``KAHNBAN_PROJECT_ROOT``), or the current directory."""
+    return Path(env.get(ENV_PROJECT_ROOT, ".")).resolve()
 
 
 def worker_role() -> str:

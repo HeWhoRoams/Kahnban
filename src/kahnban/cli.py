@@ -11,12 +11,24 @@ from __future__ import annotations
 import argparse
 import glob
 import json
-import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from kahnban import __version__, core, dispatcher, gitops, ingest, linter, session, skills, skills_check, trust, worktree
+from kahnban import (
+    __version__,
+    core,
+    dispatcher,
+    gitops,
+    ingest,
+    linter,
+    roles,
+    session,
+    skills,
+    skills_check,
+    trust,
+    worktree,
+)
 
 EXIT_OK = 0
 EXIT_REFUSED = 1
@@ -535,7 +547,7 @@ def cmd_next(args: argparse.Namespace) -> int:
 
 def cmd_feedback(args: argparse.Namespace) -> int:
     """Older name for ``reject``: feedback that does not move the ticket loops forever."""
-    _report(core.reject(_load(args), args.ticket, args.author or "qa_reviewer", args.message))
+    _report(core.reject(_load(args), args.ticket, args.author or roles.QA_REVIEWER, args.message))
     return EXIT_OK
 
 def cmd_skills(args: argparse.Namespace) -> int:
@@ -986,7 +998,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fb_parser.add_argument("ticket", help="ticket ID (e.g. KB-001)")
     fb_parser.add_argument("--message", "-m", required=True, help="rejection feedback explanation")
-    fb_parser.add_argument("--author", default="qa_reviewer", help="author role recording feedback")
+    fb_parser.add_argument("--author", default=roles.QA_REVIEWER, help="author role recording feedback")
     fb_parser.set_defaults(handler=cmd_feedback)
 
     skills_parser = subparsers.add_parser(

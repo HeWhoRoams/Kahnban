@@ -88,18 +88,18 @@ def _relative_to(path: Path, base: Path) -> str | None:
 
 
 def _edit_problem(role: str, path: Path, env: Mapping[str, str]) -> str | None:
-    root = Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve()
+    root = core.project_root_from_env(env)
     scope = roles.edits(role)
     if not scope:
-        hint = f" {roles.finish(role, env.get('KAHNBAN_TICKET', ''))}" if role in roles.workers() else ""
+        hint = f" {roles.finish(role, env.get(core.ENV_TICKET, ''))}" if role in roles.workers() else ""
         return f"a {role} does not edit files.{hint}"
     config = core.load_config(root)
     if scope == "blast_radius":
-        tree = Path(env.get("KAHNBAN_WORKTREE", "")).resolve()
+        tree = Path(env.get(core.ENV_WORKTREE, "")).resolve()
         relative = _relative_to(path, tree)
         if relative is None:
             return f"{path} is outside your worktree {tree}"
-        ticket = core.find_ticket(config, env.get("KAHNBAN_TICKET", ""))
+        ticket = core.find_ticket(config, env.get(core.ENV_TICKET, ""))
         radius = core.parse_blast_radius(frontmatter.parse(ticket.text)[1])
         if core.path_within(relative, (config.board_root,)):
             return "board files are the engine's; never edit them from a ticket"
@@ -249,7 +249,7 @@ def command_problem(role: str, command: str) -> str | None:
 
 def decide(payload: Mapping[str, Any], env: Mapping[str, str]) -> str | None:
     """The reason to block this tool call, or None to allow it."""
-    role = env.get("KAHNBAN_ROLE", "").strip()
+    role = env.get(core.ENV_ROLE, "").strip()
     if not role:
         return None
     tool = str(payload.get("tool_name") or "")
@@ -264,13 +264,13 @@ def decide(payload: Mapping[str, Any], env: Mapping[str, str]) -> str | None:
             return None
         path = Path(raw)
         if not path.is_absolute():
-            path = Path(str(payload.get("cwd") or env.get("KAHNBAN_WORKTREE") or ".")) / path
+            path = Path(str(payload.get("cwd") or env.get(core.ENV_WORKTREE) or ".")) / path
         try:
             return _edit_problem(role, path.resolve(), env)
         except core.KahnbanError as error:
             return f"guard could not check this edit ({error}); refusing"
     if tool in SHELL_TOOLS:
-        cwd = Path(str(payload.get("cwd") or env.get("KAHNBAN_WORKTREE") or "."))
+        cwd = Path(str(payload.get("cwd") or env.get(core.ENV_WORKTREE) or "."))
         return _bash_problem(role, str(tool_input.get("command") or ""), cwd, env, powershell=tool == "PowerShell")
     return None
 
@@ -289,8 +289,8 @@ def _log_refusal(reason: str, payload: Mapping[str, Any]) -> None:
     attempted = tool_input.get("command") or tool_input.get("file_path") or payload.get("command") or ""
     entry = {
         "time": datetime.now().isoformat(timespec="seconds"),
-        "role": os.environ.get("KAHNBAN_ROLE", ""),
-        "ticket": os.environ.get("KAHNBAN_TICKET", ""),
+        "role": os.environ.get(core.ENV_ROLE, ""),
+        "ticket": os.environ.get(core.ENV_TICKET, ""),
         "tool": payload.get("tool_name") or "shell",
         "reason": reason,
         "attempted": str(attempted)[:200],
@@ -304,7 +304,7 @@ def _log_refusal(reason: str, payload: Mapping[str, Any]) -> None:
 
 def _report_refusal(reason: str) -> None:
     """Tell the ``on-refusal`` hook; a hook that fails never changes the guard's answer."""
-    root = os.environ.get("KAHNBAN_PROJECT_ROOT", "")
+    root = os.environ.get(core.ENV_PROJECT_ROOT, "")
     if not root:
         return
     try:
@@ -313,8 +313,8 @@ def _report_refusal(reason: str) -> None:
         hooks.run_hook(
             Path(root),
             "on-refusal",
-            os.environ.get("KAHNBAN_TICKET", ""),
-            payload={"gate": "guard", "role": os.environ.get("KAHNBAN_ROLE", ""), "reason": reason},
+            os.environ.get(core.ENV_TICKET, ""),
+            payload={"gate": "guard", "role": os.environ.get(core.ENV_ROLE, ""), "reason": reason},
             timeout=5.0,
         )
     except Exception:
@@ -328,7 +328,7 @@ def main(*, stop: bool = False) -> int:
     except json.JSONDecodeError:
         payload = {}
     if stop:
-        role = os.environ.get("KAHNBAN_ROLE", "").strip()
+        role = os.environ.get(core.ENV_ROLE, "").strip()
         if not role:
             return 0
         try:

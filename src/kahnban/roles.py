@@ -17,6 +17,11 @@ from typing import Any
 
 MANIFEST = Path(__file__).parent / "templates" / "roles.json"
 PLACEHOLDER = "<ID>"
+SPEC_ANALYST = "spec_analyst"
+CODER = "coder"
+QA_REVIEWER = "qa_reviewer"
+INTEGRATOR = "integrator"
+CURATOR = "curator"
 FACTS = {"worktree", "qa_contract", "branch"}  # what handoff.py can say about a ticket
 HUMAN = "human"  # who acts next on an escalated ticket
 NOBODY = "none"  # who acts next on a finished one
