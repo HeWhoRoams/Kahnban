@@ -211,7 +211,11 @@ Each is a pure refactor: the suite plus the golden agent files and the guard tab
 | 0: Standards pass over unread files | Done as a function-length scan only: `skills.install_skills` (156 lines; T6 shortens it), `handoff.build_handoff_baton` (97), `runner._work` (80), `skills_check.audit` (71). `core.py` itself is still unread for smells; its size is T9 |
 | PR A: C1, C2, X1, X2, C3, A2, A3, A4 | Done |
 | PR C: C6, T1 | Done early because CI on Windows 3.10 failed `test_concurrent_runners_do_not_lose_counts`: Windows raises `PermissionError`, not `FileExistsError`, while a lock file is being deleted. `fsutil.exclusive` now covers attempts and stop nudges |
-| PR B, PR D, PR E | Not started |
+| PR B: A1, C4, C5, A5, A6, A7, A8 | Done |
+| PR D: T2–T8, T10, T11 | Done: `ExitContext`, role and environment constants, `Role` dataclass, unknown `exit` raises, one loop for the agent harnesses, two hook layout classes, comments dropped. Not done: shortening `handoff.build_handoff_baton` (97 lines), `runner._work` (80) and `skills_check.audit` (about 70), and T9, the `core.py` split |
+| PR E: C7, A9, B-notes | Done: `CHANGELOG.md`, `how-it-works.md` prose. The `unslop` pass over earlier README rows was not run |
+
+The PowerShell tool is named `PowerShell` in this session's own tool list, which is what a hook payload carries; a payload from a Windows worker was not captured.
 
 Changes from the plan as written, made while implementing PR A:
 
