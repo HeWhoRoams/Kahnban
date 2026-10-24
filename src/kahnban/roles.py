@@ -87,19 +87,28 @@ def instructions(name: str, ticket: str = "") -> list[str]:
     return lines
 
 
-def agent_markdown(name: str) -> str:
-    """The Claude Code agent file for one worker role."""
+def agent_markdown(name: str, harness: str = "claude") -> str:
+    """The native agent file for one worker role.
+
+    Claude Code preloads ``skills:`` and restricts ``tools:``. Gemini CLI and Cursor have
+    neither, so their files tell the agent which skills to read first; the guard hook
+    holds them to the role's commands and files in every harness.
+    """
     spec = role(name)
-    front = [
-        "---",
-        f"name: {agent_name(name)}",
-        f"description: {spec['description']}",
-        f"tools: {spec['tools']}",
-    ]
-    if spec.get("skills"):
-        front += ["skills:", *(f"  - {skill}" for skill in spec["skills"])]
+    front = ["---", f"name: {agent_name(name)}", f"description: {spec['description']}"]
+    skills = spec.get("skills", [])
+    if harness == "claude":
+        front.append(f"tools: {spec['tools']}")
+        if skills:
+            front += ["skills:", *(f"  - {skill}" for skill in skills)]
+    elif harness == "gemini":
+        front.append("kind: local")
     intro = f"You are the Kahnban {spec['title']}. {_fill(spec['intro'], PLACEHOLDER)}"
-    return "\n".join([*front, "---", "", intro, "", *instructions(name), ""])
+    body = [intro, ""]
+    if skills and harness != "claude":
+        paths = ", ".join(f"`.agents/skills/{skill}/SKILL.md`" for skill in skills)
+        body += [f"Before you start, read and follow these skills: {paths}.", ""]
+    return "\n".join([*front, "---", "", *body, *instructions(name), ""])
 
 
 def _fill(text: str, ticket: str) -> str:

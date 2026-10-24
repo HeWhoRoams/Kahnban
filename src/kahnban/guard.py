@@ -1,6 +1,7 @@
 """``kahnban guard`` — keep a factory worker inside its role.
 
-Installed as a Claude Code ``PreToolUse`` hook. It reads the hook's JSON from
+Installed as a Claude Code ``PreToolUse`` hook, and as the equivalent hook in Gemini CLI
+(``BeforeTool``) and Cursor (``beforeShellExecution``, ``preToolUse``). It reads the hook's JSON from
 stdin and exits 2 (block, reason on stderr) or 0 (allow). It only acts when
 ``KAHNBAN_ROLE`` is set, which ``kahnban run`` does for every worker it starts,
 so ordinary interactive sessions are never affected.
@@ -23,7 +24,14 @@ from typing import Any
 
 from kahnban import core, frontmatter, gitops, roles
 
-EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+# Tool names differ per harness: Claude Code, Gemini CLI, Cursor.
+EDIT_TOOLS = {
+    "Edit", "Write", "MultiEdit", "NotebookEdit",
+    "write_file", "replace",
+    "StrReplace", "Delete", "EditNotebook",
+}
+SHELL_TOOLS = {"Bash", "run_shell_command", "Shell"}
+PATH_KEYS = ("file_path", "notebook_path", "path", "target_file")
 # Which commands and files each role gets lives in templates/roles.json.
 OVERRIDE_FLAGS = {"--force", "--force-scope", "--force-overlap", "--abandon", "--no-verify"}
 GIT_FORBIDDEN = re.compile(
@@ -125,8 +133,10 @@ def decide(payload: Mapping[str, Any], env: Mapping[str, str]) -> str | None:
         return None
     tool = str(payload.get("tool_name") or "")
     tool_input = payload.get("tool_input") or {}
+    if not tool and "command" in payload:  # Cursor's beforeShellExecution has no tool name
+        tool, tool_input = "Bash", {"command": payload["command"]}
     if tool in EDIT_TOOLS:
-        raw = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
+        raw = next((tool_input[key] for key in PATH_KEYS if tool_input.get(key)), "")
         if not raw:
             return None
         path = Path(raw)
@@ -136,7 +146,7 @@ def decide(payload: Mapping[str, Any], env: Mapping[str, str]) -> str | None:
             return _edit_problem(role, path.resolve(), env)
         except core.KahnbanError as error:
             return f"guard could not check this edit ({error}); refusing"
-    if tool == "Bash":
+    if tool in SHELL_TOOLS:
         return _bash_problem(role, str(tool_input.get("command") or ""))
     return None
 
@@ -191,7 +201,7 @@ def main(*, stop: bool = False) -> int:
     if stop:
         role = os.environ.get("KAHNBAN_ROLE", "").strip()
         # One push back per stop: if the agent still stops, the runner's own check decides.
-        if not role or payload.get("stop_hook_active"):
+        if not role or payload.get("stop_hook_active") or payload.get("loop_count"):
             return 0
         try:
             reason = exit_problem(role, os.environ)
@@ -200,6 +210,10 @@ def main(*, stop: bool = False) -> int:
             return 0
     else:
         reason = decide(payload, os.environ)
+    if reason and stop and "conversation_id" in payload:
+        # Cursor's stop hook can't block; it re-prompts the agent with followup_message.
+        print(json.dumps({"followup_message": reason}))
+        return 0
     if reason:
         print(reason, file=sys.stderr)  # Claude Code already labels it with the hook's name
         return 2
