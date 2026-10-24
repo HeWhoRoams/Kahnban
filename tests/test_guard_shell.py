@@ -123,3 +123,106 @@ def test_an_unknown_write_target_is_refused(env: dict[str, str]) -> None:
 def test_unbalanced_quotes_fall_back_to_the_words() -> None:
     with pytest.raises(ValueError):
         guard_shell.parse('echo "unterminated')
+
+
+def checking(env: dict[str, str], command: str, role: str = "coder", tool: str = "Bash") -> str | None:
+    payload = {"tool_name": tool, "tool_input": {"command": command}, "cwd": env["KAHNBAN_WORKTREE"]}
+    return guard.decide(payload, {**env, "KAHNBAN_ROLE": role})
+
+
+SPLIT_QUOTES = [
+    ('git m""erge other', "runner's job"),
+    ('git --no-pager "mer"ge x', "runner's job"),
+    ("git 'pu''sh' origin main", "runner's job"),
+    ('kahnban verify TST-001 --force""-scope --reason x', "override flags"),
+    ("kahnban verify TST-001 --no-ver\"\"ify", "override flags"),
+    ("git mer\\ge other", "runner's job"),
+]
+OPAQUE = [
+    "x=merge; git $x",
+    "git$IFS merge",
+    "$tool push origin main",
+    "kahnban $sub TST-001",
+    'git "$sub" main',
+]
+OTHER_HISTORY = [
+    "git branch -f main HEAD",
+    "git branch --force main HEAD",
+    "git -c core.x=y branch -D main",
+    "git branch -m main old",
+    "git cherry-pick abc123",
+    "git worktree add ../elsewhere",
+    "git tag -d v1",
+    "git tag -f v1",
+    "git symbolic-ref HEAD refs/heads/main",
+]
+CLEARING_THE_ROLE = [
+    "KAHNBAN_ROLE= kahnban ready TST-001",
+    "env -u KAHNBAN_ROLE kahnban approve TST-001 --reviewer x",
+    "env --unset=KAHNBAN_ROLE kahnban ready TST-001",
+    "env -i kahnban ready TST-001",
+    "env KAHNBAN_ROLE=human kahnban ready TST-001",
+    "export KAHNBAN_ROLE=",
+    "unset KAHNBAN_ROLE; kahnban ready TST-001",
+    "bash -c 'unset KAHNBAN_ROLE; kahnban ready TST-001'",
+    "KAHNBAN_TICKET=TST-009 pytest -q",
+]
+MORE_ALLOWED = [
+    'git commit -m "--no-verify is for humans"',
+    'git commit -m "a `b` c"',
+    "git commit -m \"$(cat <<'EOF'\nfix: merge docs, mention git push and --force\n\nbody (with parens)\nEOF\n)\"",
+    "sudo -u builder pytest -q",
+    "git branch --list",
+    "git branch -a",
+    'git tag -a v1 -m "release"',
+    "cd src && echo x > app.py",
+    "(cd src && pytest -q); echo ok",
+    "echo KAHNBAN_ROLE is documented",
+]
+
+
+@pytest.mark.parametrize(("command", "why"), SPLIT_QUOTES)
+def test_quotes_inside_a_word_do_not_hide_what_it_says(env: dict[str, str], command: str, why: str) -> None:
+    assert why in (checking(env, command) or "")
+
+
+@pytest.mark.parametrize("command", OPAQUE)
+def test_a_command_or_subcommand_from_an_expansion_is_refused(env: dict[str, str], command: str) -> None:
+    assert "cannot tell" in (checking(env, command) or "")
+
+
+@pytest.mark.parametrize("command", OTHER_HISTORY)
+def test_other_commands_that_rewrite_shared_refs_are_refused(env: dict[str, str], command: str) -> None:
+    problem = checking(env, command) or ""
+    assert "runner's job" in problem or "override flags" in problem, command
+
+
+@pytest.mark.parametrize("command", CLEARING_THE_ROLE)
+def test_a_worker_cannot_clear_or_change_its_own_role(env: dict[str, str], command: str) -> None:
+    assert "runner's" in (checking(env, command) or ""), command
+
+
+@pytest.mark.parametrize("command", MORE_ALLOWED)
+def test_more_ordinary_commands_pass(env: dict[str, str], command: str) -> None:
+    assert checking(env, command) is None, command
+
+
+def test_a_write_after_cd_is_judged_where_it_lands(env: dict[str, str]) -> None:
+    assert "outside your worktree" in (checking(env, "cd .. && echo x > a.txt") or "")
+    assert "blast radius" in (checking(env, "cd src && echo x > other.py") or "")
+    assert "cannot tell where" in (checking(env, "cd $ELSEWHERE && echo x > src/app.py") or "")
+    assert checking(env, "(cd .. ); echo x > src/app.py") is None  # the subshell's cd does not leak
+
+
+def test_unbalanced_quotes_are_refused_for_a_reviewer_and_judged_by_words_for_a_coder(env: dict[str, str]) -> None:
+    assert "unbalanced quotes" in (checking(env, 'echo "oops', "qa_reviewer") or "")
+    assert checking(env, 'echo "oops') is None
+    assert "override flags" in (checking(env, 'echo "oops --force') or "")
+
+
+def test_the_powershell_tool_gets_the_same_answers(env: dict[str, str]) -> None:
+    assert "runner's job" in (checking(env, "git push origin main", tool="PowerShell") or "")
+    assert "blast radius" in (checking(env, "Set-Content -Path README.md -Value x", tool="PowerShell") or "")
+    assert "runner's" in (checking(env, "$env:KAHNBAN_ROLE = ''; kahnban ready TST-001", tool="PowerShell") or "")
+    assert "runner's" in (checking(env, "Remove-Item Env:KAHNBAN_ROLE", tool="PowerShell") or "")
+    assert checking(env, 'git commit -m "fix `"quoted`" text"', tool="PowerShell") is None

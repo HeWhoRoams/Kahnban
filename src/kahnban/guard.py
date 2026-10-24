@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 import os
-import shlex
+import re
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -29,38 +29,47 @@ EDIT_TOOLS = {
     "write_file", "replace",
     "StrReplace", "Delete", "EditNotebook",
 }
-SHELL_TOOLS = {"Bash", "run_shell_command", "Shell"}
+SHELL_TOOLS = {"Bash", "run_shell_command", "Shell", "PowerShell"}
 READ_TOOLS = {"Read", "read_file", "ReadFile", "Grep", "Glob"}
 SECRET_REFUSAL = "the signing key is the runner's, not a worker's to read"
 PATH_KEYS = ("file_path", "notebook_path", "path", "target_file")
 OVERRIDE_FLAGS = {"--force", "--force-scope", "--force-overlap", "--abandon", "--no-verify"}
-GIT_FORBIDDEN = {"merge", "push", "rebase", "filter-branch", "update-ref"}
+GIT_FORBIDDEN = {
+    "merge", "push", "rebase", "filter-branch", "update-ref", "cherry-pick", "worktree", "symbolic-ref", "replace", "gc",
+}
+MESSAGE_OPTIONS = {"-m", "--message", "-F", "--file", "--reason", "-C", "--author", "--date"}
+ENV_COMMANDS = {"export", "unset", "set", "declare", "typeset", "readonly", "setx", "setenv", "set-item", "remove-item", "ri", "si"}
+ENV_REFUSAL = "KAHNBAN_* variables and the environment are the runner's; a worker does not change or clear them"
 KAHNBAN_GLOBAL_OPTIONS = {"--project-root", "--config"}
 
 
-def _kahnban_subcommands(command: str) -> list[str]:
-    """Subcommands of every ``kahnban`` / ``python -m kahnban`` call in a command line."""
-    try:
-        tokens = shlex.split(command, posix=os.name != "nt")
-    except ValueError:
-        tokens = command.split()
+def _unescaped(word: str) -> str:
+    """A shell drops a backslash before an ordinary letter, so ``mer`` + backslash + ``ge`` is ``merge``."""
+    return word.replace("\\", "")
+
+
+def _kahnban_subcommands(words: list[str], expands: list[bool]) -> tuple[list[str], bool]:
+    """Subcommands of every ``kahnban`` / ``python -m kahnban`` call in ``words``, and whether one is an expansion."""
     found: list[str] = []
-    for index, token in enumerate(tokens):
-        name = Path(token.strip("\"'")).name.lower()
-        if name not in ("kahnban", "kahnban.exe"):
+    opaque = False
+    for index, word in enumerate(words):
+        if Path(word).name.lower() not in ("kahnban", "kahnban.exe"):
             continue
-        rest = iter(tokens[index + 1 :])
-        for item in rest:
-            if item in KAHNBAN_GLOBAL_OPTIONS:
-                next(rest, None)
-            elif not item.startswith("-"):
-                command = item.lower()
+        positions = iter(range(index + 1, len(words)))
+        for position in positions:
+            if words[position] in KAHNBAN_GLOBAL_OPTIONS:
+                next(positions, None)
+            elif not words[position].startswith("-"):
+                if expands[position]:
+                    opaque = True
+                    break
+                command = _unescaped(words[position]).lower()
                 if command == "spec":  # its action decides: drafting is fine, approving is not
-                    action = next((t for t in rest if not t.startswith("-")), "")
-                    command = f"spec {action.lower()}".strip()
+                    action = next((p for p in positions if not words[p].startswith("-")), None)
+                    command = f"spec {words[action].lower()}" if action is not None else command
                 found.append(command)
                 break
-    return found
+    return found, opaque
 
 
 def _relative_to(path: Path, base: Path) -> str | None:
@@ -109,15 +118,91 @@ def _names_the_key(*texts: str) -> bool:
     return any(trust.KEY_ENV.lower() in text.lower() or folder in os.path.normcase(text) for text in texts)
 
 
-def _git_subcommand(words: list[str]) -> tuple[str, list[str]]:
-    """The git subcommand in ``words`` and what follows it, skipping git's global options."""
+def _git_subcommand(words: list[str], expands: list[bool]) -> tuple[str, list[str], bool]:
+    """The git subcommand in ``words``, what follows it, and whether it comes from an expansion."""
     if not words or Path(words[0]).name.lower().removesuffix(".exe") != "git":
-        return "", []
+        return "", [], False
     takes_value = {"-c", "-C", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--super-prefix"}
     index = 1
     while index < len(words) and words[index].startswith("-"):
         index += 2 if words[index] in takes_value else 1
-    return (words[index].lower(), words[index + 1 :]) if index < len(words) else ("", [])
+    if index >= len(words):
+        return "", [], False
+    return _unescaped(words[index]).lower(), words[index + 1 :], expands[index]
+
+
+def _rewrites_shared_state(subcommand: str, rest: list[str]) -> bool:
+    """History and ref changes that are the runner's job, however git is asked to make them."""
+    if subcommand in GIT_FORBIDDEN or (subcommand == "reset" and "--hard" in rest):
+        return True
+    flags = [word for word in rest if word.startswith("-")]
+    if subcommand == "branch":
+        return any(flag in {"--force", "--delete", "--move"} or re.match(r"^-[A-Za-z]*[fdDmM]", flag) for flag in flags)
+    if subcommand == "tag":
+        return any(flag in {"--force", "--delete"} or re.match(r"^-[A-Za-z]*[fd]", flag) for flag in flags)
+    return False
+
+
+def _override_flags(words: list[str]) -> list[str]:
+    """Override flags among ``words``, not counting text given as a message or reason."""
+    flags: set[str] = set()
+    skip = False
+    for word in words:
+        if skip:
+            skip = False
+        elif word in MESSAGE_OPTIONS:
+            skip = True
+        elif _unescaped(word).split("=", 1)[0] in OVERRIDE_FLAGS:
+            flags.add(_unescaped(word).split("=", 1)[0])
+    return sorted(flags)
+
+
+def _environment_problem(item: guard_shell.Simple) -> str | None:
+    """The worker's role and run state are the runner's: refuse a command that would clear or change them."""
+    words = [word.lower() for word in item.words]
+    name = Path(item.words[0]).name.lower().removesuffix(".exe") if item.words else ""
+    env_words = [word.lower() for word in item.env]
+    mentions = any("kahnban_" in word for word in [*env_words, *words])
+    wrapped_in_env = any(Path(word).name.lower().removesuffix(".exe") == "env" for word in item.env)
+    clears = wrapped_in_env and any(word in {"-i", "--ignore-environment", "-u", "--unset"} for word in item.env)
+    sets = name in ENV_COMMANDS or any(word.startswith(("$env:", "env:")) for word in words)
+    if (mentions and (sets or any("kahnban_" in word for word in env_words))) or clears:
+        return ENV_REFUSAL
+    return None
+
+
+def _item_problem(role: str, item: guard_shell.Simple, env: Mapping[str, str]) -> str | None:
+    if _names_the_key(*item.words):
+        return SECRET_REFUSAL
+    problem = _environment_problem(item)
+    if problem:
+        return problem
+    flags = _override_flags(item.words)
+    if flags:
+        return f"override flags are for humans: {', '.join(flags)}"
+    if item.words and item.expands[0]:
+        return "cannot tell what this runs: the command name comes from an expansion"
+    subcommand, rest, expanded = _git_subcommand(item.words, item.expands)
+    if expanded:
+        return "cannot tell which git command this is: the subcommand comes from an expansion"
+    if _rewrites_shared_state(subcommand, rest):
+        return "merging, pushing and rewriting history is the runner's job"
+    if subcommand == "commit" and not roles.edits(role):
+        return f"a {role} does not commit"
+    commands, opaque = _kahnban_subcommands(item.words, item.expands)
+    if opaque:
+        return "cannot tell which kahnban command this is: the subcommand comes from an expansion"
+    for kahnban_command in commands:
+        problem = command_problem(role, kahnban_command)
+        if problem:
+            return problem
+    for target in item.writes:
+        if item.cwd is None:
+            return f"cannot tell where '{target}' writes: an earlier cd could not be followed"
+        problem = _write_problem(role, target, item.cwd, env)
+        if problem:
+            return problem
+    return None
 
 
 def _write_problem(role: str, target: str, cwd: Path, env: Mapping[str, str]) -> str | None:
@@ -131,30 +216,18 @@ def _write_problem(role: str, target: str, cwd: Path, env: Mapping[str, str]) ->
         return f"guard could not check this write ({error}); refusing"
 
 
-def _bash_problem(role: str, command: str, cwd: Path, env: Mapping[str, str]) -> str | None:
+def _bash_problem(role: str, command: str, cwd: Path, env: Mapping[str, str], *, powershell: bool = False) -> str | None:
     try:
-        commands = guard_shell.parse(command)
-    except ValueError:  # unbalanced quoting: judge the words as they stand
-        commands = [guard_shell.Simple(command.split(), command.split())]
+        commands = guard_shell.parse(command, cwd=cwd, powershell=powershell)
+    except ValueError:
+        if not roles.edits(role):
+            return "cannot read this command line (unbalanced quotes); write it plainly"
+        words = command.split()  # a coder keeps working, judged on the words as they stand
+        commands = [guard_shell.Simple(words, words, [False] * len(words), [], [], cwd)]
     for item in commands:
-        if _names_the_key(*item.words):
-            return SECRET_REFUSAL
-        flags = sorted(OVERRIDE_FLAGS & {word.split("=", 1)[0] for word in item.words})
-        if flags:
-            return f"override flags are for humans: {', '.join(flags)}"
-        subcommand, rest = _git_subcommand(item.words)
-        if subcommand in GIT_FORBIDDEN or (subcommand == "reset" and "--hard" in rest):
-            return "merging, pushing and rewriting history is the runner's job"
-        if subcommand == "commit" and not roles.edits(role):
-            return f"a {role} does not commit"
-        for kahnban_command in _kahnban_subcommands(" ".join(item.raw)):
-            problem = command_problem(role, kahnban_command)
-            if problem:
-                return problem
-        for target in item.writes:
-            problem = _write_problem(role, target, cwd, env)
-            if problem:
-                return problem
+        problem = _item_problem(role, item, env)
+        if problem:
+            return problem
     return None
 
 
@@ -193,7 +266,7 @@ def decide(payload: Mapping[str, Any], env: Mapping[str, str]) -> str | None:
             return f"guard could not check this edit ({error}); refusing"
     if tool in SHELL_TOOLS:
         cwd = Path(str(payload.get("cwd") or env.get("KAHNBAN_WORKTREE") or "."))
-        return _bash_problem(role, str(tool_input.get("command") or ""), cwd, env)
+        return _bash_problem(role, str(tool_input.get("command") or ""), cwd, env, powershell=tool == "PowerShell")
     return None
 
 
