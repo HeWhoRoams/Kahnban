@@ -254,6 +254,8 @@ def _work(
     if not template:
         raise RunStop(_NO_WORKER.format(role=f"role '{role}'"))
     ticket = rec.ticket_id or ""
+    if ticket:
+        core.refresh_baton_strict(config, ticket, f"starting the {role}")
     exit_checks.reset_nudges(config, role, ticket)
     command = template.replace("{role}", role.replace("_", "-")).replace("{ticket}", ticket)
     env = {

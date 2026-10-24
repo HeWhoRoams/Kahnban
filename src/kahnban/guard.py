@@ -203,6 +203,25 @@ def exit_problem(role: str, env: Mapping[str, str]) -> str | None:
     return exit_checks.problem(role, env)
 
 
+def _report_refusal(reason: str) -> None:
+    """Tell the ``on-refusal`` hook; a hook that fails never changes the guard's answer."""
+    root = os.environ.get("KAHNBAN_PROJECT_ROOT", "")
+    if not root:
+        return
+    try:
+        from kahnban import hooks
+
+        hooks.run_hook(
+            Path(root),
+            "on-refusal",
+            os.environ.get("KAHNBAN_TICKET", ""),
+            payload={"gate": "guard", "role": os.environ.get("KAHNBAN_ROLE", ""), "reason": reason},
+            timeout=5.0,
+        )
+    except Exception:
+        pass
+
+
 def main(*, stop: bool = False) -> int:
     """``kahnban guard`` as a PreToolUse hook, or with ``--stop`` as a Stop hook."""
     try:
@@ -228,6 +247,7 @@ def main(*, stop: bool = False) -> int:
         print(json.dumps({"followup_message": reason}))
         return 0
     if reason:
+        _report_refusal(reason)
         print(reason, file=sys.stderr)  # Claude Code already labels it with the hook's name
         return 2
     return 0

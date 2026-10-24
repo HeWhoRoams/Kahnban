@@ -148,6 +148,7 @@ class Config:
     worker_timeout_sec: int = 3600
     max_attempts: int = 3
     max_stop_nudges: int = 2
+    strict_hooks: bool = False
     autonomy: str = Autonomy.UNATTENDED
     human_gates: tuple[str, ...] = (HumanGate.MERGE,)
     require_signed_approvals: bool = False
@@ -320,6 +321,7 @@ def load_config(
         worker_timeout_sec=int(raw.get("worker_timeout_sec", 3600)),
         max_attempts=int(raw.get("max_attempts", 3)),
         max_stop_nudges=int(raw.get("max_stop_nudges", 2)),
+        strict_hooks=bool(raw.get("strict_hooks", False)),
         autonomy=str(raw.get("autonomy", Autonomy.UNATTENDED)),
         human_gates=tuple(str(gate) for gate in raw.get("human_gates") or (HumanGate.MERGE,)),
         require_signed_approvals=bool(raw.get("require_signed_approvals", False)),
@@ -1130,6 +1132,29 @@ def log_line(entry: str, *, timestamp: datetime | None = None) -> str:
     return f"- {stamp} - {entry}"
 
 
+def _check_veto(config: Config, ticket: Ticket, target_column: str, log_entry: str) -> None:
+    """Run the ``pre-transition`` hook: exit 2 vetoes the move; with ``strict_hooks`` so does any failure."""
+    from kahnban import hooks
+
+    event = {"from": ticket.column, "to": target_column, "log_entry": log_entry}
+    veto = hooks.run_hook(
+        config.project_root, "pre-transition", ticket.ticket_id, column=target_column, payload=event
+    )
+    if not veto.executed:
+        return
+    if veto.exit_code == 2:
+        raise GateError(
+            f"pre-transition hook refused {ticket.column} -> {target_column}: "
+            + (veto.stderr.strip() or "no reason given")
+        )
+    if config.strict_hooks and veto.exit_code != 0:
+        raise GateError(
+            f"pre-transition hook failed (exit {veto.exit_code}) and strict_hooks is on, so "
+            f"{ticket.column} -> {target_column} is refused: "
+            + (veto.stderr.strip() or "no output")
+        )
+
+
 def transition(
     config: Config,
     ticket_id: str,
@@ -1141,6 +1166,7 @@ def transition(
     commit_message: str | None = None,
     timestamp: datetime | None = None,
     verification: Mapping[str, object] | None = None,
+    vetoed: bool = False,
 ) -> TransitionResult:
     """Move a ticket and commit the board change on the default branch.
 
@@ -1159,14 +1185,8 @@ def transition(
     ticket = find_ticket(config, ticket_id)
     _require_board_branch(config)
     event = {"from": ticket.column, "to": target_column, "log_entry": log_entry}
-    veto = hooks.run_hook(
-        config.project_root, "pre-transition", ticket.ticket_id, column=target_column, payload=event
-    )
-    if veto.executed and veto.exit_code == 2:
-        raise GateError(
-            f"pre-transition hook refused {ticket.column} -> {target_column}: "
-            + (veto.stderr.strip() or "no reason given")
-        )
+    if not vetoed:  # claim runs the veto itself, before it creates a worktree
+        _check_veto(config, ticket, target_column, log_entry)
     now = timestamp or datetime.now()
 
     updates: dict[str, object] = {
@@ -1243,6 +1263,16 @@ def _refresh_baton(
     except (KahnbanError, frontmatter.FrontmatterError, OSError) as error:
         messages.append(f"[WARN] handoff baton not refreshed: {error}")
         return None
+
+
+def refresh_baton_strict(config: Config, ticket_id: str, event: str) -> Path | None:
+    """Rewrite the baton and fail loudly; None means the baton feature is off for this project."""
+    from kahnban import handoff
+
+    try:
+        return handoff.refresh(config, ticket_id, event=event)
+    except (frontmatter.FrontmatterError, OSError) as error:
+        raise KahnbanError(f"handoff baton for {ticket_id} cannot be written: {error}") from error
 
 
 def _report_refusal(config: Config, ticket_id: str, gate: str, reason: str) -> None:
@@ -1780,6 +1810,7 @@ def claim(
                 + "]"
             )
 
+        _check_veto(config, ticket, target, f"claimed by {owner.strip()} -> {target}")
         for attempt in (1, 2):
             info: worktree.WorktreeInfo | None = None
             updates: dict[str, object] = {"owner": owner.strip(), **contract_updates}
@@ -1804,14 +1835,22 @@ def claim(
                 log_entry += " | " + "; ".join(
                     message for message in messages if not message.startswith("[WARN]")
                 ).strip(" ;")
-            result = transition(
-                config,
-                ticket.ticket_id,
-                target,
-                log_entry=log_entry.rstrip(" |"),
-                fm_updates=updates,
-                timestamp=timestamp,
-            )
+            try:
+                result = transition(
+                    config,
+                    ticket.ticket_id,
+                    target,
+                    log_entry=log_entry.rstrip(" |"),
+                    fm_updates=updates,
+                    timestamp=timestamp,
+                    vetoed=True,
+                )
+            except Exception:
+                if info is not None:  # a refused claim leaves no worktree or branch behind
+                    worktree.teardown(
+                        config.project_root, ticket.ticket_id, junctions=info.junctions, force=True
+                    )
+                raise
             result.messages = [*messages, *result.messages]
             write_lease(config, ticket.ticket_id, owner.strip())
             from kahnban.handoff import get_handoff_path
@@ -1991,6 +2030,7 @@ def lease(
         return result
 
 
+@_refusals_reported
 def escalate(
     config: Config, ticket_id: str, reason: str, *, timestamp: datetime | None = None
 ) -> TransitionResult:
@@ -2027,6 +2067,7 @@ def escalate(
     return result
 
 
+@_refusals_reported
 def unblock(
     config: Config, ticket_id: str, reason: str, *, timestamp: datetime | None = None
 ) -> TransitionResult:
@@ -2050,6 +2091,7 @@ def unblock(
     return result
 
 
+@_refusals_reported
 def confirm(
     config: Config, ticket_id: str, *, timestamp: datetime | None = None
 ) -> TransitionResult:
@@ -2946,6 +2988,7 @@ def merge(
         )
 
 
+@_refusals_reported
 def move(
     config: Config,
     ticket_id: str,
@@ -2973,6 +3016,7 @@ def move(
         return result
 
 
+@_refusals_reported
 def cleanup(
     config: Config,
     ticket_id: str,
@@ -3059,6 +3103,7 @@ def init_board(
         "require_integration": True,
         "require_spec": False,
         "require_signed_approvals": True,
+        "strict_hooks": True,
         "max_blast_radius_files": 3,
         "stale_after_days": 3,
         "allowed_commands": [],

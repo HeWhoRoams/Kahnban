@@ -168,3 +168,113 @@ def test_nudges_are_per_worker_and_reset_for_the_next_one(repo: Path) -> None:
     assert exit_checks.spend_nudge("qa_reviewer", env)  # another role has its own budget
     exit_checks.reset_nudges(config, "coder", "TST-001")
     assert exit_checks.spend_nudge("coder", env)
+
+
+def hook_dir(repo: Path) -> Path:
+    directory = repo / ".kahnban" / "hooks"
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+LOG_REFUSALS = (
+    "import json, sys\n"
+    "with open('refusals.jsonl', 'a', encoding='utf-8') as log:\n"
+    "    log.write(json.dumps(json.load(sys.stdin)) + chr(10))\n"
+)
+
+
+def refused_gates(repo: Path) -> set[str]:
+    lines = (repo / "refusals.jsonl").read_text(encoding="utf-8").splitlines()
+    return {json.loads(line)["gate"] for line in lines}
+
+
+def test_a_vetoed_claim_leaves_no_worktree_branch_or_lease(repo: Path) -> None:
+    from test_factory_run import ready_ticket
+
+    config = factory_board(repo)
+    ready_ticket(config)
+    (hook_dir(repo) / "pre-transition.py").write_text(
+        "import sys\nprint('freeze: release week', file=sys.stderr)\nsys.exit(2)\n", encoding="utf-8"
+    )
+
+    with pytest.raises(core.GateError, match="freeze: release week"):
+        core.claim(config, "TST-001", "coder", create_worktree=True)
+
+    assert not (repo / ".worktrees" / "TST-001").exists()
+    assert not core.branch_tip(config, "ticket/TST-001")
+    assert not core.live_lease(config, "TST-001")
+    assert core.find_ticket(config, "TST-001").column == "2-ready"
+
+
+def test_strict_hooks_refuse_a_move_when_the_veto_hook_itself_fails(repo: Path) -> None:
+    from test_factory_run import ready_ticket
+
+    config = factory_board(repo)
+    ready_ticket(config)
+    (hook_dir(repo) / "pre-transition.py").write_text("raise SystemExit(1)\n", encoding="utf-8")
+
+    core.claim(config, "TST-001", "coder", create_worktree=False)  # lenient by default: a broken hook only reports
+    core.escalate(config, "TST-001", "park it")
+    core.unblock(config, "TST-001", "back")
+
+    strict = core.load_config(repo)
+    object.__setattr__(strict, "strict_hooks", True)
+    with pytest.raises(core.GateError, match="strict_hooks is on"):
+        core.escalate(strict, "TST-001", "park it again")
+
+
+def test_every_command_that_can_refuse_tells_the_on_refusal_hook(repo: Path) -> None:
+    from test_factory_run import ready_ticket
+
+    config = factory_board(repo)
+    ready_ticket(config)
+    (hook_dir(repo) / "on-refusal.py").write_text(LOG_REFUSALS, encoding="utf-8")
+
+    refusals = [
+        lambda: core.escalate(config, "TST-001", ""),
+        lambda: core.unblock(config, "TST-001", ""),
+        lambda: core.confirm(config, "TST-001"),
+        lambda: core.move(config, "TST-001", "2-ready", reason=""),
+        lambda: core.cleanup(config, "TST-001"),
+    ]
+    for attempt in refusals:
+        with pytest.raises(core.KahnbanError):
+            attempt()
+
+    assert refused_gates(repo) == {"escalate", "unblock", "confirm", "move", "cleanup"}
+
+
+def test_a_guard_refusal_reaches_the_on_refusal_hook(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    factory_board(repo)
+    (hook_dir(repo) / "on-refusal.py").write_text(LOG_REFUSALS, encoding="utf-8")
+    monkeypatch.setenv("KAHNBAN_ROLE", "qa_reviewer")
+    monkeypatch.setenv("KAHNBAN_PROJECT_ROOT", str(repo))
+    payload = {"tool_name": "Bash", "tool_input": {"command": "kahnban claim TST-001"}}
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(payload)))
+
+    assert main(["guard"]) == 2
+    assert "not a qa_reviewer's" in capsys.readouterr().err
+    assert refused_gates(repo) == {"guard"}
+
+
+def test_a_move_survives_an_unwritable_baton_but_the_next_worker_is_not_started_on_it(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from test_factory_run import ready_ticket
+
+    config = factory_board(repo)
+    (repo / ".agents").mkdir()
+    ready_ticket(config)
+
+    def refuse(*args: object, **kwargs: object) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(handoff, "write_handoff_baton", refuse)
+
+    claimed_result = core.claim(config, "TST-001", "coder", create_worktree=False)
+    assert core.find_ticket(config, "TST-001").column == "3-in-progress"
+    assert any("handoff baton not refreshed" in message for message in claimed_result.messages)
+    with pytest.raises(core.KahnbanError, match="cannot be written"):
+        core.refresh_baton_strict(config, "TST-001", "starting the coder")
