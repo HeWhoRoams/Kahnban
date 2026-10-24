@@ -212,8 +212,8 @@ Each is a pure refactor: the suite plus the golden agent files and the guard tab
 | PR A: C1, C2, X1, X2, C3, A2, A3, A4 | Done |
 | PR C: C6, T1 | Done early because CI on Windows 3.10 failed `test_concurrent_runners_do_not_lose_counts`: Windows raises `PermissionError`, not `FileExistsError`, while a lock file is being deleted. `fsutil.exclusive` now covers attempts and stop nudges |
 | PR B: A1, C4, C5, A5, A6, A7, A8 | Done |
-| PR D: T2–T8, T10, T11 | Done: `ExitContext`, role and environment constants, `Role` dataclass, unknown `exit` raises, one loop for the agent harnesses, two hook layout classes, comments dropped. Not done: shortening `handoff.build_handoff_baton` (97 lines), `runner._work` (80) and `skills_check.audit` (about 70), and T9, the `core.py` split |
-| PR E: C7, A9, B-notes | Done: `CHANGELOG.md`, `how-it-works.md` prose. The `unslop` pass over earlier README rows was not run |
+| PR D: T2-T11 | Done: `ExitContext`, role and environment constants, `Role` dataclass, unknown `exit` raises, one loop for the agent harnesses, two hook layout classes, comments dropped, `_work`, `build_handoff_baton` and `audit` split, and T9: `config.py` and `scaffold.py` leave `core.py` (3,300 lines down to about 2,800; `core` re-exports the config names). The big gate functions (`verify` 255 lines, `claim` 182) are still long |
+| PR E: C7, A9, B-notes | Done: `CHANGELOG.md`, `how-it-works.md` prose, and the Trust and Autonomy README rows rewritten against the `unslop` rules. The older README rows still carry em dashes |
 
 The PowerShell tool is named `PowerShell` in this session's own tool list, which is what a hook payload carries; a payload from a Windows worker was not captured.
 
