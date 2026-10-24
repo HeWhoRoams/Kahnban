@@ -221,6 +221,15 @@ def parse_learning(file_path: Path) -> LearningRecord:
     )
 
 
+def recurring(project_root: Path) -> list[LearningRecord]:
+    """Active learnings that came back (twice or more) or are critical: they need a structural fix."""
+    return [
+        record
+        for record in list_learnings(project_root, include_archive=False)
+        if record.occurrences >= 2 or record.severity == "critical"
+    ]
+
+
 def list_learnings(project_root: Path, include_archive: bool = False) -> list[LearningRecord]:
     """List all learning records in the project's ./learnings/ directory."""
     root = Path(project_root).resolve()

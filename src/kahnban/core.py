@@ -147,6 +147,7 @@ class Config:
     workers: Mapping[str, str] = field(default_factory=dict)
     worker_timeout_sec: int = 3600
     max_attempts: int = 3
+    max_stop_nudges: int = 2
     autonomy: str = Autonomy.UNATTENDED
     human_gates: tuple[str, ...] = (HumanGate.MERGE,)
     require_signed_approvals: bool = False
@@ -318,6 +319,7 @@ def load_config(
         workers={str(k): str(v) for k, v in dict(raw.get("workers") or {}).items()},
         worker_timeout_sec=int(raw.get("worker_timeout_sec", 3600)),
         max_attempts=int(raw.get("max_attempts", 3)),
+        max_stop_nudges=int(raw.get("max_stop_nudges", 2)),
         autonomy=str(raw.get("autonomy", Autonomy.UNATTENDED)),
         human_gates=tuple(str(gate) for gate in raw.get("human_gates") or (HumanGate.MERGE,)),
         require_signed_approvals=bool(raw.get("require_signed_approvals", False)),

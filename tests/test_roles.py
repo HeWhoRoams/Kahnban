@@ -110,7 +110,9 @@ def test_cursor_stop_hook_re_prompts_once(monkeypatch, capsys) -> None:
     import json
     import sys
 
+    budget = iter([True, False])
     monkeypatch.setattr(guard, "exit_problem", lambda role, env: "still uncommitted")
+    monkeypatch.setattr(guard.exit_checks, "spend_nudge", lambda role, env: next(budget))
     monkeypatch.setenv("KAHNBAN_ROLE", "coder")
     monkeypatch.setattr(sys, "stdin", io.StringIO('{"conversation_id": "c", "loop_count": 0}'))
     assert guard.main(stop=True) == 0

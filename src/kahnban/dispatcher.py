@@ -131,11 +131,7 @@ def resolve_next_action(
     # list_learnings already tolerates a missing directory and reports unreadable files.
     from kahnban import learnings
 
-    recurring = [
-        record
-        for record in learnings.list_learnings(root, include_archive=False)
-        if record.occurrences >= 2 or record.severity == "critical"
-    ]
+    recurring = learnings.recurring(root)
     if recurring and not skip_harvest and preferred_role in (None, "curator"):
         count = len(recurring)
         return DispatchRecommendation(

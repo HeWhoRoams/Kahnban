@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import attempts, core, dispatcher, frontmatter, gitops, trust, worktree
+from kahnban import attempts, core, dispatcher, exit_checks, frontmatter, gitops, trust, worktree
 
 CODER = "coder-agent"
 INTEGRATOR = "integrator"
@@ -254,6 +254,7 @@ def _work(
     if not template:
         raise RunStop(_NO_WORKER.format(role=f"role '{role}'"))
     ticket = rec.ticket_id or ""
+    exit_checks.reset_nudges(config, role, ticket)
     command = template.replace("{role}", role.replace("_", "-")).replace("{ticket}", ticket)
     env = {
         **{key: value for key, value in os.environ.items() if key != trust.KEY_ENV},

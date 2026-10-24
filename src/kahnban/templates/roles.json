@@ -83,7 +83,7 @@
     },
     "curator": {
       "title": "curator",
-      "exit": "none",
+      "exit": "learnings_processed",
       "description": "Kahnban learnings curator. Turns recurring entries in ./learnings/ into tickets for structural fixes. Never changes code directly.",
       "tools": "Read, Edit, Write, Grep, Glob, Bash",
       "skills": ["harvest-learnings"],

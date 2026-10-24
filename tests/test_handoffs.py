@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import core, guard, handoff
+from kahnban import core, exit_checks, guard, handoff
 from kahnban.cli import main
 from conftest import git, write_ticket
 from test_factory_gates import CHECK_APP, FIX, claimed, commit_work, factory_board
@@ -114,14 +114,20 @@ def test_a_worker_cannot_stop_before_its_role_is_done(
     (tree / "src" / "app.py").write_text("def f():\n    return 2\n", encoding="utf-8")
     assert "uncommitted changes" in guard.exit_problem("coder", coder)
 
-    # The Stop hook pushes back once, then lets a second stop through to the runner's check.
+    # The Stop hook pushes back max_stop_nudges (2) times, then lets the stop through to the
+    # runner's own check; a new worker starts with a full budget again.
     for name, value in coder.items():
         monkeypatch.setenv(name, value)
-    monkeypatch.setattr(sys, "stdin", io.StringIO("{}"))
-    assert main(["guard", "--stop"]) == 2
-    assert "uncommitted changes" in capsys.readouterr().err
+    for _ in range(2):
+        monkeypatch.setattr(sys, "stdin", io.StringIO('{"stop_hook_active": true}'))
+        assert main(["guard", "--stop"]) == 2
+        assert "uncommitted changes" in capsys.readouterr().err
     monkeypatch.setattr(sys, "stdin", io.StringIO('{"stop_hook_active": true}'))
     assert main(["guard", "--stop"]) == 0
+    exit_checks.reset_nudges(config, "coder", "TST-001")
+    monkeypatch.setattr(sys, "stdin", io.StringIO("{}"))
+    assert main(["guard", "--stop"]) == 2
+    capsys.readouterr()
 
     commit_work(tree, FIX)
     assert guard.exit_problem("coder", coder) is None
@@ -140,3 +146,25 @@ def test_a_worker_cannot_stop_before_its_role_is_done(
     write_ticket(config.board_path, "0-backlog", "TST-003", "idea", acceptance=())
     analyst = {**coder, "KAHNBAN_ROLE": "spec_analyst", "KAHNBAN_TICKET": "TST-003"}
     assert "has no checkboxes" in guard.exit_problem("spec_analyst", analyst)
+
+
+def test_the_curator_cannot_stop_while_a_recurring_learning_has_no_fix(board: Path) -> None:
+    from kahnban import learnings
+
+    env = {"KAHNBAN_ROLE": "curator", "KAHNBAN_PROJECT_ROOT": str(board), "KAHNBAN_TICKET": ""}
+    assert guard.exit_problem("curator", env) is None
+
+    for _ in range(2):
+        learnings.capture_learning(board, title="Flaky clock", problem="sleep races", ticket_id="TST-001")
+
+    assert "1 recurring learning(s) still need a structural fix ticket" in guard.exit_problem("curator", env)
+
+
+def test_nudges_are_per_worker_and_reset_for_the_next_one(repo: Path) -> None:
+    config = factory_board(repo)
+    env = {"KAHNBAN_PROJECT_ROOT": str(repo), "KAHNBAN_TICKET": "TST-001"}
+
+    assert [exit_checks.spend_nudge("coder", env) for _ in range(3)] == [True, True, False]
+    assert exit_checks.spend_nudge("qa_reviewer", env)  # another role has its own budget
+    exit_checks.reset_nudges(config, "coder", "TST-001")
+    assert exit_checks.spend_nudge("coder", env)

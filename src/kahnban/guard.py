@@ -211,11 +211,13 @@ def main(*, stop: bool = False) -> int:
         payload = {}
     if stop:
         role = os.environ.get("KAHNBAN_ROLE", "").strip()
-        # One push back per stop: if the agent still stops, the runner's own check decides.
-        if not role or payload.get("stop_hook_active") or payload.get("loop_count"):
+        if not role:
             return 0
         try:
             reason = exit_problem(role, os.environ)
+            # A few pushes back (max_stop_nudges), then the runner's own check decides.
+            if reason and not exit_checks.spend_nudge(role, os.environ):
+                reason = None
         except (core.KahnbanError, frontmatter.FrontmatterError, OSError) as error:
             print(f"kahnban guard --stop could not check this exit ({error})", file=sys.stderr)
             return 0

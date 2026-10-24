@@ -31,6 +31,16 @@ class Attempt:
     fingerprint: str = ""
 
 
+def artifact_dir(config: Any) -> Path:
+    """The board's git-ignored scratch directory for run state."""
+    directory = config.board_path / ARTIFACT_DIR
+    directory.mkdir(parents=True, exist_ok=True)
+    gitignore = directory / ".gitignore"
+    if not gitignore.exists():
+        gitignore.write_text("*\n", encoding="utf-8", newline="\n")
+    return directory
+
+
 def _path(config: Any) -> Path:
     return config.board_path / ARTIFACT_DIR / "attempts.json"
 
@@ -42,9 +52,6 @@ def _key(action: str, ticket: str) -> str:
 @contextmanager
 def _locked(path: Path) -> Iterator[None]:
     path.parent.mkdir(parents=True, exist_ok=True)
-    gitignore = path.parent / ".gitignore"
-    if not gitignore.exists():
-        gitignore.write_text("*\n", encoding="utf-8", newline="\n")
     lock = path.with_suffix(".lock")
     deadline = time.monotonic() + LOCK_WAIT_SEC
     while True:
@@ -97,6 +104,7 @@ def load(config: Any) -> dict[str, Attempt]:
 
 def bump(config: Any, action: str, ticket: str, fingerprint: str) -> Attempt:
     """Count one more try at ``action``; a changed ``fingerprint`` means progress, so restart at one."""
+    artifact_dir(config)
     path = _path(config)
     with _locked(path):
         attempts = _read(path)

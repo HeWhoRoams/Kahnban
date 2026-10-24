@@ -10,9 +10,9 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
-from kahnban import core, frontmatter, gitops, roles
+from kahnban import attempts, core, frontmatter, gitops, learnings, roles
 
-Check = Callable[[core.Config, core.Ticket, dict, str, Mapping[str, str]], "str | None"]
+Check = Callable[[core.Config, "core.Ticket | None", dict, str, Mapping[str, str]], "str | None"]
 
 
 def problem(role: str, env: Mapping[str, str]) -> str | None:
@@ -21,17 +21,45 @@ def problem(role: str, env: Mapping[str, str]) -> str | None:
     if check is None:
         return None
     config = core.load_config(Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve())
-    ticket = core.find_ticket(config, env.get("KAHNBAN_TICKET", ""))
+    wanted = env.get("KAHNBAN_TICKET", "")
+    if not wanted:  # a board-wide role such as the curator
+        return check(config, None, {}, "", env)
+    ticket = core.find_ticket(config, wanted)
     fields, body = frontmatter.parse(ticket.text)
     if str(fields.get("blocked_on") or "").strip():
         return None
     return check(config, ticket, fields, body, env)
 
 
+def _nudges(config: core.Config, role: str, ticket: str) -> Path:
+    return attempts.artifact_dir(config) / f"stop-nudges-{role}-{ticket or 'board'}.count"
+
+
+def spend_nudge(role: str, env: Mapping[str, str]) -> bool:
+    """Use one of the worker's ``max_stop_nudges``; False once they are spent (the runner then decides)."""
+    config = core.load_config(Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve())
+    path = _nudges(config, role, env.get("KAHNBAN_TICKET", ""))
+    try:
+        used = int(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        used = 0
+    if used >= config.max_stop_nudges:
+        return False
+    path.write_text(str(used + 1), encoding="utf-8")
+    return True
+
+
+def reset_nudges(config: core.Config, role: str, ticket: str) -> None:
+    """Each worker the runner starts gets its full nudge budget."""
+    _nudges(config, role, ticket).unlink(missing_ok=True)
+
+
 def committed_work(
     config: core.Config, ticket: core.Ticket, fields: dict, body: str, env: Mapping[str, str]
 ) -> str | None:
     """A coder leaves every change committed, inside the blast radius, with a commit on its branch."""
+    if ticket is None:
+        return None
     tree = Path(env.get("KAHNBAN_WORKTREE", "")).resolve()
     branch = core.ticket_branch(fields, ticket.ticket_id)
     try:
@@ -52,7 +80,7 @@ def decision_recorded(
     config: core.Config, ticket: core.Ticket, fields: dict, body: str, env: Mapping[str, str]
 ) -> str | None:
     """A reviewer approves or rejects before stopping."""
-    if ticket.column == config.verifying_column and not str(fields.get("reviewer") or "").strip():
+    if ticket is not None and ticket.column == config.verifying_column and not str(fields.get("reviewer") or "").strip():
         return f"{ticket.ticket_id} is neither approved nor rejected. {roles.finish('qa_reviewer', ticket.ticket_id)}"
     return None
 
@@ -61,7 +89,7 @@ def ready_gate_passes(
     config: core.Config, ticket: core.Ticket, fields: dict, body: str, env: Mapping[str, str]
 ) -> str | None:
     """A spec analyst leaves the ticket in a state the ready gate accepts."""
-    if ticket.column not in (config.backlog_column, config.refining_column):
+    if ticket is None or ticket.column not in (config.backlog_column, config.refining_column):
         return None
     problems = core.ready_problems(config, ticket)
     if problems:
@@ -71,7 +99,22 @@ def ready_gate_passes(
     return None
 
 
+def learnings_processed(
+    config: core.Config, ticket: core.Ticket | None, fields: dict, body: str, env: Mapping[str, str]
+) -> str | None:
+    """The curator stops once no recurring learning is left without a fix ticket."""
+    left = learnings.recurring(config.project_root)
+    if not left:
+        return None
+    return (
+        f"{len(left)} recurring learning(s) still need a structural fix ticket: "
+        + ", ".join(record.id for record in left)
+        + ". File each with `kahnban new`, archive it, or stop only when none remain."
+    )
+
+
 CHECKS: dict[str, Check] = {
+    "learnings_processed": learnings_processed,
     "committed_work": committed_work,
     "decision_recorded": decision_recorded,
     "ready_gate_passes": ready_gate_passes,
