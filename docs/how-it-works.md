@@ -74,7 +74,7 @@ flowchart TD
   gate -.->|any check fails| stay["refused,<br/>stays in 2-ready"]
 ```
 
-Passing records a lease for the owner. With `--worktree` (which `kahnban run` always uses) it creates the worktree `.worktrees/<ID>` on branch `ticket/<ID>` and writes `.agents/HANDOFF.json` into it. It also fires the `post-claim` hook.
+The `pre-transition` hook can veto the claim, and it is asked before anything is created, so a vetoed claim leaves no worktree, branch or lease. Passing records a lease for the owner. With `--worktree` (which `kahnban run` always uses) it creates the worktree `.worktrees/<ID>` on branch `ticket/<ID>` and writes `.agents/HANDOFF.json` into it. It also fires the `post-claim` hook.
 
 ### In progress
 
@@ -206,7 +206,7 @@ The dispatcher takes the first row that matches, so finishing work comes before 
 | 4 | a `2-ready` ticket whose blast radius is free | claims it into a worktree, then implements and verifies it | coder |
 | 5 | a ticket in `0-backlog` or `1-refining` | starts refinement, then runs the ready gate | spec-analyst |
 
-Escalating sets `blocked_on: human: <reason>` and fires the `on-escalate` hook. The dispatcher skips the ticket until someone runs `kahnban unblock`, and the run carries on with the rest of the board. Workers run with `KAHNBAN_ROLE` set, so [`kahnban guard`](../README.md#running-the-factory-kahnban-run) and the CLI refuse anything outside their role, and its Stop hook pushes back once if a worker tries to stop before its role is done.
+Escalating sets `blocked_on: human: <reason>` and fires the `on-escalate` hook. The dispatcher skips the ticket until someone runs `kahnban unblock`, and the run carries on with the rest of the board. Workers run with `KAHNBAN_ROLE` set, so [`kahnban guard`](../README.md#running-the-factory-kahnban-run) and the CLI refuse anything outside their role, and its Stop hook pushes back up to `max_stop_nudges` times (default 2) if a worker tries to stop before its role is done. With `"autonomy": "attended"` the runner parks a ticket before the `merge` gate (and `ready`, if listed in `human_gates`) until a person runs `kahnban confirm <ID>`.
 
 ### The merge queue
 
