@@ -210,6 +210,9 @@ def scaffold_board(repo: Path, config_overrides: dict | None = None) -> Path:
 def _signing_keys_stay_in_the_sandbox(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("KAHNBAN_KEY_DIR", str(tmp_path / "keys"))
     monkeypatch.delenv("KAHNBAN_SIGNING_KEY", raising=False)
+    # A test that rewrites a same-sized source file within one second would otherwise run
+    # the stale .pyc on Linux, where mtimes are coarser than on Windows.
+    monkeypatch.setenv("PYTHONDONTWRITEBYTECODE", "1")
 
 
 @pytest.fixture()
