@@ -89,3 +89,31 @@ def test_retry_counts_survive_between_runs(repo: Path) -> None:
 def test_invalid_autonomy_is_refused(repo: Path) -> None:
     with pytest.raises(core.KahnbanError, match="autonomy must be"):
         factory_board(repo, autonomy="sometimes")
+
+
+def test_a_ready_confirmation_covers_only_the_contract_a_human_saw(repo: Path, monkeypatch) -> None:
+    config = factory_board(repo, autonomy="attended", human_gates=["ready"])
+    write_ticket(config.board_path, "1-refining", "TST-001", "fix", acceptance=(CRITERION,),
+                 blast_radius=("src/app.py", "tests/check_app.py"), validation=CHECK)
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "refine TST-001")
+
+    assert core.needs_human(config, core.find_ticket(config, "TST-001")) == "ready"
+    assert main(["--project-root", str(repo), "confirm", "TST-001"]) == 0
+    assert core.needs_human(config, core.find_ticket(config, "TST-001")) == ""
+
+    ticket = core.find_ticket(config, "TST-001")
+    ticket.path.write_text(ticket.text.replace("returns 2", "returns 3"), encoding="utf-8")
+    assert core.needs_human(config, core.find_ticket(config, "TST-001")) == "ready"
+
+
+def test_passing_the_ready_gate_spends_the_confirmation(repo: Path) -> None:
+    config = factory_board(repo, autonomy="attended", human_gates=["ready"])
+    write_ticket(config.board_path, "1-refining", "TST-001", "fix", acceptance=(CRITERION,),
+                 blast_radius=("src/app.py", "tests/check_app.py"), validation=CHECK)
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "refine TST-001")
+    core.confirm(config, "TST-001")
+    core.ready(config, "TST-001")
+
+    assert not fields_of(config).get("confirmed")

@@ -1572,7 +1572,7 @@ def ready(
         ticket.ticket_id,
         target,
         log_entry=f"ready gate passed -> {target} | contract {frozen}",
-        fm_updates={"contract_hash": frozen},
+        fm_updates={"contract_hash": frozen, "confirmed": ""},
         timestamp=timestamp,
     )
     from kahnban.handoff import get_handoff_path
@@ -2037,20 +2037,21 @@ def confirm(
 ) -> TransitionResult:
     """``kahnban confirm`` — a human signs off the next gate of an attended run.
 
-    Before ``ready`` that is the refined ticket; in verifying it is the exact branch tip
-    that ``merge`` will land. The mark is tied to that tip, so new commits need a new one.
+    Before ``ready`` that is the refined ticket's contract; in verifying it is the exact
+    branch tip that ``merge`` will land. Each mark is tied to what was reviewed, so an
+    edited contract or new commits need a new one.
     """
     with board_lock(config) as lock_warnings:
         _require_board_branch(config)
         ticket = find_ticket(config, ticket_id)
-        fields, _ = frontmatter.parse(ticket.text)
+        fields, body = frontmatter.parse(ticket.text)
         gate = _human_gate(config, ticket.column)
         if not gate:
             raise GateError(
                 f"{ticket.ticket_id} is in {ticket.column}; only a ticket waiting for 'ready' "
                 "or 'merge' has anything to confirm"
             )
-        mark = gate
+        mark = f"ready:{contract_hash(body)}"
         if gate == "merge":
             tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
             if not tip:
@@ -2081,10 +2082,10 @@ def needs_human(config: Config, ticket: Ticket) -> str:
     gate = _human_gate(config, ticket.column)
     if config.autonomy != "attended" or gate not in config.human_gates:
         return ""
-    fields, _ = frontmatter.parse(ticket.text)
+    fields, body = frontmatter.parse(ticket.text)
     mark = str(fields.get("confirmed") or "").strip()
     if gate == "ready":
-        return "" if mark == "ready" else gate
+        return "" if mark == f"ready:{contract_hash(body)}" else gate
     tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
     return "" if mark == f"merge:{tip}" else gate
 
