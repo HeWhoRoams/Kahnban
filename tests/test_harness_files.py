@@ -139,3 +139,32 @@ def test_reads_of_the_signing_key_are_refused_under_every_harness_tool_name(tool
     payload = {"tool_name": tool, "tool_input": {"file_path": key, "pattern": "x"}}
 
     assert "signing key" in (guard.decide(payload, {"KAHNBAN_ROLE": "coder"}) or "")
+
+
+def test_check_notices_a_cursor_rule_that_is_not_kahnbans_and_hooks_left_without_agents(tmp_path: Path) -> None:
+    import shutil
+
+    skills.install_skills(tmp_path, harness="all")
+    (tmp_path / ".cursor" / "rules" / "kanban.mdc").write_text("be nice\n", encoding="utf-8")
+    shutil.rmtree(tmp_path / ".claude" / "agents")
+
+    report = "\n".join(skills_check.audit(tmp_path))
+    assert ".cursor/rules/kanban.mdc is not Kahnban's rule" in report
+    assert ".claude/settings.json still runs the guard but .claude/agents/ is missing" in report
+
+
+def test_cursors_follow_up_cap_follows_max_stop_nudges(repo: Path) -> None:
+    from conftest import set_board_config, scaffold_board
+
+    scaffold_board(repo)
+    set_board_config(repo, max_stop_nudges=4)
+    cursor = repo / ".cursor" / "hooks.json"
+
+    skills.install_skills(repo, harness="cursor")
+    assert json.loads(cursor.read_text(encoding="utf-8"))["hooks"]["stop"][0]["loop_limit"] == 4
+    assert not any("out-of-date" in problem for problem in skills_check.audit(repo))
+
+    set_board_config(repo, max_stop_nudges=3)
+    assert any("out-of-date" in problem for problem in skills_check.audit(repo))  # the file still says 4
+    skills.install_skills(repo, harness="cursor")
+    assert json.loads(cursor.read_text(encoding="utf-8"))["hooks"]["stop"][0]["loop_limit"] == 3

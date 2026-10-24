@@ -14,7 +14,15 @@ from pathlib import Path
 from typing import Any
 
 from kahnban import cli, exit_checks, frontmatter, roles, trust
-from kahnban.harnesses import AGENT_HARNESSES, HARNESS_HOOKS, HOOK_FILES, entry_for, is_current
+from kahnban.harnesses import (
+    AGENT_HARNESSES,
+    CURSOR_RULE_HEADING,
+    HOOK_FILES,
+    entry_for,
+    hooks_for,
+    is_current,
+    stop_nudges,
+)
 from kahnban.skills import TEMPLATES_SKILLS_DIR
 
 SKILL_REF = re.compile(r"(?:^|[\s`(])/([a-z][a-z0-9-]*)")
@@ -128,6 +136,7 @@ def _project_drift(root: Path, source: Path | None) -> list[str]:
     for harness in AGENT_HARNESSES:
         agents_dir = root / f".{harness}" / "agents"
         if not agents_dir.is_dir():
+            problems += _hooks_without_agents(root, harness)
             continue
         for name in roles.workers():
             path = agents_dir / f"{roles.agent_name(name)}.md"
@@ -142,21 +151,43 @@ def _project_drift(root: Path, source: Path | None) -> list[str]:
 def _hook_problems(root: Path, harness: str) -> list[str]:
     """A harness with generated agents must also run the guard: without it the role is only advice."""
     fix = f"re-run 'kahnban skills install --harness {harness}'"
-    rule = root / ".cursor" / "rules" / "kanban.mdc"
-    problems = [f".cursor/rules/kanban.mdc is missing; {fix}"] if harness == "cursor" and not rule.is_file() else []
+    problems = _cursor_rule_problems(root, fix) if harness == "cursor" else []
     path = root / HOOK_FILES[harness]
     label = path.relative_to(root).as_posix()
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return [f"{label} is missing or not valid JSON, so the guard hooks are not installed; {fix}", *problems]
-    for hook in HARNESS_HOOKS[harness]:
+    for hook in hooks_for(harness, stop_nudges(root)):
         entry = entry_for(harness, data, hook)
         if entry is None:
             problems.append(f"{label} has no {hook.event} hook running '{hook.command}'; {fix}")
         elif not is_current(harness, entry, hook):
             problems.append(f"{label} runs '{hook.command}' for {hook.event} with an out-of-date matcher; {fix}")
     return problems
+
+
+def _cursor_rule_problems(root: Path, fix: str) -> list[str]:
+    rule = root / ".cursor" / "rules" / "kanban.mdc"
+    if not rule.is_file():
+        return [f".cursor/rules/kanban.mdc is missing; {fix}"]
+    if CURSOR_RULE_HEADING not in rule.read_text(encoding="utf-8"):
+        return [f".cursor/rules/kanban.mdc is not Kahnban's rule (no '{CURSOR_RULE_HEADING}' heading); {fix}"]
+    return []
+
+
+def _hooks_without_agents(root: Path, harness: str) -> list[str]:
+    """The guard is wired into a harness whose agent files are gone: it would hold nobody to a role."""
+    try:
+        data = json.loads((root / HOOK_FILES[harness]).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    if any(entry_for(harness, data, hook) for hook in hooks_for(harness)):
+        return [
+            f"{HOOK_FILES[harness].as_posix()} still runs the guard but .{harness}/agents/ is missing; "
+            f"re-run 'kahnban skills install --harness {harness}'"
+        ]
+    return []
 
 
 def _text(path: Path) -> str:

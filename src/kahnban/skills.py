@@ -24,6 +24,7 @@ from kahnban.harnesses import (
     HOOK_FILES,
     VSCODE_MCP_SERVER,
     merge_hooks,
+    stop_nudges,
     write_agents,
 )
 
@@ -209,7 +210,7 @@ def install_skills(
             claude_skills.mkdir(parents=True, exist_ok=True)
             _copy_tree_contents(agents_skills_dir, claude_skills)
             write_agents(root / ".claude" / "agents")
-            merge_hooks(root / HOOK_FILES["claude"], "claude", messages)
+            merge_hooks(root / HOOK_FILES["claude"], "claude", messages, stop_nudges(root))
             messages.append(
                 "Commit .claude/ so ticket worktrees inherit the agents and the guard hook."
             )
@@ -221,7 +222,7 @@ def install_skills(
             gemini_skills.mkdir(parents=True, exist_ok=True)
             _copy_tree_contents(agents_skills_dir, gemini_skills)
             write_agents(root / ".gemini" / "agents", "gemini")
-            merge_hooks(root / HOOK_FILES["gemini"], "gemini", messages)
+            merge_hooks(root / HOOK_FILES["gemini"], "gemini", messages, stop_nudges(root))
             messages.append("Commit .gemini/ so ticket worktrees inherit the agents and the guard hook.")
         configured_harnesses.append("gemini (.gemini/skills/, .gemini/agents/, guard hook)")
 
@@ -233,7 +234,7 @@ def install_skills(
             if not rule_file.exists():
                 write_text_atomic(rule_file, CURSOR_MDC_CONTENT)
             write_agents(root / ".cursor" / "agents", "cursor")
-            merge_hooks(root / HOOK_FILES["cursor"], "cursor", messages)
+            merge_hooks(root / HOOK_FILES["cursor"], "cursor", messages, stop_nudges(root))
             messages.append("Commit .cursor/ so ticket worktrees inherit the agents and the guard hook.")
         configured_harnesses.append("cursor (.cursor/rules/kanban.mdc, .cursor/agents/, guard hook)")
 

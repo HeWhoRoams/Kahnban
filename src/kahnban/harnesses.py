@@ -75,6 +75,26 @@ def installed_commands(harness: str, data: dict[str, Any], event: str) -> list[s
     return [h.get("command") for entry in entries for h in entry.get("hooks", [])]
 
 
+def stop_nudges(root: Path) -> int:
+    """The board's ``max_stop_nudges``, or the default when there is no readable board."""
+    try:
+        from kahnban import core
+
+        return core.load_config(root, check_version=False).max_stop_nudges
+    except Exception:
+        return 2
+
+
+def hooks_for(harness: str, nudges: int = 2) -> tuple[HookEvent, ...]:
+    """The hook table for ``harness``, with Cursor's follow-up cap matching ``max_stop_nudges``."""
+    return tuple(
+        HookEvent(hook.event, hook.command, hook.matcher, {**hook.options, "loop_limit": nudges})
+        if "loop_limit" in hook.options
+        else hook
+        for hook in HARNESS_HOOKS[harness]
+    )
+
+
 def entry_for(harness: str, data: dict[str, Any], hook: HookEvent) -> dict[str, Any] | None:
     """The entry in a harness config that runs ``hook``'s command for its event, if any."""
     for entry in data.get("hooks", {}).get(hook.event, []):
@@ -100,7 +120,7 @@ def _refresh(harness: str, entry: dict[str, Any], hook: HookEvent) -> None:
         entry.pop("matcher", None)
 
 
-def merge_hooks(path: Path, harness: str, messages: list[str]) -> None:
+def merge_hooks(path: Path, harness: str, messages: list[str], nudges: int = 2) -> None:
     """Add the guard and stop hooks to ``path``, bringing an older entry up to date and keeping the rest."""
     data: dict[str, Any] = {"version": 1} if harness == "cursor" else {}
     if path.is_file():
@@ -110,7 +130,7 @@ def merge_hooks(path: Path, harness: str, messages: list[str]) -> None:
             messages.append(f"{path} is not valid JSON; add the '{GUARD_COMMAND}' hooks by hand.")
             return
     added = False
-    for hook in HARNESS_HOOKS[harness]:
+    for hook in hooks_for(harness, nudges):
         entry = entry_for(harness, data, hook)
         if entry is None:
             data.setdefault("hooks", {}).setdefault(hook.event, []).append(_entry(harness, hook))
@@ -130,6 +150,7 @@ def write_agents(agents_dir: Path, harness: str = "claude") -> None:
         write_text_atomic(agents_dir / f"{roles.agent_name(name)}.md", roles.agent_markdown(name, harness))
 
 
+CURSOR_RULE_HEADING = "# Kahnban Engineering Protocols"
 CURSOR_MDC_CONTENT = """---
 description: Kahnban Software Factory Rules & Matt Pocock Skills
 globs: *
