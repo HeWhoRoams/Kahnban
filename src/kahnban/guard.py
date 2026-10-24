@@ -21,7 +21,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from kahnban import core, frontmatter, gitops, guard_shell, roles, trust
+from kahnban import core, exit_checks, frontmatter, guard_shell, roles, trust
 
 # Tool names differ per harness: Claude Code, Gemini CLI, Cursor.
 EDIT_TOOLS = {
@@ -199,44 +199,8 @@ def decide(payload: Mapping[str, Any], env: Mapping[str, str]) -> str | None:
 
 
 def exit_problem(role: str, env: Mapping[str, str]) -> str | None:
-    """Why a worker in ``role`` may not stop yet, or None.
-
-    Escalating is always a valid way out. Otherwise a coder must leave every change
-    committed, inside the blast radius, with at least one commit on its branch; a
-    reviewer must have approved or rejected; a spec analyst's ticket must pass the
-    ready gate. The runner still checks the board itself after the worker exits.
-    """
-    if role not in ("coder", "qa_reviewer", "spec_analyst"):
-        return None
-    config = core.load_config(Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve())
-    ticket = core.find_ticket(config, env.get("KAHNBAN_TICKET", ""))
-    fields, body = frontmatter.parse(ticket.text)
-    if str(fields.get("blocked_on") or "").strip():
-        return None
-    if role == "coder":
-        tree = Path(env.get("KAHNBAN_WORKTREE", "")).resolve()
-        branch = core.ticket_branch(fields, ticket.ticket_id)
-        try:
-            core._require_clean_tip(config, tree, branch)
-        except core.GateError as error:
-            return str(error)
-        offenders, _ = core._diff_scope_problems(config, ticket, fields, core.parse_blast_radius(body))
-        if offenders:
-            return f"{branch} changes files outside the blast radius: {', '.join(offenders)}"
-        default = gitops.default_branch(config.project_root)
-        ahead = gitops.run(tree, ["rev-list", "--count", f"{default}..HEAD"]).stdout.strip()
-        if ahead == "0":
-            return f"{branch} has no commits yet: finish the work and commit it, or escalate"
-    elif role == "qa_reviewer":
-        if ticket.column == config.verifying_column and not str(fields.get("reviewer") or "").strip():
-            return f"{ticket.ticket_id} is neither approved nor rejected. {roles.finish(role, ticket.ticket_id)}"
-    elif ticket.column in (config.backlog_column, config.refining_column):
-        problems = core.ready_problems(config, ticket)
-        if problems:
-            return f"'kahnban ready {ticket.ticket_id}' would refuse it:\n" + "\n".join(
-                f"  - {problem}" for problem in problems
-            )
-    return None
+    """Why a worker in ``role`` may not stop yet, or None; see :mod:`kahnban.exit_checks`."""
+    return exit_checks.problem(role, env)
 
 
 def main(*, stop: bool = False) -> int:

@@ -1873,7 +1873,7 @@ def _indent_output(text: str) -> str:
     return "\n".join(f"    {line}" if line.strip() else "" for line in lines)
 
 
-def _diff_scope_problems(
+def diff_scope_problems(
     config: Config, ticket: Ticket, fields: Mapping[str, object], radius: Sequence[str]
 ) -> tuple[list[str], list[str]]:
     """(out-of-scope paths, notes) for the ticket branch vs its blast radius."""
@@ -2149,7 +2149,7 @@ def _release_problems(
     return problems
 
 
-def _require_clean_tip(config: Config, tree: Path, branch: str) -> str:
+def require_clean_tip(config: Config, tree: Path, branch: str) -> str:
     """Verify tests what will merge: the committed tip, nothing uncommitted."""
     output = gitops.run(tree, ["status", "--porcelain", "--untracked-files=all"]).stdout
     ignorable = (HANDOFF_IN_WORKTREE, *config.shared_caches)
@@ -2304,7 +2304,7 @@ def verify(
             )
 
         radius = parse_blast_radius(body)
-        offenders, notes = _diff_scope_problems(config, ticket, fields, radius)
+        offenders, notes = diff_scope_problems(config, ticket, fields, radius)
         messages.extend(notes)
         if offenders:
             if not force_scope:
@@ -2340,7 +2340,7 @@ def verify(
         branch = ticket_branch(fields, ticket.ticket_id)
         tip = ""
         if cwd != config.project_root:
-            tip = _require_clean_tip(config, cwd, branch)
+            tip = require_clean_tip(config, cwd, branch)
             messages.append(f"verifying {branch} at {tip[:12]}")
         proof_base, source_paths = (
             _proof_plan(config, ticket.ticket_id, fields, body, branch, cwd)
