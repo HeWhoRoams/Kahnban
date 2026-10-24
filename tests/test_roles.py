@@ -118,3 +118,29 @@ def test_cursor_stop_hook_re_prompts_once(monkeypatch, capsys) -> None:
     monkeypatch.setattr(sys, "stdin", io.StringIO('{"conversation_id": "c", "loop_count": 1}'))
     assert guard.main(stop=True) == 0
     assert capsys.readouterr().out == ""
+
+
+def test_the_guard_ignores_drive_and_folder_case_on_windows(repo: Path) -> None:
+    import os
+
+    import pytest
+
+    from test_factory_gates import claimed, strict_board
+
+    if os.name != "nt":
+        pytest.skip("case-insensitive paths are a Windows behaviour")
+    config = strict_board(repo)
+    tree = claimed(config)
+    env = {
+        "KAHNBAN_ROLE": "coder",
+        "KAHNBAN_TICKET": "TST-001",
+        "KAHNBAN_PROJECT_ROOT": str(repo),
+        "KAHNBAN_WORKTREE": str(tree),
+    }
+    shouted = str(tree / "src" / "app.py").upper()
+
+    # Same file, different spelling: it is inside the worktree and the blast radius.
+    assert guard.decide({"tool_name": "Write", "tool_input": {"file_path": shouted}}, env) is None
+    assert "outside your worktree" in guard.decide(
+        {"tool_name": "Write", "tool_input": {"file_path": str(repo / "src" / "app.py").upper()}}, env
+    )

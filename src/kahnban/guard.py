@@ -66,6 +66,16 @@ def _kahnban_subcommands(command: str) -> list[str]:
     return found
 
 
+def _relative_to(path: Path, base: Path) -> str | None:
+    """``path`` under ``base`` as a posix string, or None; folds case where the filesystem does."""
+    target, root = os.path.normcase(str(path)), os.path.normcase(str(base)).rstrip(os.sep)
+    if target == root:
+        return ""
+    if not target.startswith(root + os.sep):
+        return None
+    return Path(str(path)[len(root) + 1 :]).as_posix()
+
+
 def _edit_problem(role: str, path: Path, env: Mapping[str, str]) -> str | None:
     root = Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve()
     scope = roles.edits(role)
@@ -75,9 +85,8 @@ def _edit_problem(role: str, path: Path, env: Mapping[str, str]) -> str | None:
     config = core.load_config(root)
     if scope == "blast_radius":
         tree = Path(env.get("KAHNBAN_WORKTREE", "")).resolve()
-        try:
-            relative = path.relative_to(tree).as_posix()
-        except ValueError:
+        relative = _relative_to(path, tree)
+        if relative is None:
             return f"{path} is outside your worktree {tree}"
         ticket = core.find_ticket(config, env.get("KAHNBAN_TICKET", ""))
         radius = core.parse_blast_radius(frontmatter.parse(ticket.text)[1])
@@ -89,9 +98,8 @@ def _edit_problem(role: str, path: Path, env: Mapping[str, str]) -> str | None:
                 f"({', '.join(radius)}); report it instead of editing it"
             )
         return None
-    try:
-        relative = path.relative_to(root).as_posix()
-    except ValueError:
+    relative = _relative_to(path, root)
+    if relative is None:
         return f"{path} is outside the project"
     allowed = tuple(config.board_root if entry == "{board}" else entry for entry in scope)
     if not core.path_within(relative, allowed):
