@@ -581,6 +581,7 @@ def cmd_skills(args: argparse.Namespace) -> int:
         harness=harness,
         source=source,
         dry_run=dry_run,
+        relock=getattr(args, "relock", False),
     )
     for msg in res.get("messages", []):
         print(f"  {msg}")
@@ -1010,6 +1011,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="target AI harness: 'auto' (default), 'claude', 'gemini', 'cursor', 'all'",
     )
     inst_parser.add_argument("--dry-run", action="store_true", help="simulate without writing files")
+    inst_parser.add_argument(
+        "--relock", action="store_true", help="re-pin every skill and hook after reviewing what changed"
+    )
     inst_parser.set_defaults(handler=cmd_skills)
 
     list_parser = skills_sub.add_parser("list", help="list installed and available skills")

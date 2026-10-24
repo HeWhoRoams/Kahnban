@@ -69,3 +69,19 @@ def test_an_unsigned_approval_is_refused_and_a_new_verify_clears_the_signature(r
     object.__setattr__(strict, "require_signed_approvals", True)
     with pytest.raises(core.GateError, match="unsigned"):
         core.merge(strict, "TST-001")
+
+
+def test_reinstalling_never_moves_an_existing_pin_unless_asked(tmp_path: Path) -> None:
+    (tmp_path / ".claude").mkdir()
+    skills.install_skills(tmp_path, harness="claude")
+    hook = tmp_path / ".kahnban" / "hooks" / "post-done.py"
+    hook.parent.mkdir(parents=True)
+    hook.write_text("print('swapped in')\n", encoding="utf-8")
+
+    result = skills.install_skills(tmp_path, harness="claude")
+
+    assert any("post-done.py is not pinned" in message for message in result.messages)
+    assert trust.lock_problems(tmp_path)  # still unpinned
+
+    skills.install_skills(tmp_path, harness="claude", relock=True)
+    assert trust.lock_problems(tmp_path) == []

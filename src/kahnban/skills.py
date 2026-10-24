@@ -224,6 +224,7 @@ def install_skills(
     harness: str = "auto",
     source: str = "bundled",
     dry_run: bool = False,
+    relock: bool = False,
 ) -> SkillsResult:
     """Install and configure skills in the adopter project and chosen harnesses.
 
@@ -359,9 +360,13 @@ def install_skills(
         configured_harnesses.append("hermes (.hermes/skills/)")
 
     if not dry_run:
-        pinned = trust.write_lock(root)
-        if pinned:
-            messages.append(f"Pinned {pinned} skill and hook files in {trust.LOCK.as_posix()}; commit it.")
+        if relock or not (root / trust.LOCK).is_file():
+            pinned = trust.write_lock(root)
+            if pinned:
+                messages.append(f"Pinned {pinned} skill and hook files in {trust.LOCK.as_posix()}; commit it.")
+        else:
+            # An existing pin is a decision a person made: report what changed, never move it.
+            messages.extend(f"[WARN] {problem}" for problem in trust.lock_problems(root))
 
     return SkillsResult(
         ok=True,
