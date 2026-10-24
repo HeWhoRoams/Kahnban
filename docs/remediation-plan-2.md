@@ -210,7 +210,8 @@ Each is a pure refactor: the suite plus the golden agent files and the guard tab
 |---|---|
 | 0: Standards pass over unread files | Done as a function-length scan only: `skills.install_skills` (156 lines; T6 shortens it), `handoff.build_handoff_baton` (97), `runner._work` (80), `skills_check.audit` (71). `core.py` itself is still unread for smells; its size is T9 |
 | PR A: C1, C2, X1, X2, C3, A2, A3, A4 | Done |
-| PR B–E | Not started |
+| PR C: C6, T1 | Done early because CI on Windows 3.10 failed `test_concurrent_runners_do_not_lose_counts`: Windows raises `PermissionError`, not `FileExistsError`, while a lock file is being deleted. `fsutil.exclusive` now covers attempts and stop nudges |
+| PR B, PR D, PR E | Not started |
 
 Changes from the plan as written, made while implementing PR A:
 
