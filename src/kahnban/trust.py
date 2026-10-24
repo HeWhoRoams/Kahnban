@@ -28,6 +28,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from kahnban.fsutil import write_text_atomic
+
 LOCK = Path(".agents") / "skills.lock.json"
 LOCKED_DIRS = (Path(".agents") / "skills", Path(".kahnban") / "hooks")
 KEY_ENV = "KAHNBAN_SIGNING_KEY"
@@ -53,8 +55,7 @@ def write_lock(root: Path) -> int:
     files = fingerprints(root)
     if not files:
         return 0
-    (root / LOCK).parent.mkdir(parents=True, exist_ok=True)
-    (root / LOCK).write_text(json.dumps({"version": 1, "files": files}, indent=2) + "\n", encoding="utf-8", newline="\n")
+    write_text_atomic(root / LOCK, json.dumps({"version": 1, "files": files}, indent=2) + "\n")
     return len(files)
 
 

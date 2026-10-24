@@ -60,3 +60,64 @@ def test_clear_forgets_one_ticket_only(repo: Path) -> None:
     attempts.clear(config, "TST-001")
 
     assert list(attempts.load(config)) == ["claim_and_implement|TST-002"]
+
+
+def test_a_lock_left_by_a_dead_process_is_broken_but_a_fresh_one_is_not(tmp_path: Path) -> None:
+    import os
+    import time
+
+    import pytest
+
+    from kahnban.fsutil import exclusive
+
+    lock = tmp_path / "x.lock"
+    lock.write_text("", encoding="utf-8")
+    with pytest.raises(TimeoutError):
+        with exclusive(lock, wait=0.2, stale=30):  # a fresh lock is respected
+            pass
+
+    old = time.time() - 120
+    os.utime(lock, (old, old))
+    with exclusive(lock, wait=1, stale=30):  # an old one is taken over
+        assert lock.exists()
+    assert not lock.exists()
+
+
+def test_windows_style_permission_errors_while_a_lock_is_deleted_just_mean_retry(tmp_path: Path, monkeypatch) -> None:
+    import os
+
+    from kahnban.fsutil import exclusive
+
+    real_open = os.open
+    failures = iter([PermissionError(13, "pending delete"), PermissionError(13, "pending delete")])
+
+    def flaky_open(path, flags, *args):  # type: ignore[no-untyped-def]
+        error = next(failures, None)
+        if error:
+            raise error
+        return real_open(path, flags, *args)
+
+    monkeypatch.setattr(os, "open", flaky_open)
+    with exclusive(tmp_path / "x.lock", wait=2):
+        pass
+
+
+def test_stop_nudges_are_not_lost_to_concurrent_workers(repo: Path) -> None:
+    from kahnban import exit_checks
+
+    board_config(repo)
+    env = {"KAHNBAN_PROJECT_ROOT": str(repo), "KAHNBAN_TICKET": "TST-001"}
+    spent: list[bool] = []
+
+    def spend() -> None:
+        for _ in range(5):
+            spent.append(exit_checks.spend_nudge("coder", env))
+
+    threads = [threading.Thread(target=spend) for _ in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert spent.count(True) == 2  # max_stop_nudges, however the workers interleave
+    assert len(spent) == 20

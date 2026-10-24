@@ -10,18 +10,15 @@ a board.
 from __future__ import annotations
 
 import json
-import os
 import sys
-import time
-from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import AbstractContextManager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from kahnban.fsutil import exclusive, write_text_atomic
+
 ARTIFACT_DIR = ".artifacts"
-LOCK_WAIT_SEC = 10.0
-LOCK_STALE_SEC = 10.0
 
 
 @dataclass
@@ -49,32 +46,8 @@ def _key(action: str, ticket: str) -> str:
     return f"{action}|{ticket}"
 
 
-@contextmanager
-def _locked(path: Path) -> Iterator[None]:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    lock = path.with_suffix(".lock")
-    deadline = time.monotonic() + LOCK_WAIT_SEC
-    while True:
-        try:
-            os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
-            break
-        except FileExistsError:
-            try:
-                if time.time() - lock.stat().st_mtime > LOCK_STALE_SEC:
-                    lock.unlink()
-                    continue
-            except OSError:
-                continue
-            if time.monotonic() > deadline:
-                raise TimeoutError(f"could not lock {lock}")
-            time.sleep(0.02)
-    try:
-        yield
-    finally:
-        try:
-            lock.unlink()
-        except OSError:
-            pass
+def _locked(path: Path) -> AbstractContextManager[None]:
+    return exclusive(path.with_suffix(".lock"))
 
 
 def _read(path: Path) -> dict[str, Attempt]:
@@ -93,9 +66,7 @@ def _read(path: Path) -> dict[str, Attempt]:
 
 def _write(path: Path, attempts: dict[str, Attempt]) -> None:
     data = {key: asdict(value) for key, value in attempts.items()}
-    temp = path.with_name(path.name + ".tmp")
-    temp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n")
-    temp.replace(path)
+    write_text_atomic(path, json.dumps(data, indent=2) + "\n")
 
 
 def load(config: Any) -> dict[str, Attempt]:

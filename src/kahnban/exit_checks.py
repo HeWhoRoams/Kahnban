@@ -11,6 +11,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from kahnban import attempts, core, frontmatter, gitops, learnings, roles
+from kahnban.fsutil import exclusive, write_text_atomic
 
 Check = Callable[[core.Config, "core.Ticket | None", dict, str, Mapping[str, str]], "str | None"]
 
@@ -39,19 +40,22 @@ def spend_nudge(role: str, env: Mapping[str, str]) -> bool:
     """Use one of the worker's ``max_stop_nudges``; False once they are spent (the runner then decides)."""
     config = core.load_config(Path(env.get("KAHNBAN_PROJECT_ROOT", ".")).resolve())
     path = _nudges(config, role, env.get("KAHNBAN_TICKET", ""))
-    try:
-        used = int(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        used = 0
-    if used >= config.max_stop_nudges:
-        return False
-    path.write_text(str(used + 1), encoding="utf-8")
-    return True
+    with exclusive(path.with_suffix(".lock")):
+        try:
+            used = int(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            used = 0
+        if used >= config.max_stop_nudges:
+            return False
+        write_text_atomic(path, str(used + 1))
+        return True
 
 
 def reset_nudges(config: core.Config, role: str, ticket: str) -> None:
     """Each worker the runner starts gets its full nudge budget."""
-    _nudges(config, role, ticket).unlink(missing_ok=True)
+    path = _nudges(config, role, ticket)
+    with exclusive(path.with_suffix(".lock")):
+        path.unlink(missing_ok=True)
 
 
 def committed_work(
