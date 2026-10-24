@@ -23,7 +23,7 @@ CODER = "coder"
 QA_REVIEWER = "qa_reviewer"
 INTEGRATOR = "integrator"
 CURATOR = "curator"
-FACTS = {"worktree", "qa_contract", "branch"}  # what handoff.py can say about a ticket
+FACTS = {"worktree", "qa_contract", "branch"}
 HUMAN = "human"
 NOBODY = "none"
 

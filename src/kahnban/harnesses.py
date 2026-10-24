@@ -28,10 +28,12 @@ VSCODE_MCP_SERVER = {
 
 @dataclass(frozen=True)
 class HookEvent:
+    """One hook: its event, command, the tools it matches (where a harness filters) and extra keys (Cursor's loop_limit)."""
+
     event: str
     command: str
-    matcher: str = ""  # which tools, for harnesses that filter by tool name
-    options: dict[str, Any] = field(default_factory=dict)  # extra keys such as Cursor's loop_limit
+    matcher: str = ""
+    options: dict[str, Any] = field(default_factory=dict)
 
 
 # Every tool call goes through the guard (no matcher for Claude Code, ".*" for Gemini CLI): it
@@ -60,19 +62,51 @@ HOOK_FILES = {
 }
 
 
-def _entry(harness: str, hook: HookEvent) -> dict[str, Any]:
-    if harness == "cursor":
+class NestedLayout:
+    """Claude Code and Gemini CLI: ``{"matcher": ..., "hooks": [{"type": "command", "command": ...}]}``."""
+
+    @staticmethod
+    def commands(entry: dict[str, Any]) -> list[str]:
+        return [h.get("command") for h in entry.get("hooks", [])]
+
+    @staticmethod
+    def make(hook: HookEvent) -> dict[str, Any]:
+        entry: dict[str, Any] = {"hooks": [{"type": "command", "command": hook.command}]}
+        return {"matcher": hook.matcher, **entry} if hook.matcher else entry
+
+    @staticmethod
+    def current(entry: dict[str, Any], hook: HookEvent) -> bool:
+        return (entry.get("matcher") or "") == hook.matcher
+
+    @staticmethod
+    def refresh(entry: dict[str, Any], hook: HookEvent) -> None:
+        if hook.matcher:
+            entry["matcher"] = hook.matcher
+        else:
+            entry.pop("matcher", None)
+
+
+class FlatLayout:
+    """Cursor: ``{"command": ..., "loop_limit": ...}``, one flat list per event."""
+
+    @staticmethod
+    def commands(entry: dict[str, Any]) -> list[str]:
+        return [entry.get("command")]
+
+    @staticmethod
+    def make(hook: HookEvent) -> dict[str, Any]:
         return {"command": hook.command, **hook.options}
-    entry: dict[str, Any] = {"hooks": [{"type": "command", "command": hook.command}]}
-    return {"matcher": hook.matcher, **entry} if hook.matcher else entry
+
+    @staticmethod
+    def current(entry: dict[str, Any], hook: HookEvent) -> bool:
+        return all(entry.get(key) == value for key, value in hook.options.items())
+
+    @staticmethod
+    def refresh(entry: dict[str, Any], hook: HookEvent) -> None:
+        entry.update(hook.options)
 
 
-def installed_commands(harness: str, data: dict[str, Any], event: str) -> list[str]:
-    """The commands a harness config already runs for ``event``."""
-    entries = data.get("hooks", {}).get(event, [])
-    if harness == "cursor":
-        return [entry.get("command") for entry in entries]
-    return [h.get("command") for entry in entries for h in entry.get("hooks", [])]
+LAYOUTS = {"claude": NestedLayout, "gemini": NestedLayout, "cursor": FlatLayout}
 
 
 def stop_nudges(root: Path) -> int:
@@ -98,31 +132,19 @@ def hooks_for(harness: str, nudges: int = 2) -> tuple[HookEvent, ...]:
 def entry_for(harness: str, data: dict[str, Any], hook: HookEvent) -> dict[str, Any] | None:
     """The entry in a harness config that runs ``hook``'s command for its event, if any."""
     for entry in data.get("hooks", {}).get(hook.event, []):
-        commands = [entry.get("command")] if harness == "cursor" else [h.get("command") for h in entry.get("hooks", [])]
-        if hook.command in commands:
+        if hook.command in LAYOUTS[harness].commands(entry):
             return entry
     return None
 
 
 def is_current(harness: str, entry: dict[str, Any], hook: HookEvent) -> bool:
     """Whether an installed entry still matches the table (tool matcher, Cursor's extra keys)."""
-    if harness == "cursor":
-        return all(entry.get(key) == value for key, value in hook.options.items())
-    return (entry.get("matcher") or "") == hook.matcher
-
-
-def _refresh(harness: str, entry: dict[str, Any], hook: HookEvent) -> None:
-    if harness == "cursor":
-        entry.update(hook.options)
-    elif hook.matcher:
-        entry["matcher"] = hook.matcher
-    else:
-        entry.pop("matcher", None)
+    return LAYOUTS[harness].current(entry, hook)
 
 
 def merge_hooks(path: Path, harness: str, messages: list[str], nudges: int = 2) -> None:
     """Add the guard and stop hooks to ``path``, bringing an older entry up to date and keeping the rest."""
-    data: dict[str, Any] = {"version": 1} if harness == "cursor" else {}
+    data: dict[str, Any] = {"version": 1} if LAYOUTS[harness] is FlatLayout else {}
     if path.is_file():
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
@@ -133,10 +155,10 @@ def merge_hooks(path: Path, harness: str, messages: list[str], nudges: int = 2) 
     for hook in hooks_for(harness, nudges):
         entry = entry_for(harness, data, hook)
         if entry is None:
-            data.setdefault("hooks", {}).setdefault(hook.event, []).append(_entry(harness, hook))
+            data.setdefault("hooks", {}).setdefault(hook.event, []).append(LAYOUTS[harness].make(hook))
             added = True
         elif not is_current(harness, entry, hook):
-            _refresh(harness, entry, hook)
+            LAYOUTS[harness].refresh(entry, hook)
             added = True
     if added:
         path.parent.mkdir(parents=True, exist_ok=True)
