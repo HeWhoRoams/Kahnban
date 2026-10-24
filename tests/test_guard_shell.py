@@ -243,3 +243,56 @@ def test_a_command_that_clears_the_role_never_reaches_a_gate(env: dict[str, str]
     """The gates trust KAHNBAN_ROLE, so the guard is what keeps a worker from emptying it."""
     for command in CLEARING_THE_ROLE[:4]:
         assert "runner's" in (checking(env, command, role="spec_analyst") or ""), command
+
+
+def test_a_refusal_is_written_to_the_guard_log(
+    env: dict[str, str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import io
+    import json
+    import sys
+
+    from kahnban.cli import main
+
+    log = tmp_path / "run.log.guard"
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setenv("KAHNBAN_GUARD_LOG", str(log))
+    monkeypatch.setenv("KAHNBAN_ROLE", "coder")
+    blocked = {"tool_name": "Bash", "tool_input": {"command": "git push origin main"}}
+    allowed = {"tool_name": "Bash", "tool_input": {"command": "pytest -q"}}
+    for payload in (blocked, allowed):
+        monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(payload)))
+        main(["guard"])
+    capsys.readouterr()
+
+    lines = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert len(lines) == 1
+    assert lines[0]["role"] == "coder" and lines[0]["attempted"] == "git push origin main"
+    assert "runner's job" in lines[0]["reason"]
+
+
+def test_a_run_reports_what_the_guard_refused(repo: Path, tmp_path: Path) -> None:
+    from kahnban import runner
+    from test_factory_gates import CHECK_APP, PY, factory_board
+    from test_factory_run import WORKER, ready_ticket
+
+    script = tmp_path / "worker.py"
+    script.write_text(
+        WORKER.format(check_app=CHECK_APP).replace(
+            "print(role, \"finished\")",
+            "import json\n"
+            "payload = json.dumps({'tool_name': 'Bash', 'tool_input': {'command': 'git push origin main'}})\n"
+            "subprocess.run([sys.executable, '-m', 'kahnban', 'guard'], input=payload, text=True)\n"
+            "print(role, 'finished')",
+        ),
+        encoding="utf-8",
+    )
+    config = factory_board(repo, workers={"default": f"{PY} {script}"})
+    ready_ticket(config)
+    lines: list[str] = []
+
+    result = runner.run(config, max_steps=10, echo=lines.append)
+
+    assert result.guard_refusals >= 1
+    assert any("the guard refused" in line for line in lines)

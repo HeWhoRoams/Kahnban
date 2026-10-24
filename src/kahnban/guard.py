@@ -18,6 +18,7 @@ import os
 import re
 import sys
 from collections.abc import Mapping
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -279,6 +280,28 @@ def exit_problem(role: str, env: Mapping[str, str]) -> str | None:
     return exit_checks.problem(role, env)
 
 
+def _log_refusal(reason: str, payload: Mapping[str, Any]) -> None:
+    """Append one JSON line to ``KAHNBAN_GUARD_LOG`` so a run can show what it blocked."""
+    path = os.environ.get("KAHNBAN_GUARD_LOG", "")
+    if not path:
+        return
+    tool_input = payload.get("tool_input") or {}
+    attempted = tool_input.get("command") or tool_input.get("file_path") or payload.get("command") or ""
+    entry = {
+        "time": datetime.now().isoformat(timespec="seconds"),
+        "role": os.environ.get("KAHNBAN_ROLE", ""),
+        "ticket": os.environ.get("KAHNBAN_TICKET", ""),
+        "tool": payload.get("tool_name") or "shell",
+        "reason": reason,
+        "attempted": str(attempted)[:200],
+    }
+    try:
+        with open(path, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry) + "\n")
+    except OSError:
+        pass
+
+
 def _report_refusal(reason: str) -> None:
     """Tell the ``on-refusal`` hook; a hook that fails never changes the guard's answer."""
     root = os.environ.get("KAHNBAN_PROJECT_ROOT", "")
@@ -323,6 +346,7 @@ def main(*, stop: bool = False) -> int:
         print(json.dumps({"followup_message": reason}))
         return 0
     if reason:
+        _log_refusal(reason, payload)
         _report_refusal(reason)
         print(reason, file=sys.stderr)  # Claude Code already labels it with the hook's name
         return 2

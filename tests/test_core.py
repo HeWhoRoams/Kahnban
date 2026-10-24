@@ -441,3 +441,10 @@ def test_collect_records_type_hints() -> None:
     import typing
     hints = typing.get_type_hints(core.collect_records)
     assert "return" in hints
+
+
+def test_blast_radius_paths_fold_case_only_where_the_filesystem_does() -> None:
+    import os
+
+    same_file = core.path_within("SRC/App.py", ("src/app.py",)) and core.path_within("src/sub/x.py", ("SRC",))
+    assert bool(same_file) == (os.name == "nt")

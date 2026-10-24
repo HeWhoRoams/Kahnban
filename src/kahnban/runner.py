@@ -49,6 +49,7 @@ class RunResult:
     stopped: str = ""
     log_path: Path | None = None
     parked: list[str] = field(default_factory=list)  # tickets waiting for a human
+    guard_refusals: int = 0  # tool calls the role guard blocked during this run
 
 
 def _parked(config: core.Config) -> list[str]:
@@ -100,6 +101,7 @@ def run(
                 if result.parked
                 else rec.summary
             )
+            _guard_summary(result, echo)
             return result
         ticket = rec.ticket_id or ""
         entry = attempts.bump(config, rec.action, ticket, _progress(config, ticket))
@@ -124,7 +126,19 @@ def run(
         echo(f"[{number}] {rec.action} {ticket}: {summary[:400]}")
     result.stopped = f"stopped after {max_steps} steps"
     result.parked = _parked(config)
+    _guard_summary(result, echo)
     return result
+
+
+def guard_log_path(log: Path) -> Path:
+    return log.with_name(log.name + ".guard")
+
+
+def _guard_summary(result: RunResult, echo: Callable[[str], None]) -> None:
+    path = guard_log_path(result.log_path) if result.log_path else None
+    if path and path.is_file():
+        result.guard_refusals = len(path.read_text(encoding="utf-8").splitlines())
+        echo(f"the guard refused {result.guard_refusals} tool call(s); see {path}")
 
 
 def _progress(config: core.Config, ticket_id: str) -> str:
@@ -260,6 +274,7 @@ def _work(
     command = template.replace("{role}", role.replace("_", "-")).replace("{ticket}", ticket)
     env = {
         **{key: value for key, value in os.environ.items() if key != trust.KEY_ENV},
+        "KAHNBAN_GUARD_LOG": str(guard_log_path(log)),
         "KAHNBAN_ROLE": role,
         "KAHNBAN_TICKET": ticket,
         "KAHNBAN_PROJECT_ROOT": str(config.project_root),
