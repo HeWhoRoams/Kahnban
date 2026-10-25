@@ -25,6 +25,7 @@ Goal: one command a contributor (or CI) can run that shows every command, gate, 
 | T3 | Adversarial gate matrix: try to get past each gate with a no-op, tampered or self-signed input | every push (part of T0) | in T0 |
 | T4 | Live harness smoke: a real `claude -p` worker drives one toy ticket from ready to done | opt-in, `KAHNBAN_LIVE=1`, never CI | about 10 min |
 | T5 | Dogfood: kahnban's own backlog runs on a kahnban board in this repo | ongoing | — |
+| T6 | Workflow simulation with scripted agents, a scorecard and a before/after comparison (see [simulation-plan.md](simulation-plan.md)) | fast set on every PR, full set nightly | under 3 min / nightly |
 
 `python -m kahnban selftest` is **not** proposed: the tiers are pytest markers plus one script, so no new command needs maintaining.
 
