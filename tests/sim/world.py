@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import sys
 import time
 from collections.abc import Callable
@@ -78,6 +79,7 @@ class World:
         column: str = "2-ready",
         depends_on: tuple[int, ...] = (),
         extra_radius: tuple[str, ...] = (),
+        coder_policy: str = "",
     ) -> str:
         """Ticket ``n`` makes ``src/m{n}.py`` return 2; its own check proves it."""
         ident = self.ticket_id(n)
@@ -91,6 +93,7 @@ class World:
                 check: f"import sys\nsys.path.insert(0, 'src')\nfrom m{n} import f\nassert f() == 2, f()\n",
             },
             "validation": command,
+            "policy_coder": coder_policy,
             "spec": {
                 "criteria": f"- [ ] {criterion}",
                 "radius": "\n".join(f"- `{item}`" for item in radius),
@@ -145,7 +148,8 @@ class World:
 
     # --- running -------------------------------------------------------------
 
-    def run(self) -> Outcome:
+    def run(self, crash: str = "") -> Outcome:
+        self.crashed = False
         config = self.build()
         plan_path = self.sim_dir / "plan.json"
         plan_path.write_text(json.dumps(self.plan, indent=2), encoding="utf-8")
@@ -159,10 +163,29 @@ class World:
         saved = {key: os.environ.get(key) for key in environment}
         os.environ.update(environment)
         try:
+            if crash:
+                died = subprocess.run(
+                    [PY, "-m", "kahnban", "--project-root", str(self.repo), "run", "--max-steps", str(self.max_steps)],
+                    env={**os.environ, "KAHNBAN_FAULT": crash},
+                    capture_output=True,
+                    text=True,
+                )
+                self.crashed = died.returncode == 137
             checker = Checker(config, self.plan)
             before = checker.head
             started = time.monotonic()
-            result = runner.run(config, max_steps=self.max_steps, echo=checker.after_step)
+            try:
+                result = runner.run(config, max_steps=self.max_steps, echo=checker.after_step)
+            except Exception as error:  # a recovery that raises is the finding, not a harness error
+                if not crash:
+                    raise
+                checker.fail("I12", f"the run after the crash raised {type(error).__name__}: {str(error)[:200]}")
+                result = runner.RunResult()
+            if crash:
+                checker.evaluated["I12"] += 1
+                unfinished = [t.ticket_id for t in core.iter_tickets(config) if t.column != config.done_column]
+                if unfinished and not checker.violations["I12"]:
+                    checker.fail("I12", f"after the crash the run left {', '.join(unfinished)} unfinished: {result.stopped[:100]}")
             rounds = 0
             while self.human is not None and rounds < self.max_rounds and self.human(config, result):
                 rounds += 1

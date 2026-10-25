@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Self-test and simulation
+- `tests/run_sim.py` drives the real engine with scripted honest, sloppy and cheating agents, checks fourteen rules after every step, and compares a scorecard against a committed baseline or another git ref ([docs/simulation-plan.md](docs/simulation-plan.md)). CI runs the fast set on pull requests and everything, plus deliberate-breakage canaries, nightly.
+- `KAHNBAN_FAULT=before:K` or `after:K` ends the process hard at the K-th engine commit. It exists for the crash scenarios and does nothing unless set.
+- Contract tests fail when a CLI command or MCP tool has no test, and `adapters/skills` must match the shipped templates.
+
 ### Roles, handoffs and harnesses
 - `roles.json` defines each factory role once. The guard's tables, the prompts `run` and `next` hand out, the handoff baton and the native agent files for Claude Code, Gemini CLI and Cursor are rendered from it. `kahnban skills check` fails when skills, roles, generated files, installed hooks or the lock disagree.
 - Every board move refreshes the ticket's baton and runs the `pre-transition` and `post-transition` hooks; every refusal runs `on-refusal`. `claim` asks the veto before it creates a worktree. A worker is not started on a baton the engine cannot write.

@@ -16,6 +16,8 @@ METRICS: dict[str, tuple[str, float]] = {
     "engine_commits_per_ticket": ("lower", 0),
     "worker_prompt_bytes": ("lower", 0.03),
     "false_blocks": ("lower", 0),
+    "recovery_rate": ("higher", 0),
+    "crashes_injected": ("exact", 0),
     "cheats_stopped": ("higher", 0),
     "guard_refusals": ("exact", 0),
     "cheats_attempted": ("exact", 0),
@@ -44,6 +46,7 @@ def normalize(scorecard: dict[str, Any]) -> dict[str, Any]:
         scenarios[ident] = {
             "title": card["title"],
             "ok": card["ok"],
+            "known_gap": card.get("known_gap", ""),
             "invariants": {key: item["pass"] for key, item in card["invariants"].items()},
             "expectations": {key: item["pass"] for key, item in card.get("expectations", {}).items()},
             "metrics": {key: value for key, value in card["metrics"].items() if key not in IGNORED},
@@ -77,6 +80,8 @@ def compare(old: dict[str, Any], new: dict[str, Any]) -> Comparison:
         for key, passed in before["invariants"].items():
             if passed and not after["invariants"].get(key, False):
                 result.broken.append(f"{ident} {key}: passed before, fails now")
+            if not passed and after["invariants"].get(key, False):
+                result.better.append(f"{ident} {key}: failed before, passes now")
         for key, passed in before["expectations"].items():
             if passed and not after["expectations"].get(key, False):
                 result.broken.append(f"{ident} expectation '{key}': met before, not now")

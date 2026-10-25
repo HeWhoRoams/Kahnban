@@ -33,7 +33,7 @@ def chosen(args: argparse.Namespace) -> list:
 
 
 def show(card: dict) -> None:
-    mark = "PASS" if card["ok"] else "FAIL"
+    mark = "PASS" if card["ok"] else ("KNOWN GAP" if card.get("known_gap") else "FAIL")
     metrics = card["metrics"]
     print(
         f"[{mark}] {card['scenario']} {card['title']} | steps {metrics['steps_to_done']}, "
@@ -108,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run":
         card = run_scenarios(args)
         Path(args.out).write_text(json.dumps(card, indent=2) + "\n", encoding="utf-8")
-        failed = [key for key, item in card["scenarios"].items() if not item["ok"]]
+        failed = [key for key, item in card["scenarios"].items() if not item["ok"] and not item.get("known_gap")]
         total = len(card["scenarios"])
         print(f"{total - len(failed)}/{total} scenarios hold every invariant -> {args.out}")
         return 1 if failed else 0
@@ -129,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
     result = compare(normalize(old), normalize(new))
     print(report(result))
     if args.accept:
-        if not result.clean or any(not item["ok"] for item in new["scenarios"].values()):
+        if not result.clean or any(not item["ok"] and not item.get("known_gap") for item in new["scenarios"].values()):
             print("not accepted: something is broken or worse")
             return 1
         BASELINE.parent.mkdir(exist_ok=True)

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import random
 import shutil
 import tempfile
 from collections.abc import Callable
@@ -12,6 +14,7 @@ from typing import Any
 
 from kahnban import core
 
+from .invariants import INVARIANTS
 from .world import Outcome, World
 
 PAIR_CHECK = (
@@ -33,6 +36,9 @@ class Scenario:
     expect_done: int | None = None  # None: every ticket
     expect_parked: int = 0  # tickets left waiting for a human
     expect_outcome: str = ""  # text some step's outcome must contain (the gate that caught it)
+    known_gap: str = ""  # a real engine weakness this scenario shows; reported, not failed, until it is fixed
+    spaced: bool = False  # build the repository under a path containing spaces
+    custom: Callable[..., dict[str, Any]] | None = None  # a scenario that runs the world many times
 
 
 def s1(world: World) -> None:
@@ -136,6 +142,88 @@ def s7(world: World) -> None:
     world.human = human
 
 
+def s12(world: World) -> None:
+    """The same idea-to-done run, with spaces in the project path."""
+    world.add_ticket(1, column="0-backlog")
+
+
+def s13(world: World) -> None:
+    """Twelve independent tickets through one board."""
+    for n in range(1, 13):
+        world.add_ticket(n)
+
+
+def mixed(seed: int) -> Callable[[World], None]:
+    def build(world: World) -> None:
+        """Six tickets; each coder is drawn at random: mostly honest, some sloppy, some cheating."""
+        rng = random.Random(seed)
+        world.seed = seed
+        for n in range(1, 7):
+            policy = rng.choices(["honest", "sloppy", "cheat-radius"], weights=[70, 20, 10])[0]
+            world.add_ticket(n, coder_policy=policy)
+
+    build.__doc__ = f"Six tickets with randomly drawn coder behaviour (seed {seed})."
+    return build
+
+
+CRASH_STEPS = 9  # engine commits in one ticket's life, with room to spare; the sweep stops when a point is never reached
+
+
+def crash_sweep(scenario: "Scenario", keep: bool, seed: int) -> dict[str, Any]:
+    """Kill the run at every commit of one ticket's life (before and after), then run again."""
+    cards: list[dict[str, Any]] = []
+    only = os.environ.get("KAHNBAN_SIM_FAULT")  # replay one crash point, for example "before:3"
+    for when in ("before", "after"):
+        for k in range(1, CRASH_STEPS + 1):
+            if only and only != f"{when}:{k}":
+                continue
+            root = Path(tempfile.mkdtemp(prefix=f"sim-{scenario.id}-{when}{k}-"))
+            world = World(root, tickets=1, seed=seed, extra_files=BASE_FILES)
+            try:
+                world.add_ticket(1)
+                outcome = world.run(crash=f"{when}:{k}")
+                card = scorecard(scenario, world, outcome)
+            finally:
+                shutil.rmtree(root, ignore_errors=True)
+            if not world.crashed:
+                break  # the run has fewer commits than this; later points are never reached either
+            card["fault"] = f"{when}:{k}"
+            cards.append(card)
+    return merge_cards(scenario, cards)
+
+
+def merge_cards(scenario: "Scenario", cards: list[dict[str, Any]]) -> dict[str, Any]:
+    """One scorecard for a scenario that ran the world several times."""
+    invariants = {}
+    for key, title in INVARIANTS.items():
+        parts = [(card.get("fault", ""), card["invariants"][key]) for card in cards]
+        invariants[key] = {
+            "title": title,
+            "checked": sum(item["checked"] for _, item in parts),
+            "violations": [f"[{fault}] {v}" for fault, item in parts for v in item["violations"]],
+            "pass": all(item["pass"] for _, item in parts),
+        }
+    sums = {"done", "guard_refusals", "false_blocks", "cheats_attempted", "cheats_stopped"}
+    metrics: dict[str, Any] = {}
+    for key in cards[0]["metrics"]:
+        values = [card["metrics"][key] for card in cards if card["metrics"][key] is not None]
+        metrics[key] = (sum(values) if key in sums else round(sum(values) / len(values), 2)) if values else None
+    recovered = sum(1 for card in cards if card["ok"])
+    metrics["crashes_injected"] = len(cards)
+    metrics["recovery_rate"] = round(recovered / len(cards), 2) if cards else 0
+    return {
+        "scenario": scenario.id,
+        "title": scenario.title,
+        "seed": cards[0]["seed"] if cards else 0,
+        "ok": bool(cards) and all(card["ok"] for card in cards),
+        "stopped": f"{recovered}/{len(cards)} crash points recovered",
+        "invariants": invariants,
+        "expectations": {"recovered": {"got": recovered, "expected": len(cards), "pass": bool(cards) and recovered == len(cards)}},
+        "metrics": metrics,
+        "steps": [],
+    }
+
+
 SCENARIOS: list[Scenario] = [
     Scenario("S1", "One idea from the backlog to done, honest agents", "fast", 1, s1),
     Scenario("S2", "Five tickets with dependencies and a shared file", "fast", 5, s2),
@@ -151,6 +239,13 @@ SCENARIOS: list[Scenario] = [
     Scenario("S5", "Two tickets pass alone and fail together", "fast", 2, s5, expect_done=1, expect_parked=1),
     Scenario("S6", "Attended run waits for a human at the merge gate", "fast", 1, s6),
     Scenario("S7", "Escalation, the human answers, the run resumes", "fast", 1, s7),
+    Scenario("S8", "Crash at every commit of a ticket's life, then recover", "full", 1, s1, custom=crash_sweep,
+             known_gap="a crashed run leaves a board lock that blocks the next run for 5 minutes, and a crash at the done step leaves the worktree and branch behind"),
+    Scenario("S12", "Idea to done under a path with spaces", "full", 1, s12, spaced=True),
+    Scenario("S13", "Twelve independent tickets", "full", 12, s13),
+    Scenario("S14a", "Random mix of honest, sloppy and cheating coders (seed 1)", "full", 6, mixed(1)),
+    Scenario("S14b", "Random mix of honest, sloppy and cheating coders (seed 2)", "full", 6, mixed(2)),
+    Scenario("S14c", "Random mix of honest, sloppy and cheating coders (seed 3)", "full", 6, mixed(3)),
 ]
 
 BASE_FILES = {"tests/check_pair.py": PAIR_CHECK}
@@ -211,12 +306,17 @@ def scorecard(scenario: Scenario, world: World, outcome: Outcome) -> dict[str, A
 
 
 def execute(scenario: Scenario, *, keep: bool = False, seed: int = 0) -> dict[str, Any]:
-    root = Path(tempfile.mkdtemp(prefix=f"sim-{scenario.id}-"))
+    if scenario.custom:
+        card = scenario.custom(scenario, keep, seed)
+        card["known_gap"] = scenario.known_gap
+        return card
+    root = Path(tempfile.mkdtemp(prefix=f"sim {scenario.id} " if scenario.spaced else f"sim-{scenario.id}-"))
     world = World(root, tickets=scenario.tickets, seed=seed, extra_files=BASE_FILES)
     try:
         scenario.build(world)
         outcome = world.run()
         card = scorecard(scenario, world, outcome)
+        card["known_gap"] = scenario.known_gap
         if keep:
             card["kept"] = str(root)
         return card

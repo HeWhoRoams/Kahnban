@@ -162,6 +162,40 @@ One commit per step. Each ends in something you can run.
 9. **Live tier.** The repeated-run wrapper and median comparison.
 10. **First improvement through the loop.** Pick one item from NEXT_STEPS.md (for example the per-role rejection breakdown, or a smaller baton), and carry it through the seven-step protocol above, as the proof that the loop works.
 
+## Status: built (2026-10-25)
+
+Steps 1 to 8 are built; steps 9 (live tier) and 10 (first improvement through the loop) are open.
+
+```
+python tests/run_sim.py list                      # the scenarios
+python tests/run_sim.py run S1 S4a                # run some, write scorecard.json
+python tests/run_sim.py compare                   # fast set vs the committed baseline (exit 1 if broken or worse)
+python tests/run_sim.py compare --set all         # every scenario (about 12 minutes)
+python tests/run_sim.py compare --against main    # same scenarios on another git ref's engine
+python tests/run_sim.py compare S3 --accept       # move the baseline forward (only when clean)
+python tests/run_sim.py canaries                  # break the engine on purpose; every break must turn it red
+KAHNBAN_SIM_FAULT=before:3 python tests/run_sim.py run S8   # replay one crash point
+```
+
+What differs from the plan above:
+
+- The launcher is `tests/run_sim.py`, not `python -m tests.sim`, because some Python installs carry an unrelated `tests` package in site-packages that shadows ours.
+- Fault injection is `KAHNBAN_FAULT=before:K` or `after:K` (die as the K-th commit is reached, or right after it lands), in `gitops.commit`. It does nothing unless the variable is set, and `tests/test_fault_hook.py` covers it.
+- Built: S1-S7 (S3 split into S3, S3b and S3c; S4 into S4a-S4f), S8, S12, S13, S14a-c. Not built: S9 (two runners at once), S10 (hung worker) and S11 (an older board opens): the lint tests already run `tests/fixtures/clean-board` and its CRLF twin.
+- Invariants I1-I14 are all checked (I12 only in S8). Every agent command goes through `kahnban guard` first, as a harness hook would, so I13 and I14 measure the real guard.
+- Six canaries; the first run caught four, which led to a better S3 (an honest reviewer, so only verify can stop the sloppy coder) and an S5 that holds both tickets at the merge gate so only the merge queue can stop the second.
+- `tests/test_sim_compare.py` (in the normal suite) covers the comparison rules. CI is `.github/workflows/sim.yml`: the fast set on pull requests (Linux and Windows), everything plus the canaries nightly.
+
+### What the simulation found in the engine
+
+S8 is marked `known_gap`: it is reported, not failed, and sits in the baseline as failing so that fixing it shows up as BETTER in the next comparison.
+
+1. **A crashed run blocks the board for five minutes.** Kill `kahnban run` as it reaches its 1st, 2nd or 3rd commit, before or after: the board lock file stays, and the next run raises `LockError` until `LOCK_STALE_SECONDS` (300) passes. The lock is broken only by age, never because its holder (`pid=...` is written in the file) is dead. Recovery is 6 of 6 failures at those points.
+2. **A crash at the done step leaves the worktree and branch behind.** The next run finishes the ticket but does not clean up (`I10`, `before:4` and `after:4`).
+3. **Attended mode loops while a human keeps confirming.** When the integration test refuses a ticket, it goes back, the coder resubmits the same code, a reviewer approves it again and the run pauses for a confirmation, again. Eight rounds of confirmation in a row never escalated it, although `max_attempts` is 3. That follows the CHANGELOG ("counts reset on `unblock`, `confirm` and escalation"), so it is by design: a human who confirms is vouching for another try. It means the cap cannot stop a ticket that a human keeps confirming; the human is the cap. S5 stops after one confirmation.
+
+The loop then has its first improvement ready to run (step 10): make `board_lock` break a lock whose holder pid is gone, make the recovery run clean up a done ticket, and watch S8's `recovery_rate` and I10-I12 move from failing to passing in `compare`, with nothing else worse.
+
 ## What this does not claim
 
 - It confirms the engine and guard against the cheats listed. A cheat nobody wrote a policy for is untested, so every new bypass found in review becomes a new policy and a canary.

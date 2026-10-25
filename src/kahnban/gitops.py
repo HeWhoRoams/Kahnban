@@ -8,6 +8,7 @@ failure is never swallowed.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from collections.abc import Iterable, Sequence
 from pathlib import Path
@@ -178,8 +179,28 @@ def commit(
         args.append("--allow-empty")
     if paths:
         args.extend(["--", *[str(p) for p in paths]])
+    _fault_point("before")
     run(repo, args)
+    _fault_point("after")
     return rev_parse(repo, "HEAD")
+
+
+_commit_calls = {"before": 0, "after": 0}
+
+
+def _fault_point(when: str) -> None:
+    """Crash injection for the workflow simulation, off unless the variable is set.
+
+    ``KAHNBAN_FAULT=before:3`` ends the process hard as it reaches its 3rd commit (the files are
+    moved and staged, the commit not made); ``after:3`` ends it right after that commit lands.
+    """
+    spec = os.environ.get("KAHNBAN_FAULT", "")
+    if not spec:
+        return
+    _commit_calls[when] += 1
+    kind, _, count = spec.partition(":")
+    if kind == when and _commit_calls[when] >= int(count):
+        os._exit(137)
 
 
 def reset_hard(repo: Path, ref: str) -> None:

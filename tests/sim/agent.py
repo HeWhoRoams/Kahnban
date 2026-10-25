@@ -27,10 +27,12 @@ TICKET = os.environ.get("KAHNBAN_TICKET", "")
 ROOT = Path(os.environ["KAHNBAN_PROJECT_ROOT"])
 SIM_DIR = Path(os.environ["KAHNBAN_SIM_DIR"])
 _override = SIM_DIR / f"policy-{ROLE}"
-POLICY = _override.read_text(encoding="utf-8").strip() if _override.exists() else (sys.argv[1] if len(sys.argv) > 1 else "honest")
 PROMPT = sys.stdin.read()
 PLAN = json.loads(Path(os.environ["KAHNBAN_SIM_PLAN"]).read_text(encoding="utf-8"))
 SPEC = PLAN["tickets"].get(TICKET, {})
+POLICY = SPEC.get(f"policy_{ROLE}") or (sys.argv[1] if len(sys.argv) > 1 else "honest")
+if _override.exists():
+    POLICY = _override.read_text(encoding="utf-8").strip()
 PY = sys.executable
 KAHNBAN = f'{PY} -m kahnban --project-root "{ROOT}"'
 

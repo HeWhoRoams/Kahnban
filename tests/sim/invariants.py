@@ -25,6 +25,7 @@ INVARIANTS = {
     "I9": "no two in-progress tickets overlap in blast radius",
     "I10": "a done ticket leaves no worktree, branch or lease behind",
     "I11": "a second run on an idle board changes nothing",
+    "I12": "after a crash the next run recovers without anyone editing files",
     "I13": "the guard never refuses an honest agent",
     "I14": "every cheat attempt is refused or undone",
 }
@@ -174,7 +175,11 @@ class Checker:
     def _idempotent(self, runner: Any) -> None:
         self.evaluated["I11"] += 1
         before = gitops.rev_parse(self.repo, self.branch)
-        again = runner.run(self.config, max_steps=5, echo=lambda line: None)
+        try:
+            again = runner.run(self.config, max_steps=5, echo=lambda line: None)
+        except core.KahnbanError as error:
+            self.fail("I11", f"a second run raised {type(error).__name__}: {str(error)[:160]}")
+            return
         after = gitops.rev_parse(self.repo, self.branch)
         if again.steps or before != after:
             self.fail("I11", f"a second run took {len(again.steps)} step(s) and moved {before[:10]} -> {after[:10]}")

@@ -75,3 +75,13 @@ def test_a_baseline_normalizes_to_itself() -> None:
     once = normalize(CARD)
 
     assert normalize(once) == once
+
+
+def test_a_rule_that_failed_before_and_holds_now_is_better() -> None:
+    old = copy.deepcopy(CARD)
+    old["scenarios"]["S1"]["invariants"]["I4"]["pass"] = False
+
+    result = compare(normalize(old), normalize(CARD))
+
+    assert result.clean
+    assert result.better == ["S1 I4: failed before, passes now"]
