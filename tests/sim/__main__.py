@@ -1,15 +1,24 @@
-"""``python tests/run_sim.py run [IDS...] [--set fast|full|all] [--out FILE] [--keep]`` and ``list``."""
+"""``python tests/run_sim.py run|compare|list``. See docs/simulation-plan.md."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from kahnban import __version__
 
+from .compare import compare, normalize, report
 from .scenarios import SCENARIOS, execute
+
+HERE = Path(__file__).resolve().parent
+BASELINE = HERE / "baseline" / "scorecard.json"
+LAUNCHER = HERE.parent / "run_sim.py"
 
 
 def chosen(args: argparse.Namespace) -> list:
@@ -39,15 +48,48 @@ def show(card: dict) -> None:
             print(f"       {key} {item['title']}: {violation}")
 
 
+def run_scenarios(args: argparse.Namespace) -> dict:
+    cards = {}
+    for scenario in chosen(args):
+        card = execute(scenario, keep=getattr(args, "keep", False), seed=args.seed)
+        cards[scenario.id] = card
+        show(card)
+    return {"engine": __version__, "scenarios": cards}
+
+
+def run_against(ref: str, args: argparse.Namespace) -> dict:
+    """The same scenarios, run with another git ref's engine (this checkout's simulation code)."""
+    repo = HERE.parents[1]
+    scratch = Path(tempfile.mkdtemp(prefix="sim-ref-"))
+    tree = scratch / "ref"
+    out = scratch / "scorecard.json"
+    subprocess.run(["git", "-C", str(repo), "worktree", "add", "--detach", str(tree), ref], check=True, capture_output=True)
+    try:
+        env = {**os.environ, "KAHNBAN_SIM_SRC": str(tree / "src")}
+        command = [sys.executable, str(LAUNCHER), "run", *args.ids, "--set", args.set, "--seed", str(args.seed), "--out", str(out)]
+        print(f"-- running the scenarios against {ref} ({tree / 'src'})")
+        subprocess.run(command, env=env, check=False)
+        return json.loads(out.read_text(encoding="utf-8"))
+    finally:
+        subprocess.run(["git", "-C", str(repo), "worktree", "remove", "--force", str(tree)], capture_output=True)
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python tests/run_sim.py")
     sub = parser.add_subparsers(dest="command", required=True)
-    run = sub.add_parser("run", help="run scenarios and write a scorecard")
-    run.add_argument("ids", nargs="*", help="scenario ids (default: the chosen set)")
-    run.add_argument("--set", choices=["fast", "full", "all"], default="fast")
-    run.add_argument("--out", default="scorecard.json")
-    run.add_argument("--keep", action="store_true", help="keep each scenario's repo for inspection")
-    run.add_argument("--seed", type=int, default=0)
+    for name, text in (("run", "run scenarios and write a scorecard"), ("compare", "run scenarios and compare with a baseline or a git ref")):
+        item = sub.add_parser(name, help=text)
+        item.add_argument("ids", nargs="*", help="scenario ids (default: the chosen set)")
+        item.add_argument("--set", choices=["fast", "full", "all"], default="fast")
+        item.add_argument("--seed", type=int, default=0)
+        item.add_argument("--out", default="scorecard.json")
+        if name == "run":
+            item.add_argument("--keep", action="store_true", help="keep each scenario's repo for inspection")
+        else:
+            item.add_argument("--against", metavar="REF", help="compare with this git ref instead of the committed baseline")
+            item.add_argument("--new", metavar="FILE", help="use this scorecard instead of running the scenarios")
+            item.add_argument("--accept", action="store_true", help="write the result as the new baseline (only if clean)")
     sub.add_parser("list", help="list scenarios")
     args = parser.parse_args(argv)
 
@@ -56,17 +98,38 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{scenario.id:4} {scenario.set:5} {scenario.title}")
         return 0
 
-    cards = {}
-    for scenario in chosen(args):
-        card = execute(scenario, keep=args.keep, seed=args.seed)
-        cards[scenario.id] = card
-        show(card)
-    Path(args.out).write_text(
-        json.dumps({"engine": __version__, "scenarios": cards}, indent=2) + "\n", encoding="utf-8"
-    )
-    failed = [key for key, card in cards.items() if not card["ok"]]
-    print(f"{len(cards) - len(failed)}/{len(cards)} scenarios hold every invariant -> {args.out}")
-    return 1 if failed else 0
+    if args.command == "run":
+        card = run_scenarios(args)
+        Path(args.out).write_text(json.dumps(card, indent=2) + "\n", encoding="utf-8")
+        failed = [key for key, item in card["scenarios"].items() if not item["ok"]]
+        total = len(card["scenarios"])
+        print(f"{total - len(failed)}/{total} scenarios hold every invariant -> {args.out}")
+        return 1 if failed else 0
+
+    new = json.loads(Path(args.new).read_text(encoding="utf-8")) if args.new else run_scenarios(args)
+    Path(args.out).write_text(json.dumps(new, indent=2) + "\n", encoding="utf-8")
+    if args.against:
+        old = run_against(args.against, args)
+    elif BASELINE.exists():
+        old = json.loads(BASELINE.read_text(encoding="utf-8"))
+    elif args.accept:
+        old = {"scenarios": {}}
+    else:
+        sys.exit(f"no baseline at {BASELINE}; run 'compare --accept' once to create it")
+    if args.ids:
+        wanted = {i.upper() for i in args.ids}
+        old = {**old, "scenarios": {k: v for k, v in old["scenarios"].items() if k.upper() in wanted}}
+    result = compare(normalize(old), normalize(new))
+    print(report(result))
+    if args.accept:
+        if not result.clean or any(not item["ok"] for item in new["scenarios"].values()):
+            print("not accepted: something is broken or worse")
+            return 1
+        BASELINE.parent.mkdir(exist_ok=True)
+        BASELINE.write_text(json.dumps(normalize(new), indent=2) + "\n", encoding="utf-8")
+        print(f"baseline written to {BASELINE}")
+        return 0
+    return 0 if result.clean else 1
 
 
 if __name__ == "__main__":

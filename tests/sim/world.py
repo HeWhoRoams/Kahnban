@@ -20,7 +20,7 @@ from .invariants import Checker
 
 PY = sys.executable
 AGENT = Path(__file__).resolve().parent / "agent.py"
-SRC = str(Path(__file__).resolve().parents[2] / "src")
+from . import SRC
 ROLES = ("coder", "qa_reviewer", "spec_analyst", "curator")
 
 
