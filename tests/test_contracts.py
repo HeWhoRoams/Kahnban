@@ -38,22 +38,6 @@ def _argv_pattern(words: tuple[str, ...]) -> re.Pattern[str]:
     return re.compile(r"\s*,\s*".join(f"[\"']{re.escape(word)}[\"']" for word in words))
 
 
-# Gaps the contract tests found on 2026-10-25. Each is a test to write (self-test plan,
-# step 3); delete the entry when it is written. An entry that gets tested fails below.
-CLI_GAPS = {"reject", "lease", "spec new", "spec approve", "spec list", "handoff"}
-MCP_GAPS = {
-    "kanban_ticket_ready",
-    "kanban_session_status",
-    "kanban_session_update",
-    "kanban_next",
-    "kanban_ticket_approve",
-    "kanban_ticket_reject",
-    "kanban_ticket_lease",
-    "kanban_ticket_escalate",
-    "kanban_feedback",
-}
-
-
 def test_every_cli_command_appears_in_a_test() -> None:
     source = _test_source()
     untested = {
@@ -61,7 +45,7 @@ def test_every_cli_command_appears_in_a_test() -> None:
         for words in _subcommands(cli.build_parser())
         if not _argv_pattern(words).search(source)
     }
-    assert untested == CLI_GAPS, f"new gaps: {untested - CLI_GAPS}; now tested: {CLI_GAPS - untested}"
+    assert not untested, f"no test runs: {sorted(untested)}"
 
 
 def test_mcp_registry_tables_agree() -> None:
@@ -72,7 +56,7 @@ def test_mcp_registry_tables_agree() -> None:
 def test_every_mcp_tool_appears_in_a_test() -> None:
     source = _test_source()
     untested = {name for name in mcp_server.TOOLS if name not in source}
-    assert untested == MCP_GAPS, f"new gaps: {untested - MCP_GAPS}; now tested: {MCP_GAPS - untested}"
+    assert not untested, f"no test calls: {sorted(untested)}"
 
 
 @pytest.mark.parametrize("name", sorted(mcp_server.TOOLS))
