@@ -69,7 +69,10 @@ def _read_skill_description(skill_md: Path) -> str:
         return ""
     try:
         text = skill_md.read_text(encoding="utf-8", errors="replace")
-        fields, body = frontmatter.parse(text)
+        try:
+            fields, body = frontmatter.parse(text)
+        except frontmatter.FrontmatterError:
+            fields, body = {}, text  # no (readable) frontmatter: describe it by its heading or first line
         desc = fields.get("description")
         if desc:
             return str(desc).strip()
