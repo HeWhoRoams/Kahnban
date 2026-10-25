@@ -74,7 +74,10 @@ def toy_repo(path: Path) -> Path:
     sh(sys.executable, "-m", "kahnban", "init", "--prefix", "LV", "--agentic", "--validation-command", f"{sys.executable} -m pytest -q", cwd=path)
     sh(sys.executable, "-m", "kahnban", "skills", "install", "--harness", "claude", cwd=path)  # the native agents behind --agent kahnban-<role>
     config = json.loads((path / "plans" / "board.config.json").read_text(encoding="utf-8"))
-    config["workers"] = {"default": f"claude -p --model {MODEL} --agent kahnban-{{role}} --permission-mode acceptEdits"}
+    # acceptEdits alone does not let a headless worker run `git add` or `git commit` (the first live run ended there),
+    # so the git commands a coder needs are allowed by name; the guard still blocks push, --no-verify and the rest.
+    git_tools = " ".join(f'"Bash(git {verb}:*)"' for verb in ("add", "commit", "status", "diff", "log", "rm", "mv"))
+    config["workers"] = {"default": f"claude -p --model {MODEL} --agent kahnban-{{role}} --permission-mode acceptEdits --allowedTools {git_tools}"}
     config["worker_timeout_sec"] = 900
     (path / "plans" / "board.config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
     sh("git", "add", "-A", cwd=path)
