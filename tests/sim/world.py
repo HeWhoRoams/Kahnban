@@ -48,6 +48,7 @@ class World:
         self.root = root
         self.extra_files = extra_files or {}
         self.human: Callable[[core.Config, runner.RunResult], bool] | None = None
+        self.parallel = 0
         self.seed = seed
         self.repo = init_repo(root / "repo")
         self.sim_dir = root / "sim"
@@ -148,7 +149,9 @@ class World:
 
     # --- running -------------------------------------------------------------
 
-    def run(self, crash: str = "") -> Outcome:
+    def run(self, crash: str = "", parallel: int = 0) -> Outcome:
+        """Run to the end in this process; or kill a first run at ``crash`` and finish here, or start
+        ``parallel`` runners at once on the board and let this process mop up what they left."""
         self.crashed = False
         config = self.build()
         plan_path = self.sim_dir / "plan.json"
@@ -163,6 +166,14 @@ class World:
         saved = {key: os.environ.get(key) for key in environment}
         os.environ.update(environment)
         try:
+            if parallel:
+                command = [PY, "-m", "kahnban", "--project-root", str(self.repo), "run", "--max-steps", str(self.max_steps)]
+                runners = [
+                    subprocess.Popen(command, env=os.environ.copy(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    for _ in range(parallel)
+                ]
+                for process in runners:
+                    process.wait(timeout=600)
             if crash:
                 died = subprocess.run(
                     [PY, "-m", "kahnban", "--project-root", str(self.repo), "run", "--max-steps", str(self.max_steps)],
@@ -171,6 +182,13 @@ class World:
                     text=True,
                 )
                 self.crashed = died.returncode == 137
+                if crash.startswith("worker"):
+                    # The dead runner's worker still holds a lease; the engine waits it out. Time passing is
+                    # the only thing faked here (the engine's own tests expire a lease the same way).
+                    for ticket in core.iter_tickets(config):
+                        holder = core.live_lease(config, ticket.ticket_id)
+                        if holder:
+                            core.write_lease(config, ticket.ticket_id, holder, minutes=-1)
             checker = Checker(config, self.plan)
             before = checker.head
             started = time.monotonic()

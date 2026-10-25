@@ -30,6 +30,7 @@ class Canary:
     old: str
     new: str
     scenarios: tuple[str, ...]
+    env: tuple[tuple[str, str], ...] = ()  # extra environment, for example one crash point to replay
 
 
 CANARIES = [
@@ -75,6 +76,22 @@ CANARIES = [
         "    if len(commands) == 1:\n        return 0, run_command(config, commands[0], cwd)[1]",
         ("S3",),
     ),
+    Canary(
+        "a lock held by a dead process is never taken over",
+        "fsutil.py",
+        "    pid = re.search(",
+        "    return False\n    pid = re.search(",
+        ("S8",),
+        env=(("KAHNBAN_SIM_FAULT", "before:1"),),
+    ),
+    Canary(
+        "a done ticket's leftovers are never offered for cleanup",
+        "dispatcher.py",
+        "            leftovers = core.cleanup_leftovers(config, done)",
+        "            leftovers = []",
+        ("S8",),
+        env=(("KAHNBAN_SIM_FAULT", "after:4"),),
+    ),
 ]
 
 
@@ -89,7 +106,7 @@ def run_canary(canary: Canary) -> tuple[bool, str]:
             return False, f"the patch point is not in {canary.file} exactly once; update the canary"
         target.write_text(text.replace(canary.old, canary.new), encoding="utf-8")
         out = scratch / "scorecard.json"
-        env = {**os.environ, "KAHNBAN_SIM_SRC": str(patched)}
+        env = {**os.environ, "KAHNBAN_SIM_SRC": str(patched), **dict(canary.env)}
         subprocess.run(
             [sys.executable, str(LAUNCHER), "run", *canary.scenarios, "--out", str(out)],
             env=env,

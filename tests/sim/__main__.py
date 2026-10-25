@@ -123,9 +123,8 @@ def main(argv: list[str] | None = None) -> int:
         old = {"scenarios": {}}
     else:
         sys.exit(f"no baseline at {BASELINE}; run 'compare --accept' once to create it")
-    if args.ids:
-        wanted = {i.upper() for i in args.ids}
-        old = {**old, "scenarios": {k: v for k, v in old["scenarios"].items() if k.upper() in wanted}}
+    ran = {s.id.upper() for s in chosen(args)}  # the baseline also holds scenarios of the other set
+    old = {**old, "scenarios": {k: v for k, v in old["scenarios"].items() if k.upper() in ran}}
     result = compare(normalize(old), normalize(new))
     print(report(result))
     if args.accept:

@@ -20,6 +20,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROLE = os.environ["KAHNBAN_ROLE"]
@@ -89,6 +90,8 @@ def coder() -> None:
     module, check = list(files)[0], list(files)[1]
     if POLICY == "idle":
         return
+    if POLICY == "hang" and turn == 1:
+        time.sleep(600)  # the runner's worker timeout kills this
     if POLICY == "sloppy" and turn == 1:
         files = {path: text.replace("return 2", "return 3") for path, text in files.items()}
     if turn == 1 and POLICY == "cheat-radius":

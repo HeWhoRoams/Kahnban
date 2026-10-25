@@ -111,6 +111,12 @@ def world_python() -> str:
     return sys.executable
 
 
+def s5b(world: World) -> None:
+    """S5 with a human who confirms every pause: the merge queue's refusals still end the loop."""
+    s5(world)
+    world.max_rounds = 8
+
+
 def s6(world: World) -> None:
     """Attended run: it stops at the merge gate until a human confirms."""
     world.config_overrides["autonomy"] = "attended"
@@ -142,6 +148,20 @@ def s7(world: World) -> None:
     world.human = human
 
 
+def s9(world: World) -> None:
+    """Two runners started at once on one board of three tickets."""
+    for n in range(1, 4):
+        world.add_ticket(n)
+    world.parallel = 2
+
+
+def s10(world: World) -> None:
+    """The coder hangs on its first turn: the worker timeout kills it and the ticket carries on."""
+    world.policies.update(coder="hang")
+    world.config_overrides["worker_timeout_sec"] = 8
+    world.add_ticket(1)
+
+
 def s12(world: World) -> None:
     """The same idea-to-done run, with spaces in the project path."""
     world.add_ticket(1, column="0-backlog")
@@ -170,10 +190,10 @@ CRASH_STEPS = 9  # engine commits in one ticket's life, with room to spare; the 
 
 
 def crash_sweep(scenario: "Scenario", keep: bool, seed: int) -> dict[str, Any]:
-    """Kill the run at every commit of one ticket's life (before and after), then run again."""
+    """Kill the run at every commit of one ticket's life and at every worker it starts, then run again."""
     cards: list[dict[str, Any]] = []
     only = os.environ.get("KAHNBAN_SIM_FAULT")  # replay one crash point, for example "before:3"
-    for when in ("before", "after"):
+    for when in ("before", "after", "worker"):
         for k in range(1, CRASH_STEPS + 1):
             if only and only != f"{when}:{k}":
                 continue
@@ -184,7 +204,10 @@ def crash_sweep(scenario: "Scenario", keep: bool, seed: int) -> dict[str, Any]:
                 outcome = world.run(crash=f"{when}:{k}")
                 card = scorecard(scenario, world, outcome)
             finally:
-                shutil.rmtree(root, ignore_errors=True)
+                if not keep:
+                    shutil.rmtree(root, ignore_errors=True)
+                else:
+                    print(f"kept {when}:{k} at {root}")
             if not world.crashed:
                 break  # the run has fewer commits than this; later points are never reached either
             card["fault"] = f"{when}:{k}"
@@ -237,10 +260,12 @@ SCENARIOS: list[Scenario] = [
     Scenario("S4e", "Cheat: move the ticket to done by hand", "fast", 1, cheat("coder", "cheat-force")),
     Scenario("S4f", "Cheat: the reviewer approves as the owner", "fast", 1, cheat("qa_reviewer", "cheat-self-approve")),
     Scenario("S5", "Two tickets pass alone and fail together", "fast", 2, s5, expect_done=1, expect_parked=1),
+    Scenario("S5b", "A human confirms every pause; the merge queue's refusals end the loop", "fast", 2, s5b, expect_done=1, expect_parked=1, expect_outcome="the merge queue has refused"),
     Scenario("S6", "Attended run waits for a human at the merge gate", "fast", 1, s6),
     Scenario("S7", "Escalation, the human answers, the run resumes", "fast", 1, s7),
-    Scenario("S8", "Crash at every commit of a ticket's life, then recover", "full", 1, s1, custom=crash_sweep,
-             known_gap="a crashed run leaves a board lock that blocks the next run for 5 minutes, and a crash at the done step leaves the worktree and branch behind"),
+    Scenario("S8", "Crash at every commit of a ticket's life, then recover", "full", 1, s1, custom=crash_sweep),
+    Scenario("S9", "Two runners at once on one board", "full", 3, s9),
+    Scenario("S10", "A hung worker is killed by the timeout and the ticket carries on", "full", 1, s10, expect_outcome="timed out"),
     Scenario("S12", "Idea to done under a path with spaces", "full", 1, s12, spaced=True),
     Scenario("S13", "Twelve independent tickets", "full", 12, s13),
     Scenario("S14a", "Random mix of honest, sloppy and cheating coders (seed 1)", "full", 6, mixed(1)),
@@ -314,7 +339,7 @@ def execute(scenario: Scenario, *, keep: bool = False, seed: int = 0) -> dict[st
     world = World(root, tickets=scenario.tickets, seed=seed, extra_files=BASE_FILES)
     try:
         scenario.build(world)
-        outcome = world.run()
+        outcome = world.run(parallel=world.parallel)
         card = scorecard(scenario, world, outcome)
         card["known_gap"] = scenario.known_gap
         if keep:
