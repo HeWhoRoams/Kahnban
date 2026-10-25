@@ -1,11 +1,102 @@
 {
-  "generated": "2026-10-25T17:51:10",
+  "generated": "2026-10-25T17:51:26",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 0,
-      "tickets": []
+      "count": 9,
+      "tickets": [
+        {
+          "id": "KB-001",
+          "title": "A SKILL.md without frontmatter lists with an empty description",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-002",
+          "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-003",
+          "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-004",
+          "title": "Break down status.json metrics per role: which worker caused the rejections",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-005",
+          "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-006",
+          "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-007",
+          "title": "Reviewer identity that is not self-asserted",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-008",
+          "title": "Parallel workers in kahnban run (leases already allow it)",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-009",
+          "title": "The citadel portability smoke test (plan.md phase 4)",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "0-backlog"
+        }
+      ]
     },
     {
       "name": "1-refining",
@@ -37,6 +128,61 @@
     "done": 0,
     "first_pass_yield": null,
     "median_cycle_hours": null,
-    "tickets": {}
+    "tickets": {
+      "KB-001": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-002": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-003": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-004": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-005": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-006": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-007": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-008": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-009": {
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      }
+    }
   }
 }

@@ -8,16 +8,26 @@ Generated: 2026-10-25 17:51
 
 | Column | Tickets |
 | :--- | ---: |
-| 0-backlog | 0 |
+| 0-backlog | 9 |
 | 1-refining | 0 |
 | 2-ready | 0 |
 | 3-in-progress | 0 |
 | 4-verifying | 0 |
 | 5-done | 0 |
 
-## 0-backlog (0)
+## 0-backlog (9)
 
-_empty_
+| ID | Title | Owner | Branch | Updated |
+| :--- | :--- | :--- | :--- | :--- |
+| KB-001 | A SKILL.md without frontmatter lists with an empty description | unassigned | - | 2026-10-25 |
+| KB-002 | Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show | unassigned | - | 2026-10-25 |
+| KB-003 | Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move | unassigned | - | 2026-10-25 |
+| KB-004 | Break down status.json metrics per role: which worker caused the rejections | unassigned | - | 2026-10-25 |
+| KB-005 | Rename the bundled blast-radius skill: it collides with the ticket field of the same name | unassigned | - | 2026-10-25 |
+| KB-006 | Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access | unassigned | - | 2026-10-25 |
+| KB-007 | Reviewer identity that is not self-asserted | unassigned | - | 2026-10-25 |
+| KB-008 | Parallel workers in kahnban run (leases already allow it) | unassigned | - | 2026-10-25 |
+| KB-009 | The citadel portability smoke test (plan.md phase 4) | unassigned | - | 2026-10-25 |
 
 ## 1-refining (0)
 
