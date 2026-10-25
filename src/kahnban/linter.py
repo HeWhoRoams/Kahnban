@@ -36,6 +36,7 @@ RULES: dict[str, str] = {
     "BL17": "ingest provenance is unique and its source document exists",
     "BL18": "spec traceability: cited specs and requirements exist, approved specs are covered",
     "BL19": "in-progress tickets move within stale_after_days (warning)",
+    "BL20": "done: no worktree, branch or lease left behind (warning)",
 }
 
 VIOLATION = "violation"
@@ -275,6 +276,13 @@ def _check_ticket(
     # BL15 — done tickets are merged
     if ticket.column == config.done_column:
         _check_merged(config, report, identifier, fields, body)
+        # BL20 — a landed ticket still holds its worktree, branch or lease
+        try:
+            leftovers = core.cleanup_leftovers(config, ticket)
+        except (core.KahnbanError, gitops.GitError):
+            leftovers = []
+        if leftovers:
+            report("BL20", f"still holds its {', '.join(leftovers)}; run 'kahnban cleanup {identifier}'", WARNING)
 
 
 def _at_or_after(config: core.Config, column: str, reference: str) -> bool:

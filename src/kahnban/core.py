@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import attempts, frontmatter, gitops, status, trust, worktree
+from kahnban import attempts, frontmatter, fsutil, gitops, status, trust, worktree
 from kahnban.fsutil import write_text_atomic
 from kahnban.config import (  # noqa: F401  (re-exported: the rest of the package reads these as core.X)
     AUTONOMY_MODES,
@@ -676,7 +676,8 @@ def board_lock(
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     warnings: list[str] = []
     descriptor: int | None = None
-    for attempt in range(1, max_retries + 1):
+    attempt = 0  # a lock we break does not use up an attempt: only waiting does
+    while True:
         try:
             descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             break
@@ -687,15 +688,16 @@ def board_lock(
             except OSError:
                 age, holder = 0.0, "unknown"
             held_until = re.search(r"\buntil=(\d+)", holder)
-            if age > stale_seconds and time.time() > int(held_until.group(1) if held_until else 0):
-                warnings.append(
-                    f"broke stale board lock after {int(age)}s (held by {holder})"
-                )
-                try:
-                    lock_path.unlink()
-                except OSError:
-                    pass
+            if fsutil.holder_is_dead(holder) and fsutil.break_lock(lock_path, holder):
+                warnings.append(f"broke the board lock of a process that is gone ({holder})")
                 continue
+            if age > stale_seconds and time.time() > int(held_until.group(1) if held_until else 0):
+                if fsutil.break_lock(lock_path, holder):
+                    warnings.append(
+                        f"broke stale board lock after {int(age)}s (held by {holder})"
+                    )
+                    continue
+            attempt += 1
             if attempt < max_retries:
                 jitter = random.uniform(0.01, 0.04)
                 backoff_factor = min(1.2 ** (attempt - 1), 3.0)
@@ -710,11 +712,7 @@ def board_lock(
     try:
         os.write(
             descriptor,
-            (
-                f"pid={os.getpid()} at={datetime.now().isoformat(timespec='seconds')}"
-                + (f" until={int(time.time()) + hold_seconds}" if hold_seconds else "")
-                + "\n"
-            ).encode(),
+            fsutil.lock_stamp(f" until={int(time.time()) + hold_seconds}" if hold_seconds else "").encode(),
         )
         os.close(descriptor)
         descriptor = None
@@ -722,10 +720,7 @@ def board_lock(
     finally:
         if descriptor is not None:
             os.close(descriptor)
-        try:
-            lock_path.unlink()
-        except FileNotFoundError:
-            pass
+        fsutil.unlink_retry(lock_path)
 
 
 # --- projections ------------------------------------------------------------
@@ -1818,15 +1813,29 @@ def unblock(
     return result
 
 
+def integration_refusals(config: Config, ticket_id: str) -> int:
+    """How many times the merge queue has sent this ticket back, over its whole life.
+
+    ``confirm`` resets the retry counts, so without this a ticket that cannot land could be confirmed
+    and refused for ever; the count is not reset by a confirmation.
+    """
+    fields, _ = frontmatter.parse(find_ticket(config, ticket_id).text)
+    try:
+        return int(str(fields.get("integration_refusals") or 0))
+    except ValueError:
+        return 0
+
+
 @_refusals_reported
 def confirm(
-    config: Config, ticket_id: str, *, timestamp: datetime | None = None
+    config: Config, ticket_id: str, *, reason: str = "", timestamp: datetime | None = None
 ) -> TransitionResult:
     """``kahnban confirm`` — a human signs off the next gate of an attended run.
 
     Before ``ready`` that is the refined ticket's contract; in verifying it is the exact
     branch tip that ``merge`` will land. Each mark is tied to what was reviewed, so an
-    edited contract or new commits need a new one.
+    edited contract or new commits need a new one. Once the merge queue has refused a ticket
+    ``max_attempts`` times, a confirmation needs a ``reason`` and buys exactly one more try.
     """
     with board_lock(config) as lock_warnings:
         _require_board_branch(config)
@@ -1839,17 +1848,29 @@ def confirm(
                 "or 'merge' has anything to confirm"
             )
         mark = f"ready:{contract_hash(body)}"
+        updates: dict[str, Any] = {"blocked_on": ""}
+        note = ""
         if gate == HumanGate.MERGE:
             tip = branch_tip(config, ticket_branch(fields, ticket.ticket_id))
             if not tip:
                 raise GateError(f"{ticket.ticket_id} has no branch to confirm")
             mark = f"merge:{tip}"
+            refused = integration_refusals(config, ticket.ticket_id)
+            if refused >= config.max_attempts:
+                if not reason.strip():
+                    raise GateError(
+                        f"the merge queue has refused {ticket.ticket_id} {refused} times, so confirming it "
+                        "again lands nothing new. Read its Log and fix the cause, then confirm with "
+                        "--reason <what changed> to allow one more try"
+                    )
+                updates["integration_refusals"] = str(config.max_attempts - 1)
+                note = f" after {refused} refusals: {reason.strip()}"
         result = transition(
             config,
             ticket.ticket_id,
             ticket.column,
-            log_entry=f"confirmed by a human for {gate}",
-            fm_updates={"confirmed": mark, "blocked_on": ""},
+            log_entry=f"confirmed by a human for {gate}{note}",
+            fm_updates={"confirmed": mark, **updates},
             commit_message=f"kanban({ticket.ticket_id}): confirmed for {gate}",
             timestamp=timestamp,
         )
@@ -2525,12 +2546,14 @@ def reject(
     reviewer: str,
     message: str,
     *,
+    integration_refusal: bool = False,
     timestamp: datetime | None = None,
 ) -> TransitionResult:
     """``kahnban reject`` — send a verified ticket back to its coder, with the reasons.
 
     The reasons are committed to the ticket's ``## Log``; every box is unticked so
-    the next verify has to earn them again.
+    the next verify has to earn them again. ``integration_refusal`` marks a rejection by the
+    merge queue, which is counted for the life of the ticket (see :func:`integration_refusals`).
     """
     if not message.strip():
         raise GateError("a rejection needs a message saying what to fix")
@@ -2541,19 +2564,22 @@ def reject(
         unticked = _tick_acceptance_criteria(ticket.text, ticked=False)
         if unticked != ticket.text:
             write_text(ticket.path, unticked)
+        updates = {
+            "verified_sha": "",
+            "reviewer": "",
+            "approved_sha": "",
+            "approval_sig": "",
+            "integrated_sha": "",
+            "confirmed": "",
+        }
+        if integration_refusal:
+            updates["integration_refusals"] = str(integration_refusals(config, ticket.ticket_id) + 1)
         result = transition(
             config,
             ticket.ticket_id,
             config.in_progress_column,
             log_entry=f"rejected by {reviewer}:\n{_indent_output(message.strip())}",
-            fm_updates={
-                "verified_sha": "",
-                "reviewer": "",
-                "approved_sha": "",
-                "approval_sig": "",
-                "integrated_sha": "",
-                "confirmed": "",
-            },
+            fm_updates=updates,
             timestamp=timestamp,
         )
         result.messages = [*lock_warnings, *result.messages]
@@ -2738,6 +2764,29 @@ def move(
         )
         result.messages = [*lock_warnings, *result.messages]
         return result
+
+
+def cleanup_leftovers(config: Config, ticket: Ticket) -> list[str]:
+    """What a done ticket still holds that ``cleanup`` would remove, once its work is on the default branch.
+
+    A crash between ``done`` and ``cleanup`` leaves the worktree and branch, and nothing else looks at a
+    done ticket again. A branch whose work is not on the default branch is not listed, so this never
+    points ``cleanup`` at work that has not landed.
+    """
+    fields, _ = frontmatter.parse(ticket.text)
+    branch = ticket_branch(fields, ticket.ticket_id)
+    root = config.project_root
+    branch_exists = gitops.branch_exists(root, branch)
+    if branch_exists and not is_branch_content_merged(root, branch, gitops.default_branch(root), config):
+        return []
+    found = []
+    if (root / ".worktrees" / ticket.ticket_id).exists():
+        found.append("worktree")
+    if branch_exists:
+        found.append("branch")
+    if live_lease(config, ticket.ticket_id):
+        found.append("lease")
+    return found
 
 
 @_refusals_reported

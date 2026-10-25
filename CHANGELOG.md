@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Crash recovery
+- A lock file (`.claim.lock`, and the attempts and stop-nudge locks) records `pid`, `host` and time. A waiter that finds the lock of a process on this machine that no longer exists breaks it at once instead of waiting out the 300-second age limit; anything it cannot judge still falls back to the age rule. Only one waiter wins a break, and a lock made in the meantime is left alone. A release now retries when a waiter has the file open, which on Windows had made the holder's delete fail silently.
+- A ticket that reached `5-done` but was killed before `cleanup` is finished by the next run (`finish_cleanup`), and `kahnban lint` warns about it (BL20). `kahnban next` says when the board is idle only because a live lease is still held.
+- The merge queue's refusals are counted for the life of a ticket (`integration_refusals`). `confirm` resets the retry counts, so a human who kept confirming a ticket that cannot land looped for ever; after `max_attempts` refusals the run escalates instead of pausing, and `kahnban confirm --reason <what changed>` allows exactly one more try.
+- Before and after, from the simulation's crash sweep (S8): 2 of 10 crash points recovered; now 12 of 12 (adding a crash while a worker runs). S5 with a human confirming every pause: 39 steps and no end; now 19 and an escalation.
+
 ### Self-test and simulation
 - `tests/run_sim.py` drives the real engine with scripted honest, sloppy and cheating agents, checks fourteen rules after every step, and compares a scorecard against a committed baseline or another git ref ([docs/simulation-plan.md](docs/simulation-plan.md)). CI runs the fast set on pull requests and everything, plus deliberate-breakage canaries, nightly.
 - `KAHNBAN_FAULT=before:K` or `after:K` ends the process hard at the K-th engine commit. It exists for the crash scenarios and does nothing unless set.

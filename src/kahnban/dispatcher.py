@@ -15,7 +15,7 @@ from kahnban import core, frontmatter, handoff, roles
 
 @dataclass
 class DispatchRecommendation:
-    action: str  # merge_and_close, review_and_gate, resume_worktree, claim_and_implement, spec_and_refine, harvest_learnings, idle
+    action: str  # finish_cleanup, merge_and_close, review_and_gate, resume_worktree, claim_and_implement, spec_and_refine, harvest_learnings, idle
     assigned_role: str  # integrator, qa_reviewer, coder, spec_analyst, curator, none
     ticket_id: str | None = None
     ticket_title: str | None = None
@@ -51,6 +51,24 @@ def resolve_next_action(
     """
     root = config.project_root
     open_tickets = [t for t in core.iter_tickets(config) if _is_open(t)]
+
+    # Priority 0: a landed ticket that a crash left half-cleaned (its worktree or branch is still there).
+    if preferred_role in (None, roles.INTEGRATOR):
+        for done in core.iter_tickets(config):
+            if done.column != config.done_column:
+                continue
+            leftovers = core.cleanup_leftovers(config, done)
+            if leftovers:
+                what = ", ".join(leftovers)
+                return DispatchRecommendation(
+                    action="finish_cleanup",
+                    assigned_role=roles.INTEGRATOR,
+                    ticket_id=done.ticket_id,
+                    column=done.column,
+                    summary=f"{done.ticket_id} is done but still holds its {what}.",
+                    command=f"kahnban cleanup {done.ticket_id}",
+                    prompt=f"{done.ticket_id} landed but its {what} remain. Run `kahnban cleanup {done.ticket_id}`.",
+                )
 
     # Priority 1: 4-verifying. Unapproved tickets go to a reviewer; approved ones
     # go to the integrator, who lands them through the merge queue.
@@ -200,6 +218,22 @@ def resolve_next_action(
                 title=t_title,
                 facts=[f"Ticket file: {core.relative_path(config, target.path)}"],
             ),
+        )
+
+    # A ticket held by a live lease is not idle work: its holder, or a crash it left behind, owns it
+    # until the lease runs out. Say so, or a cron job reads "idle" and never looks again.
+    leased = [
+        f"{t.ticket_id} (held by {holder})"
+        for t in core.iter_tickets(config)
+        if t.column == config.in_progress_column and (holder := core.live_lease(config, t.ticket_id))
+    ]
+    if leased:
+        return DispatchRecommendation(
+            action="idle",
+            assigned_role="none",
+            summary=f"Board is idle. Waiting on a live lease: {', '.join(leased)}; it expires {config.lease_minutes} minutes after the holder's last sign of life.",
+            command="kahnban status",
+            prompt="Nothing to hand out until the lease runs out. If its holder is gone, `kahnban lease <ID> --owner <you>` takes over once it expires.",
         )
 
     # Default: Idle / Board Clean

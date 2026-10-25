@@ -246,7 +246,7 @@ def test_board_lock_retries_and_succeeds_when_released(board: Path) -> None:
         except OSError:
             pass
 
-    lock_path.write_text("pid=9999 at=test\n", encoding="utf-8")
+    lock_path.write_text("holder=someone at=test\n", encoding="utf-8")
     t = threading.Thread(target=release_later)
     t.start()
 
@@ -258,7 +258,7 @@ def test_board_lock_retries_and_succeeds_when_released(board: Path) -> None:
 def test_board_lock_breaks_a_stale_lock_with_a_warning(board: Path) -> None:
     config = load(board)
     lock_path = config.board_path / core.LOCK_NAME
-    lock_path.write_text("pid=1 at=old\n", encoding="utf-8")
+    lock_path.write_text("holder=someone at=old\n", encoding="utf-8")
 
     with core.board_lock(config, stale_seconds=0) as warnings:
         assert any("stale" in warning for warning in warnings)

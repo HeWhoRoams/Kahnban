@@ -179,20 +179,21 @@ def commit(
         args.append("--allow-empty")
     if paths:
         args.extend(["--", *[str(p) for p in paths]])
-    _fault_point("before")
+    fault_point("before")
     run(repo, args)
-    _fault_point("after")
+    fault_point("after")
     return rev_parse(repo, "HEAD")
 
 
-_commit_calls = {"before": 0, "after": 0}
+_commit_calls = {"before": 0, "after": 0, "worker": 0}
 
 
-def _fault_point(when: str) -> None:
+def fault_point(when: str) -> None:
     """Crash injection for the workflow simulation, off unless the variable is set.
 
     ``KAHNBAN_FAULT=before:3`` ends the process hard as it reaches its 3rd commit (the files are
-    moved and staged, the commit not made); ``after:3`` ends it right after that commit lands.
+    moved and staged, the commit not made); ``after:3`` ends it right after that commit lands;
+    ``worker:2`` ends it right after the runner starts its 2nd worker, which keeps running.
     """
     spec = os.environ.get("KAHNBAN_FAULT", "")
     if not spec:

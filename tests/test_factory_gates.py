@@ -470,14 +470,14 @@ def test_a_lock_is_not_broken_before_its_holder_deadline(board: Path) -> None:
     config = core.load_config(board)
     lock = config.board_path / core.LOCK_NAME
     long_ago = time.time() - 10 * core.LOCK_STALE_SECONDS
-    lock.write_text(f"pid=1 at=then until={int(time.time()) + 3600}\n", encoding="utf-8")
+    lock.write_text(f"holder=other at=then until={int(time.time()) + 3600}\n", encoding="utf-8")
     os.utime(lock, (long_ago, long_ago))
 
     with pytest.raises(core.LockError):
         with core.board_lock(config, max_retries=1):
             pass
 
-    lock.write_text("pid=1 at=then\n", encoding="utf-8")
+    lock.write_text("holder=other at=then\n", encoding="utf-8")
     os.utime(lock, (long_ago, long_ago))
     with core.board_lock(config, max_retries=2) as warnings:
         assert any("stale" in warning for warning in warnings)

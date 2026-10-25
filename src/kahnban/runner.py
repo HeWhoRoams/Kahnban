@@ -165,6 +165,10 @@ def _step(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path
     if rec.action == "merge_and_close":
         waiting = _await_human(config, ticket)
         return waiting or _merge_and_close(config, ticket)
+    if rec.action == "finish_cleanup":
+        core.cleanup(config, ticket)
+        attempts.clear(config, ticket)
+        return "finished the cleanup an interrupted run left undone"
     if rec.action == "claim_and_implement":
         core.claim(config, ticket, CODER, create_worktree=True)
         return _implement(config, rec, log)
@@ -207,6 +211,15 @@ def _await_human(config: core.Config, ticket: str) -> str:
     gate = core.needs_human(config, core.find_ticket(config, ticket))
     if not gate:
         return ""
+    refused = core.integration_refusals(config, ticket)
+    if gate == core.HumanGate.MERGE and refused >= config.max_attempts:
+        # Confirming resets the retry counts, so only this count can end the loop.
+        reason = (
+            f"the merge queue has refused {ticket} {refused} times and confirming it again lands nothing "
+            f"new: read its Log, fix the cause, then 'kahnban confirm {ticket} --reason <what changed>'"
+        )
+        core.escalate(config, ticket, reason)
+        return f"escalated: {reason}"
     reason = f"{handoff.ATTENDED_REASON} review {ticket}, then 'kahnban confirm {ticket}' to take the {gate} gate"
     core.escalate(config, ticket, reason)
     return f"paused for a human before {gate}: run 'kahnban confirm {ticket}'"
@@ -241,7 +254,7 @@ def _merge_and_close(config: core.Config, ticket: str) -> str:
     try:
         merged = core.merge(config, ticket)
     except core.GateError as error:
-        core.reject(config, ticket, INTEGRATOR, f"merge refused: {error}")
+        core.reject(config, ticket, INTEGRATOR, f"merge refused: {error}", integration_refusal=True)
         return f"merge refused and sent back: {error}"
     if not merged.passed:
         core.reject(
@@ -250,6 +263,7 @@ def _merge_and_close(config: core.Config, ticket: str) -> str:
             INTEGRATOR,
             f"integration tests failed on the merged result (exit {merged.exit_code}); "
             f"see {merged.artifact}",
+            integration_refusal=True,
         )
         return f"integration tests failed (exit {merged.exit_code}); sent back"
     core.done(config, ticket)
@@ -338,6 +352,7 @@ def _work(
         env=env,
         start_new_session=os.name != "nt",
     )
+    gitops.fault_point("worker")  # simulation only: die with the worker still running
     code, output = _communicate(process, rec.prompt, config.worker_timeout_sec, heartbeat)
     _record(log, role, ticket, command, code, output)
     if code == 124:

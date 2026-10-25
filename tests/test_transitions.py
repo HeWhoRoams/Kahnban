@@ -243,7 +243,7 @@ def test_claim_holds_the_lock_for_the_whole_gate(board: Path) -> None:
     config = core.load_config(board)
     write_ticket(config.board_path, "2-ready", "TST-001", "example")
     commit_board(board)
-    (config.board_path / core.LOCK_NAME).write_text("pid=999 at=now", encoding="utf-8")
+    (config.board_path / core.LOCK_NAME).write_text("holder=another at=now", encoding="utf-8")
 
     with pytest.raises(core.LockError):
         core.claim(config, "TST-001", "agent", create_worktree=False)

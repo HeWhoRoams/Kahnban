@@ -208,7 +208,7 @@ def cmd_escalate(args: argparse.Namespace) -> int:
 
 
 def cmd_confirm(args: argparse.Namespace) -> int:
-    _report(core.confirm(_load(args), args.ticket_id))
+    _report(core.confirm(_load(args), args.ticket_id, reason=args.reason or ""))
     return EXIT_OK
 
 
@@ -781,6 +781,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="a human signs off the next gate of an attended run (ready, or merge at the current tip)",
     )
     confirm_parser.add_argument("ticket_id")
+    confirm_parser.add_argument(
+        "--reason",
+        help="what changed; required once the merge queue has refused the ticket max_attempts times",
+    )
     confirm_parser.set_defaults(handler=cmd_confirm)
 
     spec_parser = subparsers.add_parser(

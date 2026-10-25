@@ -42,7 +42,7 @@ def rules_of(findings) -> set[str]:
 @pytest.mark.parametrize("name", ["clean-board", "clean-board-crlf"])
 def test_clean_boards_lint_without_violations(name: str, tmp_path: Path) -> None:
     root = materialize(FIXTURES / name, tmp_path / "board")
-    # The done ticket's branch is merged, so BL15 resolves without a warning.
+    # The done ticket's branch is merged, so BL15 resolves without a warning (BL20 notes it was not cleaned up).
     gitops.branch(root, "ticket/TST-006", "main")
     config = core.load_config(root)
 
@@ -52,7 +52,7 @@ def test_clean_boards_lint_without_violations(name: str, tmp_path: Path) -> None
     assert result.ok
     assert result.tickets_checked == 6
     assert result.column_counts["archive"] == 1
-    unexpected = [f.render() for f in result.warnings if f.rule != "BL15"]
+    unexpected = [f.render() for f in result.warnings if f.rule not in ("BL15", "BL20")]
     assert unexpected == []
 
 
@@ -246,7 +246,7 @@ def test_json_mode_reports_violations_and_warnings(tmp_path: Path) -> None:
 
 
 def test_every_documented_rule_has_a_description() -> None:
-    assert set(linter.RULES) == {f"BL{index:02d}" for index in range(1, 20)}
+    assert set(linter.RULES) == {f"BL{index:02d}" for index in range(1, 21)}
 
 
 def test_fixture_line_endings_are_preserved_on_disk() -> None:
