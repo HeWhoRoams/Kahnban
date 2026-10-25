@@ -7,6 +7,7 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -34,8 +35,18 @@ class Outcome:
 
 
 class World:
-    def __init__(self, root: Path, *, tickets: int, seed: int = 0, **config: object) -> None:
+    def __init__(
+        self,
+        root: Path,
+        *,
+        tickets: int,
+        seed: int = 0,
+        extra_files: dict[str, str] | None = None,
+        **config: object,
+    ) -> None:
         self.root = root
+        self.extra_files = extra_files or {}
+        self.human: Callable[[core.Config, runner.RunResult], bool] | None = None
         self.seed = seed
         self.repo = init_repo(root / "repo")
         self.sim_dir = root / "sim"
@@ -48,9 +59,11 @@ class World:
         for n in range(1, tickets + 1):
             (self.repo / "src").mkdir(exist_ok=True)
             (self.repo / "src" / f"m{n}.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        for relative, text in self.extra_files.items():
+            (self.repo / relative).parent.mkdir(parents=True, exist_ok=True)
+            (self.repo / relative).write_text(text, encoding="utf-8")
         git(self.repo, "add", "-A")
         git(self.repo, "commit", "-m", "modules return 1")
-        self._ready: list[str] = []
 
     # --- building the board ------------------------------------------------
 
@@ -149,6 +162,10 @@ class World:
             before = checker.head
             started = time.monotonic()
             result = runner.run(config, max_steps=self.max_steps, echo=checker.after_step)
+            while self.human is not None and self.human(config, result):
+                more = runner.run(config, max_steps=self.max_steps, echo=checker.after_step)
+                result.steps.extend(more.steps)
+                result.stopped, result.parked = more.stopped, more.parked
             seconds = time.monotonic() - started
             checker.finalize(runner)
         finally:
@@ -160,6 +177,9 @@ class World:
         commits = len(checker.commits_since(before))
         log_file = self.sim_dir / "agent-log.jsonl"
         entries = [json.loads(line) for line in log_file.read_text(encoding="utf-8").splitlines()] if log_file.exists() else []
+        checker.audit({".gitignore", "README.md", *self.extra_files}, entries)
+        guard_files = (config.board_path / core.ARTIFACT_DIR).glob("*.guard")
+        result.guard_refusals = sum(len(f.read_text(encoding="utf-8").splitlines()) for f in guard_files)
         return Outcome(config, result, checker, seconds, commits, entries)
 
     def cleanup(self) -> None:

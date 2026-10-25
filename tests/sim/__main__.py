@@ -15,8 +15,8 @@ from .scenarios import SCENARIOS, execute
 def chosen(args: argparse.Namespace) -> list:
     if args.ids:
         wanted = {item.upper() for item in args.ids}
-        picked = [s for s in SCENARIOS if s.id in wanted]
-        missing = wanted - {s.id for s in picked}
+        picked = [s for s in SCENARIOS if s.id.upper() in wanted]
+        missing = wanted - {s.id.upper() for s in picked}
         if missing:
             sys.exit(f"unknown scenario(s): {', '.join(sorted(missing))}")
         return picked
@@ -31,6 +31,9 @@ def show(card: dict) -> None:
         f"first-pass {metrics['first_pass_yield']}, prompts {metrics['worker_prompt_bytes']}B, "
         f"{metrics['wall_seconds']}s"
     )
+    for key, item in card["expectations"].items():
+        if not item["pass"]:
+            print(f"       expected {key} {item['expected']}, got {item['got']}")
     for key, item in card["invariants"].items():
         for violation in item["violations"]:
             print(f"       {key} {item['title']}: {violation}")

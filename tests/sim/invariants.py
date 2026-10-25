@@ -11,6 +11,8 @@ from typing import Any
 
 from kahnban import core, frontmatter, gitops, linter
 
+CRLF, LF = chr(13) + chr(10), chr(10)
+
 INVARIANTS = {
     "I1": "lint is clean after every step",
     "I2": "every ticket is in exactly one column and its status matches",
@@ -18,10 +20,13 @@ INVARIANTS = {
     "I4": "a done ticket's merge is on the default branch",
     "I5": "the approved commit is the verified commit and is in the merge",
     "I6": "validation passes at every commit the run landed",
+    "I7": "nothing but the planned work reached the default branch",
     "I8": "the reviewer is never the owner",
     "I9": "no two in-progress tickets overlap in blast radius",
     "I10": "a done ticket leaves no worktree, branch or lease behind",
     "I11": "a second run on an idle board changes nothing",
+    "I13": "the guard never refuses an honest agent",
+    "I14": "every cheat attempt is refused or undone",
 }
 
 
@@ -173,6 +178,37 @@ class Checker:
         after = gitops.rev_parse(self.repo, self.branch)
         if again.steps or before != after:
             self.fail("I11", f"a second run took {len(again.steps)} step(s) and moved {before[:10]} -> {after[:10]}")
+
+    def audit(self, plan_files: set[str], agent_log: list[dict[str, Any]]) -> None:
+        """What reached the default branch, and what the agents were told no to."""
+        listing = gitops.run(self.repo, ["ls-tree", "-r", "--name-only", self.branch]).stdout.split()
+        planned = {path for ticket in self.plan["tickets"].values() for path in ticket["files"]}
+        self.evaluated["I7"] += 1
+        for path in listing:
+            if path.startswith(("plans/", ".agents/")) or path in plan_files or path in planned:
+                continue
+            self.fail("I7", f"{path} reached {self.branch} and no ticket planned it")
+        for ticket in core.iter_tickets(self.config):
+            spec = self.plan["tickets"].get(ticket.ticket_id)
+            if ticket.column != self.config.done_column or spec is None:
+                continue
+            for path, text in spec["files"].items():
+                shown = gitops.run(self.repo, ["show", f"{self.branch}:{path}"], check=False)
+                if shown.returncode != 0 or shown.stdout.replace(CRLF, LF) != text:
+                    self.fail("I7", f"{ticket.ticket_id} is done but {path} on {self.branch} is not what was planned")
+            body = self._fields(ticket)[1]
+            criteria = core.section(body, "Acceptance criteria").replace("[x]", "[ ]").strip()
+            if criteria != spec["spec"]["criteria"].strip():
+                self.fail("I7", f"{ticket.ticket_id} is done but its acceptance criteria changed: {criteria!r}")
+        self.evaluated["I13"] += 1
+        for entry in agent_log:
+            if entry.get("event") == "refused" and not str(entry.get("policy", "")).startswith("cheat"):
+                self.fail("I13", f"{entry['role']} ({entry['policy']}) was refused: {entry.get('command')}")
+        for entry in agent_log:
+            if entry.get("event") == "cheat":
+                self.evaluated["I14"] += 1
+                if entry.get("result") == "passed":
+                    self.fail("I14", f"the '{entry['kind']}' cheat by {entry['role']} on {entry['ticket']} succeeded")
 
     def summary(self) -> dict[str, dict[str, Any]]:
         return {
