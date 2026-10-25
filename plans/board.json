@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-25T17:51:57",
+  "generated": "2026-10-25T17:52:24",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -134,13 +134,18 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-001",
           "title": "A SKILL.md without frontmatter lists with an empty description",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "verifying",
+          "column": "4-verifying",
           "owner": "claude-coder",
           "branch": "ticket/KB-001",
           "worktree": ".worktrees/KB-001",
@@ -154,11 +159,6 @@
           "updated": "2026-10-25"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -282,8 +282,8 @@
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "verifying",
+      "column": "4-verifying",
       "owner": "claude-coder",
       "branch": "ticket/KB-001",
       "worktree": ".worktrees/KB-001",

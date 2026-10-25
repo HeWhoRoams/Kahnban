@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-25T17:51:57",
+  "generated": "2026-10-25T17:52:24",
   "generator": "kahnban",
   "columns": [
     {
@@ -100,24 +100,24 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-001",
           "title": "A SKILL.md without frontmatter lists with an empty description",
-          "status": "in-progress",
+          "status": "verifying",
           "owner": "claude-coder",
           "branch": "ticket/KB-001",
           "worktree": ".worktrees/KB-001",
           "updated": "2026-10-25",
-          "column": "3-in-progress"
+          "column": "4-verifying"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -131,7 +131,7 @@
     "median_cycle_hours": null,
     "tickets": {
       "KB-001": {
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
