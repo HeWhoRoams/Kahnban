@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "files": {
+    ".agents/skills/blast-radius/SKILL.md": "4571dedc097942cd485df2c99a175dda4c908a09d72a5d1daf7551e05c1544d1",
+    ".agents/skills/code-review/SKILL.md": "b9b5fdd57c12f9784ee40fc9609d905e21702a9d5b680870849e25d92c0a5b74",
+    ".agents/skills/coder-agent/SKILL.md": "36254c3695b66f3434470f922d413eb8f0147e061250527e709c60c568979ad3",
+    ".agents/skills/create-verification-skill/SKILL.md": "d05aa34a6134aea0bb65128fc0128f4c40b06997d7253207bf6cf3e3ed9735bd",
+    ".agents/skills/factory-mode/SKILL.md": "d50a640af68bafc795c2340f34787a14f787fb123ab8ae38eb71ab57c79769c5",
+    ".agents/skills/grill-with-docs/SKILL.md": "b550032fb808c57c25b798c82f5a858088cdbf4c4feeeca1ed4aab7bef90b41e",
+    ".agents/skills/harvest-learnings/SKILL.md": "244c1143e962bb6b1f35b3af4f1bb22cc9f98a4ff25385aef8fba0022c5cb64a",
+    ".agents/skills/how/SKILL.md": "983e4a840d7bbf9cc0230470d541c6baa6f8052194641f12733b1526f00ec04b",
+    ".agents/skills/no-comments/SKILL.md": "ab73997573a8ba162295b806c893a31e397a9f786ae6a8b18de578be5bdb1311",
+    ".agents/skills/principle-boundary-discipline/SKILL.md": "29852b3ab0e3b043c62318751f445a38fedb36f3b050e71e80aab41fb08a8b00",
+    ".agents/skills/principle-encode-lessons-in-structure/SKILL.md": "d10983ec0f3637b6e114ed25dc0f6720a40f302e2165223a17ee2372b46afc68",
+    ".agents/skills/principle-fix-root-causes/SKILL.md": "e148a7bdbb56c9e1b1382d9fd2c2239acf672b98dfd0027458884dc33c30a71b",
+    ".agents/skills/principle-guard-the-context-window/SKILL.md": "478752e80498d65c173f52c95db65322bbc98fb31139e406e160e54a5a11aa2b",
+    ".agents/skills/principle-laziness-protocol/SKILL.md": "44ec0cc302105cff3da36e1d192aba697a5dffd6c42ec3bf37df447b8a960960",
+    ".agents/skills/principle-model-the-domain/SKILL.md": "e866be690f50c05d94fb7cace3c03ab89ec3e484fdfb33f7d837495d882bb7f7",
+    ".agents/skills/principle-never-block-on-the-human/SKILL.md": "a279317c80badbdf548c5b422ad04c01238bb80b7b771a14dc6841282e3afc9a",
+    ".agents/skills/principle-prove-it-works/SKILL.md": "89b9eb71b5d20d258830b31569ec47b7295441ae8e66178dddd0076d02ed8c87",
+    ".agents/skills/principle-sequence-verifiable-units/SKILL.md": "c3de134a60c75c9fed202fbe4a8f003f1737692c8d170d04dfd9c9ee99b8cdb9",
+    ".agents/skills/principle-subtract-before-you-add/SKILL.md": "a273e3955fc39223088149d7a1a955b5d44e143fd1d9d4c8e4945353b8b81344",
+    ".agents/skills/qa-reviewer-agent/SKILL.md": "a374bc9be03b2b784196c5ca33ce264479f6c2a7077c852982312f3bc8cb2a9a",
+    ".agents/skills/reflect/SKILL.md": "bed4d1b8fb898d1dc79da761ec7964348f07dd5caa3bbb7b0fabe4666de56a02",
+    ".agents/skills/setup-kahnban-skills/SKILL.md": "d138e1fd622e4a9438cb49979286155a6d4ee14a12032e09691cb05f772a0206",
+    ".agents/skills/tdd/SKILL.md": "a03a52501e5240b9b86fae554030a56d23c7030c0e9e0bda2d57687d2edb5686",
+    ".agents/skills/to-spec/SKILL.md": "4c8b11ce55b0a6a8900ba4dc3ccd085d8c0b1b34f9f89b28987a10429dfd4f8e",
+    ".agents/skills/to-tickets/SKILL.md": "b0691b68f6ffdabab49d0edec4b4ea1ea7b5cb3bb0cde3d12584ac4acebac05d",
+    ".agents/skills/unslop/SKILL.md": "0503149a9b85dad02bbc747a3aeb534e2ba07f53c5fd57e491ea3d1e67659aa3",
+    ".agents/skills/why/SKILL.md": "a6bc1348914975dfb377cdc84cebb72cf95f898a99019cef0017541580c892a2"
+  }
+}
