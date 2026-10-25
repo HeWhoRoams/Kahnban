@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -269,7 +270,7 @@ def test_module_entry_point_runs(board: Path) -> None:
         cwd=str(Path(__file__).resolve().parents[1]),
         env={
             **__import__("os").environ,
-            "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src"),
+            "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src") + os.pathsep + os.environ.get("PYTHONPATH", ""),
         },
     )
 

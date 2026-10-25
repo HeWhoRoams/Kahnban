@@ -23,7 +23,7 @@ SCRIPT = (
 
 
 def run(repo: Path, fault: str) -> subprocess.CompletedProcess[str]:
-    env = {**os.environ, "PYTHONPATH": REPO_SRC}
+    env = {**os.environ, "PYTHONPATH": REPO_SRC + os.pathsep + os.environ.get("PYTHONPATH", "")}
     if fault:
         env["KAHNBAN_FAULT"] = fault
     return subprocess.run([sys.executable, "-c", SCRIPT, str(repo)], env=env, capture_output=True, text=True)

@@ -344,7 +344,7 @@ def test_server_over_real_stdio_pipes_keeps_stdout_clean(board: Path) -> None:
         input="".join(json.dumps(frame) + "\n" for frame in frames),
         capture_output=True,
         text=True,
-        env={**os.environ, "PYTHONPATH": REPO_SRC},
+        env={**os.environ, "PYTHONPATH": REPO_SRC + os.pathsep + os.environ.get("PYTHONPATH", "")},
         timeout=120,
     )
 
@@ -374,7 +374,7 @@ def test_server_reads_the_project_root_from_the_environment(board: Path) -> None
         text=True,
         env={
             **os.environ,
-            "PYTHONPATH": REPO_SRC,
+            "PYTHONPATH": REPO_SRC + os.pathsep + os.environ.get("PYTHONPATH", ""),
             "KAHNBAN_PROJECT_ROOT": str(board),
         },
         cwd=str(Path(__file__).resolve().parents[1]),

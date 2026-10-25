@@ -25,3 +25,6 @@ version = { attr = "kahnban.__version__" }
 
 [tool.setuptools.package-data]
 kahnban = ["templates/*.md", "templates/*.json", "templates/skills/**/*.md"]
+[tool.coverage.run]
+source = ["src/kahnban"]
+parallel = true
