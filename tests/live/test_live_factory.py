@@ -72,7 +72,7 @@ def toy_repo(path: Path) -> Path:
     sh("git", "add", "-A", cwd=path)
     sh("git", "commit", "-m", "toy project", cwd=path)
     sh(sys.executable, "-m", "kahnban", "init", "--prefix", "LV", "--agentic", "--validation-command", f"{sys.executable} -m pytest -q", cwd=path)
-    sh(sys.executable, "-m", "kahnban", "skills", "install", cwd=path)
+    sh(sys.executable, "-m", "kahnban", "skills", "install", "--harness", "claude", cwd=path)  # the native agents behind --agent kahnban-<role>
     config = json.loads((path / "plans" / "board.config.json").read_text(encoding="utf-8"))
     config["workers"] = {"default": f"claude -p --model {MODEL} --agent kahnban-{{role}} --permission-mode acceptEdits"}
     config["worker_timeout_sec"] = 900
