@@ -24,3 +24,43 @@ jobs:
           git config --global user.email "ci@example.invalid"
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest -q
+
+  coverage:
+    # Line coverage with child processes counted (the CLI, the MCP server, simulation workers).
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Git identity for the scratch repos the tests create
+        run: |
+          git config --global user.name "kahnban-ci"
+          git config --global user.email "ci@example.invalid"
+      - run: python -m pip install -e ".[dev]"
+      - run: python tests/run_coverage.py --fail-under 90
+
+  installed:
+    # The built wheel, installed into a clean virtual environment, carries every template and runs.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Git identity for the scratch repos the tests create
+        run: |
+          git config --global user.name "kahnban-ci"
+          git config --global user.email "ci@example.invalid"
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m pytest tests/test_installed.py -q
+        env:
+          KAHNBAN_INSTALLED: "1"

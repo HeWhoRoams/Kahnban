@@ -32,4 +32,4 @@ call, in the same shell the run will use.
   `core.TicketDraft`s.
 - Each gate change gets a "refuses X" test in `tests/test_factory_gates.py` or
   `tests/test_spec_gates.py`, and the honest path must pass on every CI platform.
-- `py -3 -m pytest -q` takes about 5 minutes; run one file while iterating.
+- `py -3 -m pytest -q` takes about 9 minutes in one process; `py -3 tests\run_parallel.py` runs the same tests in 3. Run one file while iterating.

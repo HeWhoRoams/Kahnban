@@ -34,7 +34,9 @@ Each stage links to [How Kahnban works](docs/how-it-works.md), which goes one le
 
 ```powershell
 py -3 -m pip install -e .        # install the engine (editable)
-py -3 -m pytest -q               # drives real git repos, ~9 min
+py -3 -m pytest -q               # drives real git repos, ~9 min in one process
+py -3 tests\run_parallel.py      # the same tests in 8 worker processes, ~3 min
+py -3 tests\run_coverage.py      # line coverage with child processes counted (about 93%)
 py -3 tests\run_sim.py compare   # workflow simulation vs the committed baseline, ~3 min
 kahnban --version
 ```

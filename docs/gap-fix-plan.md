@@ -2,6 +2,28 @@
 
 Companion to [self-test-plan.md](self-test-plan.md) and [simulation-plan.md](simulation-plan.md). Those plans found the gaps; this one fixes them, using the simulation as the safety net: every fix is a hypothesis, a before/after scorecard and a baseline update.
 
+## Status (2026-10-25)
+
+| ID | Result |
+|---|---|
+| G1 stale lock | **Fixed.** Lock files record pid and host; a waiter breaks the lock of a dead local process at once, one waiter wins the break (exclusive-create guard), and a release retries while a waiter has the file open. |
+| G2 leftovers after a crash at done | **Fixed.** `finish_cleanup` action, lint rule BL20. |
+| G3 confirm loop | **Fixed** with option 1: `integration_refusals` counted for the life of the ticket, escalation after `max_attempts`, `confirm --reason` for one more try. |
+| G4 unknown crash points | The sweep now has 12 points (before and after each engine commit, and at each worker start). One new finding: after a crash with a worker still running, the board waits out the worker's lease (30 minutes by default) and called itself idle. `kahnban next` now says it is waiting on a live lease. The wait itself is by design. All 12 points recover. |
+| G5 Linux and GitHub | **Not done.** WSL on this machine is broken (its disk image path is missing) and Docker would need an image or packages downloaded, which I did not do without asking. `sim.yml` and the new CI jobs parse as valid YAML and have never run. |
+| G6 determinism | **Partly done.** The 14 fast scenarios were baselined in one run and compared in a separate, later run: every gated metric matched (wall time aside). That is two runs, not the five on an unchanged tree the plan asked for; my own edits contaminated the repeat runs I started, so they were discarded. |
+| G7 S9, S10 | **Built and passing** (two runners at once; a hung worker killed by the timeout). |
+| G8 coverage | **Done.** 91% to 93%; every module is at least 85%, and `skills.py` went from 69% to 99%, `worktree.py` 79% to 95%, `frontmatter.py` 88% to 99%, `learnings.py` 88% to 97%, `runner.py` 86% to 94%, `trust.py` 85% to 93%. CI floor is 90%. |
+| G9 child-process coverage | **Done.** `tests/run_coverage.py` puts a `sitecustomize` on PYTHONPATH; `cli.py` 85% to 90% and `mcp_server.py` 85% to 93% once the processes the tests start were counted. |
+| G10 wheel | **Done.** `tests/test_installed.py` builds a wheel from a copy of the source, installs it into a fresh virtual environment and checks every template file and a scaffold-and-lint run. Removing the `templates/skills` glob from `package-data` makes it fail. CI job added. |
+| G11 gate matrix | **Done.** `tests/test_gate_matrix.py`: 19 rows, one dishonest input per gate. Breaking three of the gates in a copy of the source (escalate's reason, approve's owner check, the `--force` reason) turns the matching row red; the `--force` break was first missed, which is why the two `claim --force` rows exist. |
+| G12 speed | **Done another way.** Building the repo per test is only 0.2 s of about 1 s per test, so a template repository would save little. `tests/run_parallel.py` deals the 700 tests to worker processes: 153 s with 12 workers, against 9 minutes in one process. No new dependency. |
+| G13 live agents | **Written, not run.** `tests/live/test_live_factory.py` preflights the CLI and one call, runs the toy ticket, and prints medians over `KAHNBAN_LIVE_RUNS`. It skips without `KAHNBAN_LIVE=1`; running it spends model usage and needs the login. |
+| G14 dogfood | **Not done.** `kahnban init --agentic` adds `plans/`, `.agents/` and agent and hook files to this repository, which is your call. |
+| G15 `python -c` | Unchanged, as planned. |
+
+Things found on the way, all fixed or noted: concurrent `rename` calls on one file all reported success on this machine, so the lock break uses an exclusive-create guard instead; reading a lock file made the holder's delete fail on Windows, which the first version of the new break had turned into a permanent lock; the baseline file had never been committed because `.gitignore` matched it; and a `SKILL.md` without frontmatter lists with no description.
+
 ## How every fix runs (the loop)
 
 1. **Reproduce.** Run the scenario that shows the gap with `--keep` and read what the engine did. No fix is written from a guess; two of the three findings below are still guesses about the mechanism.
