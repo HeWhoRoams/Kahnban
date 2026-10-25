@@ -56,6 +56,7 @@ class World:
         self.count = tickets
         self.config_overrides = config
         self.max_steps = 40
+        self.max_rounds = 8  # a human who keeps answering is a livelock to report, not to hang on
         for n in range(1, tickets + 1):
             (self.repo / "src").mkdir(exist_ok=True)
             (self.repo / "src" / f"m{n}.py").write_text("def f():\n    return 1\n", encoding="utf-8")
@@ -162,7 +163,9 @@ class World:
             before = checker.head
             started = time.monotonic()
             result = runner.run(config, max_steps=self.max_steps, echo=checker.after_step)
-            while self.human is not None and self.human(config, result):
+            rounds = 0
+            while self.human is not None and rounds < self.max_rounds and self.human(config, result):
+                rounds += 1
                 more = runner.run(config, max_steps=self.max_steps, echo=checker.after_step)
                 result.steps.extend(more.steps)
                 result.stopped, result.parked = more.stopped, more.parked

@@ -91,7 +91,14 @@ def main(argv: list[str] | None = None) -> int:
             item.add_argument("--new", metavar="FILE", help="use this scorecard instead of running the scenarios")
             item.add_argument("--accept", action="store_true", help="write the result as the new baseline (only if clean)")
     sub.add_parser("list", help="list scenarios")
+    canary = sub.add_parser("canaries", help="break the engine on purpose; every break must turn the simulation red")
+    canary.add_argument("names", nargs="*", help="only canaries whose name contains this text")
     args = parser.parse_args(argv)
+
+    if args.command == "canaries":
+        from .canaries import main as canaries_main
+
+        return canaries_main(args.names)
 
     if args.command == "list":
         for scenario in SCENARIOS:
@@ -126,7 +133,11 @@ def main(argv: list[str] | None = None) -> int:
             print("not accepted: something is broken or worse")
             return 1
         BASELINE.parent.mkdir(exist_ok=True)
-        BASELINE.write_text(json.dumps(normalize(new), indent=2) + "\n", encoding="utf-8")
+        merged = normalize(new)
+        if args.ids and BASELINE.exists():
+            kept = json.loads(BASELINE.read_text(encoding="utf-8"))
+            merged = {**merged, "scenarios": {**kept["scenarios"], **merged["scenarios"]}}
+        BASELINE.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
         print(f"baseline written to {BASELINE}")
         return 0
     return 0 if result.clean else 1

@@ -50,8 +50,14 @@ def s2(world: World) -> None:
 
 
 def s3(world: World) -> None:
-    """A sloppy coder and a strict reviewer: one failed verify, one rejection, then done."""
-    world.policies.update(coder="sloppy", qa_reviewer="strict")
+    """A sloppy coder: the first attempt fails its own check, the second passes."""
+    world.policies.update(coder="sloppy")
+    world.add_ticket(1)
+
+
+def s3c(world: World) -> None:
+    """A strict reviewer rejects the first submission; the coder fixes it and it is done."""
+    world.policies.update(qa_reviewer="strict")
     world.add_ticket(1)
 
 
@@ -70,11 +76,27 @@ def cheat(role: str, policy: str) -> Callable[[World], None]:
     return build
 
 
+def confirm_every_parked_ticket(world: World) -> None:
+    """The human signs each merge-gate pause and leaves real escalations alone."""
+
+    def human(config: core.Config, result: Any) -> bool:
+        waiting = [item for item in result.parked if "attended run" in item]
+        for item in waiting:
+            core.confirm(config, item.split(":")[0].split()[0])
+        return bool(waiting)
+
+    world.human = human
+
+
 def s5(world: World) -> None:
-    """Two tickets that pass alone and fail together: the merge queue lands one, refuses the other."""
+    """Two tickets verified and approved before either merges, then they fail together:
+    an attended run holds both at the merge gate, so only the merge queue can stop the second."""
     world.config_overrides["regression_command"] = f"{world_python()} tests/check_pair.py"
+    world.config_overrides["autonomy"] = "attended"
     world.add_ticket(1)
     world.add_ticket(2)
+    confirm_every_parked_ticket(world)
+    world.max_rounds = 1  # one confirmation each; confirming a ticket that cannot land is a livelock, not a scenario
 
 
 def world_python() -> str:
@@ -117,7 +139,8 @@ def s7(world: World) -> None:
 SCENARIOS: list[Scenario] = [
     Scenario("S1", "One idea from the backlog to done, honest agents", "fast", 1, s1),
     Scenario("S2", "Five tickets with dependencies and a shared file", "fast", 5, s2),
-    Scenario("S3", "Sloppy coder and strict reviewer: fail, reject, recover", "fast", 1, s3),
+    Scenario("S3", "Sloppy coder: a failed verify, then recovery", "fast", 1, s3),
+    Scenario("S3c", "Strict reviewer rejects once, then approves", "fast", 1, s3c),
     Scenario("S3b", "A coder that does nothing is escalated", "fast", 1, s3b, expect_done=0, expect_parked=1),
     Scenario("S4a", "Cheat: edit outside the blast radius", "fast", 1, cheat("coder", "cheat-radius"), expect_outcome="outside its blast radius"),
     Scenario("S4b", "Cheat: replace the test with one that always passes", "fast", 1, cheat("coder", "cheat-noop-test"), expect_outcome="nothing for its tests to prove"),
