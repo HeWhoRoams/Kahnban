@@ -1,0 +1,39 @@
+{
+  "generated": "2026-10-25T17:51:10",
+  "generator": "kahnban-v1.4.0",
+  "project": "kahnban",
+  "wip_limit": 3,
+  "columns": [
+    {
+      "name": "0-backlog",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "1-refining",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "5-done",
+      "count": 0,
+      "tickets": []
+    }
+  ],
+  "tickets_by_id": {}
+}

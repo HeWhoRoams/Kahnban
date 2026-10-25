@@ -1,0 +1,45 @@
+{
+  "engine_min_version": "1.4.0",
+  "id_prefix": "KB",
+  "board_root": "plans/tickets",
+  "columns": [
+    "0-backlog",
+    "1-refining",
+    "2-ready",
+    "3-in-progress",
+    "4-verifying",
+    "5-done"
+  ],
+  "done_column": "5-done",
+  "wip_limit": 3,
+  "use_worktrees": true,
+  "shared_caches": [],
+  "validation_timeout_sec": 1800,
+  "log_output_max_bytes": 65536,
+  "required_headings": [
+    "Problem",
+    "Acceptance criteria",
+    "Blast radius",
+    "Implementation notes",
+    "Validation",
+    "Log"
+  ],
+  "validation_command": "python tests/run_parallel.py -j 8",
+  "require_proof": true,
+  "require_review": true,
+  "require_integration": true,
+  "require_spec": false,
+  "require_signed_approvals": true,
+  "strict_hooks": true,
+  "max_blast_radius_files": 3,
+  "stale_after_days": 3,
+  "allowed_commands": [],
+  "design_doc_roots": [
+    "plans"
+  ],
+  "extensions": {},
+  "ingest": {
+    "heading_level": null,
+    "section_aliases": {}
+  }
+}

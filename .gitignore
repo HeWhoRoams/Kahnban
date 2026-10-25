@@ -9,3 +9,10 @@ dist/
 # workflow simulation output
 /scorecard.json
 .coverage.*
+.worktrees/
+plans/tickets/.artifacts/
+plans/tickets/.claim.lock
+.agents/state/
+.agents/handoffs/
+.agents/HANDOFF.json
+*.pyc
