@@ -94,7 +94,7 @@ Fault injection (S8) needs one small hook: an environment variable, `KAHNBAN_FAU
 
 ## The scorecard
 
-`python -m tests.sim run` writes `scorecard.json`: one record per scenario with the invariants (pass or fail, with the first violation's step and message) and these metrics.
+`python tests/run_sim.py run` writes `scorecard.json`: one record per scenario with the invariants (pass or fail, with the first violation's step and message) and these metrics.
 
 | Metric | Better is | How measured |
 |---|---|---|
@@ -114,7 +114,7 @@ Wall time is informational only. Everything else is a count or a ratio, so it is
 
 ## Comparing: the loop
 
-`python -m tests.sim compare` takes two scorecards and prints three lists.
+`python tests/run_sim.py compare` takes two scorecards and prints three lists.
 
 1. **Broken:** an invariant that passed before and fails now. Always blocks.
 2. **Worse:** a metric that moved the wrong way by more than its tolerance. Blocks unless the change's hypothesis said it would, and the commit message says so.
@@ -141,7 +141,7 @@ Typical improvements this serves: a leaner handoff baton (watch `worker_prompt_b
 
 ## Does the simulation itself work (canaries)
 
-A simulation that cannot fail proves nothing. `tests/sim/canaries.py` lists deliberate engine breakages, each applied as a patch in a temporary copy: make `approve` skip the owner check, make `verify` accept any exit code, let `merge` skip the combined test, drop the lock in `claim`, ignore `KAHNBAN_ROLE`. `python -m tests.sim canaries` runs the fast set against each patched copy and must see at least one invariant fail for every canary. If one passes, add the scenario or invariant that catches it. Run it when the simulation changes and nightly.
+A simulation that cannot fail proves nothing. `tests/sim/canaries.py` lists deliberate engine breakages, each applied as a patch in a temporary copy: make `approve` skip the owner check, make `verify` accept any exit code, let `merge` skip the combined test, drop the lock in `claim`, ignore `KAHNBAN_ROLE`. `python tests/run_sim.py canaries` runs the fast set against each patched copy and must see at least one invariant fail for every canary. If one passes, add the scenario or invariant that catches it. Run it when the simulation changes and nightly.
 
 ## Live tier (optional, noisy)
 
@@ -151,7 +151,7 @@ The same scenarios S1, S3 and S7 with the real worker command (`claude -p`, chea
 
 One commit per step. Each ends in something you can run.
 
-1. **Skeleton and one scenario.** `tests/sim/` with `agents.py` (`honest`, `reviewer-honest`), `scenarios.py` (S1), the invariant checker (I1-I5, I10, I11) and `scorecard.json` output. Done when `python -m tests.sim run S1` prints a scorecard and I1-I11 as they apply.
+1. **Skeleton and one scenario.** `tests/sim/` with `agents.py` (`honest`, `reviewer-honest`), `scenarios.py` (S1), the invariant checker (I1-I5, I10, I11) and `scorecard.json` output. Done when `python tests/run_sim.py run S1` prints a scorecard and I1-I11 as they apply.
 2. **Core scenarios and the other agents.** S2-S7, all cheat policies, I6-I9, I13, I14. Done when every cheat is refused and the honest agent is never blocked.
 3. **Compare and baseline.** `compare`, tolerances, `--accept`, `--against <ref>`. Done when changing a gate's wording changes nothing, and weakening a gate shows under "Broken".
 4. **Canaries.** The five breakages above. Done when each turns the simulation red.
