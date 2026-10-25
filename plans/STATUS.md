@@ -10,8 +10,8 @@ Generated: 2026-10-25 17:51
 | :--- | ---: |
 | 0-backlog | 8 |
 | 1-refining | 0 |
-| 2-ready | 1 |
-| 3-in-progress | 0 |
+| 2-ready | 0 |
+| 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 0 |
 
@@ -32,15 +32,15 @@ Generated: 2026-10-25 17:51
 
 _empty_
 
-## 2-ready (1)
+## 2-ready (0)
+
+_empty_
+
+## 3-in-progress (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-001 | A SKILL.md without frontmatter lists with an empty description | unassigned | - | 2026-10-25 |
-
-## 3-in-progress (0)
-
-_empty_
+| KB-001 | A SKILL.md without frontmatter lists with an empty description | claude-coder | ticket/KB-001 | 2026-10-25 |
 
 ## 4-verifying (0)
 

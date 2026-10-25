@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-25T17:51:49",
+  "generated": "2026-10-25T17:51:57",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -129,16 +129,21 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-001",
           "title": "A SKILL.md without frontmatter lists with an empty description",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-001",
+          "worktree": ".worktrees/KB-001",
           "description": "`skills._read_skill_description` swallows the error that a `SKILL.md` without frontmatter raises, so `kahnban skills list` shows such a skill with an empty description although the file has a heading or a first line that would do. Found by the coverage work on `skills.py`; `tests/test_skills_sources.py` records the empty result today.",
           "depends_on": [],
           "blocked_on": "",
@@ -149,11 +154,6 @@
           "updated": "2026-10-25"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",
@@ -282,11 +282,11 @@
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-001",
+      "worktree": ".worktrees/KB-001",
       "description": "`skills._read_skill_description` swallows the error that a `SKILL.md` without frontmatter raises, so `kahnban skills list` shows such a skill with an empty description although the file has a heading or a first line that would do. Found by the coverage work on `skills.py`; `tests/test_skills_sources.py` records the empty result today.",
       "depends_on": [],
       "blocked_on": "",
