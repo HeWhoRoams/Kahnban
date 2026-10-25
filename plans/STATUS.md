@@ -8,18 +8,17 @@ Generated: 2026-10-25 17:51
 
 | Column | Tickets |
 | :--- | ---: |
-| 0-backlog | 9 |
+| 0-backlog | 8 |
 | 1-refining | 0 |
-| 2-ready | 0 |
+| 2-ready | 1 |
 | 3-in-progress | 0 |
 | 4-verifying | 0 |
 | 5-done | 0 |
 
-## 0-backlog (9)
+## 0-backlog (8)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-001 | A SKILL.md without frontmatter lists with an empty description | unassigned | - | 2026-10-25 |
 | KB-002 | Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show | unassigned | - | 2026-10-25 |
 | KB-003 | Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move | unassigned | - | 2026-10-25 |
 | KB-004 | Break down status.json metrics per role: which worker caused the rejections | unassigned | - | 2026-10-25 |
@@ -33,9 +32,11 @@ Generated: 2026-10-25 17:51
 
 _empty_
 
-## 2-ready (0)
+## 2-ready (1)
 
-_empty_
+| ID | Title | Owner | Branch | Updated |
+| :--- | :--- | :--- | :--- | :--- |
+| KB-001 | A SKILL.md without frontmatter lists with an empty description | unassigned | - | 2026-10-25 |
 
 ## 3-in-progress (0)
 

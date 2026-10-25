@@ -1,7 +1,7 @@
 ---
 id: KB-001
 title: A SKILL.md without frontmatter lists with an empty description
-status: backlog
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -16,6 +16,8 @@ source_doc: ""
 source_anchor: ""
 source_hash: ""
 validation_class: headless-verified
+contract_hash: 169b13c85d65e848
+confirmed: ""
 ---
 
 ## Problem
@@ -42,3 +44,4 @@ python -m pytest tests/test_skills_sources.py -q
 
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
+- 2026-10-25 17:51 - ready gate passed -> 2-ready | contract 169b13c85d65e848

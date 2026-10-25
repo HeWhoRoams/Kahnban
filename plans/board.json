@@ -1,27 +1,13 @@
 {
-  "generated": "2026-10-25T17:51:26",
+  "generated": "2026-10-25T17:51:49",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 9,
+      "count": 8,
       "tickets": [
-        {
-          "id": "KB-001",
-          "title": "A SKILL.md without frontmatter lists with an empty description",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [],
-          "updated": "2026-10-25"
-        },
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
@@ -143,8 +129,26 @@
     },
     {
       "name": "2-ready",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-001",
+          "title": "A SKILL.md without frontmatter lists with an empty description",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "`skills._read_skill_description` swallows the error that a `SKILL.md` without frontmatter raises, so `kahnban skills list` shows such a skill with an empty description although the file has a heading or a first line that would do. Found by the coverage work on `skills.py`; `tests/test_skills_sources.py` records the empty result today.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/skills.py",
+            "tests/test_skills_sources.py"
+          ],
+          "updated": "2026-10-25"
+        }
+      ]
     },
     {
       "name": "3-in-progress",
@@ -163,20 +167,6 @@
     }
   ],
   "tickets_by_id": {
-    "KB-001": {
-      "id": "KB-001",
-      "title": "A SKILL.md without frontmatter lists with an empty description",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [],
-      "updated": "2026-10-25"
-    },
     "KB-002": {
       "id": "KB-002",
       "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
@@ -287,6 +277,23 @@
       "depends_on": [],
       "blocked_on": "",
       "blast_radius": [],
+      "updated": "2026-10-25"
+    },
+    "KB-001": {
+      "id": "KB-001",
+      "title": "A SKILL.md without frontmatter lists with an empty description",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "`skills._read_skill_description` swallows the error that a `SKILL.md` without frontmatter raises, so `kahnban skills list` shows such a skill with an empty description although the file has a heading or a first line that would do. Found by the coverage work on `skills.py`; `tests/test_skills_sources.py` records the empty result today.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/skills.py",
+        "tests/test_skills_sources.py"
+      ],
       "updated": "2026-10-25"
     }
   }

@@ -1,21 +1,11 @@
 {
-  "generated": "2026-10-25T17:51:26",
+  "generated": "2026-10-25T17:51:49",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 9,
+      "count": 8,
       "tickets": [
-        {
-          "id": "KB-001",
-          "title": "A SKILL.md without frontmatter lists with an empty description",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-25",
-          "column": "0-backlog"
-        },
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
@@ -105,8 +95,19 @@
     },
     {
       "name": "2-ready",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-001",
+          "title": "A SKILL.md without frontmatter lists with an empty description",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-25",
+          "column": "2-ready"
+        }
+      ]
     },
     {
       "name": "3-in-progress",
