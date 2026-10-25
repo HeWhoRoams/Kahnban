@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-25T17:52:24",
+  "generated": "2026-10-25T18:50:50",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 8,
+      "count": 9,
       "tickets": [
         {
           "id": "KB-002",
@@ -109,6 +109,20 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
+          "status": "backlog",
+          "column": "0-backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [],
+          "updated": "2026-10-25"
+        },
+        {
+          "id": "KB-010",
+          "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
           "status": "backlog",
           "column": "0-backlog",
           "owner": "unassigned",
@@ -268,6 +282,20 @@
     "KB-009": {
       "id": "KB-009",
       "title": "The citadel portability smoke test (plan.md phase 4)",
+      "status": "backlog",
+      "column": "0-backlog",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [],
+      "updated": "2026-10-25"
+    },
+    "KB-010": {
+      "id": "KB-010",
+      "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
       "status": "backlog",
       "column": "0-backlog",
       "owner": "unassigned",
