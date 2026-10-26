@@ -22,7 +22,7 @@ verified_sha: 9874a9a1380c9f4e04926b8c3c14c50880b63b39
 reviewer: Tim Niles
 approved_sha: 9874a9a1380c9f4e04926b8c3c14c50880b63b39
 approval_sig: 9402f57349200f33fa3d01ee14f677c39723e25e1c32370c35ef2333ff10e816
-integrated_sha: ""
+integrated_sha: a1f8aba28fc5f71d28f287f78ca1958845d344a3
 ---
 
 ## Problem
@@ -321,3 +321,13 @@ python -m pytest tests/test_harness_files.py -q
 
     full output: plans/tickets/.artifacts/KB-010-20261026-163559.log
 - 2026-10-26 18:17 - approved by Tim Niles at 9874a9a1380c
+- 2026-10-26 18:17 - integrated into main | merge-commit: a1f8aba28fc5f71d28f287f78ca1958845d344a3
+    $ merge ticket/KB-010 onto main 8c3a2d762b67
+    === INTEGRATION: FEATURE TESTS ===
+    ...................................                                      [100%]
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    707 tests, 8 workers, 182s, all passed
+
+    full output: plans/tickets/.artifacts/KB-010-20261026-181740.log
