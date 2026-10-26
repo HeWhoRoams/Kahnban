@@ -171,6 +171,59 @@ def _install_source(
                 installed.extend(d.name for d in TEMPLATES_SKILLS_DIR.iterdir() if d.is_dir())
 
 
+# What a headless Claude worker has to be allowed to run. `claude -p` cannot answer an approval prompt, so without
+# these a coder cannot commit and a reviewer cannot approve (three live runs, 2026-10-25/26). Rules in the project's
+# .claude/settings.json are ignored by a headless worker (probe, 2026-10-26); only --allowedTools on the command
+# line works, so the rules go into the worker command in plans/board.config.json. Opt-in, because installing has
+# never touched a project's permissions. Specific git verbs, never `git:*`; the guard still decides per role and
+# refuses push and --no-verify.
+CLAUDE_ALLOWED = (
+    "Bash(kahnban:*)",
+    *(f"Bash(git {verb}:*)" for verb in ("add", "commit", "status", "diff", "log", "rm", "mv")),
+)
+WORKER_BASE = "claude -p --agent kahnban-{role} --permission-mode acceptEdits"
+
+
+def allowed_tools(root: Path) -> list[str]:
+    """``CLAUDE_ALLOWED`` plus the board's own validation and regression commands, when there is a board."""
+    tools = list(CLAUDE_ALLOWED)
+    try:
+        from kahnban import core
+
+        config = core.load_config(root, check_version=False)
+    except Exception:
+        return tools
+    for command in (config.validation_command, config.regression_command):
+        rule = f"Bash({command.strip()}:*)"
+        if command.strip() and '"' not in command and rule not in tools:  # a quote would break the quoting below
+            tools.append(rule)
+    return tools
+
+
+def worker_command(root: Path) -> str:
+    return f"{WORKER_BASE} --allowedTools " + " ".join(f'"{tool}"' for tool in allowed_tools(root))
+
+
+def write_worker_command(root: Path, messages: list[str]) -> None:
+    """Put ``workers.default`` into the board's config when it has no workers; otherwise leave it alone."""
+    command = worker_command(root)
+    path = root / "plans" / "board.config.json"
+    if not path.is_file():
+        messages.append(f"No board here yet. Once it exists, set workers.default in plans/board.config.json to: {command}")
+        return
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        messages.append(f"{path} is not valid JSON; set workers.default by hand to: {command}")
+        return
+    if data.get("workers"):
+        messages.append("plans/board.config.json already has workers; left as it is. A headless claude worker needs: " + command)
+        return
+    data["workers"] = {"default": command}
+    write_text_atomic(path, json.dumps(data, indent=2) + "\n")
+    messages.append("Wrote workers.default into plans/board.config.json (kahnban and git commands allowed by name); review it, then commit.")
+
+
 def _configure_agent_harness(
     root: Path, name: str, skills_dir: Path, messages: list[str], dry_run: bool
 ) -> str:
@@ -203,6 +256,7 @@ def install_skills(
     source: str = "bundled",
     dry_run: bool = False,
     relock: bool = False,
+    allow_worker_commands: bool = False,
 ) -> SkillsResult:
     """Install and configure skills in the adopter project and chosen harnesses.
 
@@ -242,6 +296,8 @@ def install_skills(
             configured_harnesses.append(
                 _configure_agent_harness(root, name, agents_skills_dir, messages, dry_run)
             )
+            if name == "claude" and allow_worker_commands and not dry_run:
+                write_worker_command(root, messages)
 
     if wanted("vscode"):
         vscode_dir = root / ".vscode"

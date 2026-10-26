@@ -595,6 +595,7 @@ def cmd_skills(args: argparse.Namespace) -> int:
         source=source,
         dry_run=dry_run,
         relock=getattr(args, "relock", False),
+        allow_worker_commands=getattr(args, "allow_worker_commands", False),
     )
     for msg in res.get("messages", []):
         print(f"  {msg}")
@@ -1040,6 +1041,14 @@ def build_parser() -> argparse.ArgumentParser:
     inst_parser.add_argument("--dry-run", action="store_true", help="simulate without writing files")
     inst_parser.add_argument(
         "--relock", action="store_true", help="re-pin every skill and hook after reviewing what changed"
+    )
+    inst_parser.add_argument(
+        "--allow-worker-commands",
+        action="store_true",
+        help=(
+            "claude only: set workers.default in plans/board.config.json to a 'claude -p' command that allows kahnban, "
+            "the git verbs a worker uses and the board's test commands, so a headless worker can commit and approve"
+        ),
     )
     inst_parser.set_defaults(handler=cmd_skills)
 
