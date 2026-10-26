@@ -51,7 +51,19 @@ def normalize(scorecard: dict[str, Any]) -> dict[str, Any]:
             "expectations": {key: item["pass"] for key, item in card.get("expectations", {}).items()},
             "metrics": {key: value for key, value in card["metrics"].items() if key not in IGNORED},
         }
-    return {"engine": scorecard.get("engine"), "scenarios": scenarios}
+    return {"engine": scorecard.get("engine"), "scenarios": scenarios, "unstable": sorted(scorecard.get("unstable", []))}
+
+
+def stability_report(cards: list[dict[str, Any]]) -> list[str]:
+    """'S3 steps_to_done' for every metric whose value differs between runs of one unchanged tree."""
+    moved = set()
+    for ident in cards[0]["scenarios"]:
+        for name in cards[0]["scenarios"][ident]["metrics"]:
+            if name in IGNORED:
+                continue
+            if len({repr(card["scenarios"][ident]["metrics"].get(name)) for card in cards}) > 1:
+                moved.add(f"{ident} {name}")
+    return sorted(moved)
 
 
 def _moved(name: str, old: Any, new: Any) -> str | None:
@@ -70,6 +82,7 @@ def _moved(name: str, old: Any, new: Any) -> str | None:
 
 def compare(old: dict[str, Any], new: dict[str, Any]) -> Comparison:
     result = Comparison()
+    unstable = set(old.get("unstable", []))
     for ident, before in old["scenarios"].items():
         after = new["scenarios"].get(ident)
         if after is None:
@@ -86,6 +99,8 @@ def compare(old: dict[str, Any], new: dict[str, Any]) -> Comparison:
             if passed and not after["expectations"].get(key, False):
                 result.broken.append(f"{ident} expectation '{key}': met before, not now")
         for name, value in after["metrics"].items():
+            if f"{ident} {name}" in unstable:
+                continue
             verdict = _moved(name, before["metrics"].get(name), value)
             if verdict:
                 line = f"{ident} {name}: {before['metrics'].get(name)} -> {value}"

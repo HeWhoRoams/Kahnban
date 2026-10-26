@@ -85,3 +85,37 @@ def test_a_rule_that_failed_before_and_holds_now_is_better() -> None:
 
     assert result.clean
     assert result.better == ["S1 I4: failed before, passes now"]
+
+
+def test_stability_report_names_only_the_metrics_that_moved() -> None:
+    from sim.compare import stability_report
+
+    runs = [changed(), changed(steps_to_done=5, wall_seconds=9.0), changed()]
+
+    assert stability_report(runs) == ["S1 steps_to_done"]
+    assert stability_report([CARD, copy.deepcopy(CARD)]) == []
+
+
+def test_unstable_metrics_in_the_baseline_are_not_gated() -> None:
+    base = normalize(CARD)
+    base["unstable"] = ["S1 steps_to_done"]
+
+    result = compare(base, normalize(changed(steps_to_done=9, first_pass_yield=0.5)))
+
+    assert result.worse == ["S1 first_pass_yield: 1.0 -> 0.5"]
+    assert normalize(base)["unstable"] == ["S1 steps_to_done"]
+
+
+def test_the_stability_command_records_what_moved(tmp_path, monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    import json
+
+    from sim import __main__ as sim_main
+
+    baseline = tmp_path / "scorecard.json"
+    baseline.write_text(json.dumps({"engine": "x", "scenarios": {}}), encoding="utf-8")
+    monkeypatch.setattr(sim_main, "BASELINE", baseline)
+
+    assert sim_main.main(["stability", "S1", "--runs", "2", "--accept"]) == 0
+
+    assert "moved over 2 runs" in capsys.readouterr().out
+    assert isinstance(json.loads(baseline.read_text(encoding="utf-8"))["unstable"], list)
