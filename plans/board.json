@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T16:34:09",
+  "generated": "2026-10-26T16:34:10",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -124,28 +124,13 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
-    },
-    {
-      "name": "2-ready",
-      "count": 0,
-      "tickets": []
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
-    },
-    {
-      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-010",
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-          "status": "verifying",
-          "column": "4-verifying",
+          "status": "refining",
+          "column": "1-refining",
           "owner": "claude-coder",
           "branch": "",
           "worktree": "",
@@ -160,6 +145,21 @@
           "updated": "2026-10-26"
         }
       ]
+    },
+    {
+      "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
@@ -301,8 +301,8 @@
     "KB-010": {
       "id": "KB-010",
       "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-      "status": "verifying",
-      "column": "4-verifying",
+      "status": "refining",
+      "column": "1-refining",
       "owner": "claude-coder",
       "branch": "",
       "worktree": "",
