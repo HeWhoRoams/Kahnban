@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T13:30:03",
+  "generated": "2026-10-26T13:30:04",
   "generator": "kahnban",
   "columns": [
     {
@@ -127,8 +127,8 @@
           "title": "A SKILL.md without frontmatter lists with an empty description",
           "status": "done",
           "owner": "claude-coder",
-          "branch": "ticket/KB-001",
-          "worktree": ".worktrees/KB-001",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-26",
           "column": "5-done"
         }

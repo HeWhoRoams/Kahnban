@@ -49,4 +49,4 @@ _empty_
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-001 | A SKILL.md without frontmatter lists with an empty description | claude-coder | ticket/KB-001 | 2026-10-26 |
+| KB-001 | A SKILL.md without frontmatter lists with an empty description | claude-coder | - | 2026-10-26 |
