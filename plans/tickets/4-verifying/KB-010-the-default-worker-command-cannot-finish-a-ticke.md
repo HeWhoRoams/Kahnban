@@ -1,7 +1,7 @@
 ---
 id: KB-010
 title: "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test"
-status: in-progress
+status: verifying
 owner: claude-coder
 branch: ticket/KB-010
 worktree: .worktrees/KB-010
@@ -18,7 +18,7 @@ source_hash: ""
 validation_class: headless-verified
 contract_hash: 1b28ef7875c87d85
 confirmed: ""
-verified_sha: 42f7ae1eb79473b80f3f0affffa10929b0715403
+verified_sha: 9874a9a1380c9f4e04926b8c3c14c50880b63b39
 reviewer: ""
 approved_sha: ""
 approval_sig: ""
@@ -36,10 +36,10 @@ probe show it: with nothing allowed the coder cannot commit; with the rules in t
 `kahnban skills install` has never touched a project's permissions, so this is opt-in: `kahnban skills install --harness claude --allow-worker-commands` writes `workers.default` when the board has none (decided with the user, 2026-10-26). The guard still refuses push, `--no-verify` and every command outside a role.
 
 ## Acceptance criteria
-- [ ] installing without the flag changes neither the settings permissions nor the board's workers (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_are_left`)
-- [ ] with --allow-worker-commands and a board that has no workers, workers.default becomes a claude -p command allowing kahnban, the git verbs a worker needs and the board's test commands, and never git push (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_are_written`)
-- [ ] a workers entry that is already there is never overwritten (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_keep`)
-- [ ] with no board, nothing is written and the command to use is printed (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_without_a_board`)
+- [x] installing without the flag changes neither the settings permissions nor the board's workers (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_are_left`)
+- [x] with --allow-worker-commands and a board that has no workers, workers.default becomes a claude -p command allowing kahnban, the git verbs a worker needs and the board's test commands, and never git push (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_are_written`)
+- [x] a workers entry that is already there is never overwritten (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_keep`)
+- [x] with no board, nothing is written and the command to use is printed (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_without_a_board`)
 
 ## Blast radius
 - `src/kahnban/skills.py`
@@ -207,3 +207,116 @@ python -m pytest tests/test_harness_files.py -q
 - 2026-10-26 16:34 - manual move 4-verifying -> 1-refining: contract rewritten: the flag writes --allowedTools into the worker command, not settings.json
 - 2026-10-26 16:34 - ready gate passed -> 2-ready | contract 1b28ef7875c87d85
 - 2026-10-26 16:34 - claimed by claude-coder -> 3-in-progress
+- 2026-10-26 16:35 - verify exit=0 in 208.6s (cwd=KB-010) -> 4-verifying
+    verifying ticket/KB-010 at 9874a9a1380c; Running Tier 1 (Feature Tests): python -m pytest tests/test_harness_files.py -q; Running Tier 2 (Regression Tests): python tests/run_parallel.py -j 8
+    $ [python -m pytest tests/test_harness_files.py -q] && [4/4 criterion tests] && [python tests/run_parallel.py -j 8] && [red check vs a944626de9af]
+    === TIER 1: FEATURE TESTS ===
+    ...................................                                      [100%]
+
+
+    === ACCEPTANCE CRITERIA ===
+    [PASS] $ python -m pytest tests/test_harness_files.py -q -k worker_commands_are_left
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_harness_files.py -q -k worker_commands_are_written
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_harness_files.py -q -k worker_commands_keep
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_harness_files.py -q -k worker_commands_without_a_board
+    .                                                                        [100%]
+
+
+    === TIER 2: REGRESSION TESTS ===
+    707 tests, 8 workers, 172s, all passed
+
+
+    === RED CHECK: FEATURE TESTS ON THE BASE SOURCE (must fail) ===
+    ...............................FFFF                                      [100%]
+    ================================== FAILURES ===================================
+    _ test_worker_commands_are_written_for_kahnban_the_git_verbs_and_the_boards_test_commands _
+
+    repo = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-423/test_worker_commands_are_writt0/scratch')
+
+        def test_worker_commands_are_written_for_kahnban_the_git_verbs_and_the_boards_test_commands(repo: Path) -> None:
+            from conftest import scaffold_board
+            from kahnban.cli import main
+
+            scaffold_board(repo, {"validation_command": "python -m pytest -q", "regression_command": "python tests/all.py"})
+
+    >       assert main(["--project-root", str(repo), "skills", "install", "--harness", "claude", "--allow-worker-commands"]) == 0
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    tests\test_harness_files.py:201: 
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    src\kahnban\cli.py:1068: in main
+        args = parser.parse_args(argv)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+    C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1902: in parse_args
+        self.error(msg)
+    C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2658: in error
+        self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    self = ArgumentParser(prog='kahnban', usage=None, description='Portable agentic Kanban workflow engine', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+    status = 2
+    message = 'kahnban: error: unrecognized arguments: --allow-worker-commands\n'
+
+        def exit(self, status=0, message=None):
+            if message:
+                self._print_message(message, _sys.stderr)
+    >       _sys.exit(status)
+    E       SystemExit: 2
+
+    C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2645: SystemExit
+    ---------------------------- Captured stderr call -----------------------------
+    usage: kahnban [-h] [--version] [--project-root PROJECT_ROOT]
+                   [--config CONFIG]
+                   {new,ready,claim,verify,done,approve,reject,merge,run,lease,escalate,unblock,confirm,spec,guard,move,cleanup,ingest,capture,lint,sync,status,init,session,handoff,learnings,next,feedback,skills} ...
+    kahnban: error: unrecognized arguments: --allow-worker-commands
+    _______ test_worker_commands_keep_a_workers_entry_that_is_already_there _______
+
+    repo = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-423/test_worker_commands_keep_a_wo0/scratch')
+
+        def test_worker_commands_keep_a_workers_entry_that_is_already_there(repo: Path) -> None:
+            from conftest import scaffold_board
+
+            scaffold_board(repo, {"workers": {"default": "my-own-agent --role {role}"}})
+
+    >       result = skills.install_skills(repo, harness="claude", allow_worker_commands=True)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    E       TypeError: install_skills() got an unexpected keyword argument 'allow_worker_commands'
+
+    tests\test_harness_files.py:215: TypeError
+    __ test_worker_commands_without_a_board_write_nothing_and_print_the_command ___
+
+    tmp_path = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-423/test_worker_commands_without_a0')
+
+        def test_worker_commands_without_a_board_write_nothing_and_print_the_command(tmp_path: Path) -> None:
+    >       result = skills.install_skills(tmp_path, harness="claude", allow_worker_commands=True)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    E       TypeError: install_skills() got an unexpected keyword argument 'allow_worker_commands'
+
+    tests\test_harness_files.py:222: TypeError
+    ______ test_a_board_test_command_with_a_quote_is_left_out_of_the_command ______
+
+    repo = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-423/test_a_board_test_command_with0/scratch')
+
+        def test_a_board_test_command_with_a_quote_is_left_out_of_the_command(repo: Path) -> None:
+            from conftest import scaffold_board
+
+            scaffold_board(repo, {"validation_command": 'python -c "print(1)"'})
+
+    >       assert not [t for t in skills.allowed_tools(repo) if "print" in t]
+                                   ^^^^^^^^^^^^^^^^^^^^
+    E       AttributeError: module 'kahnban.skills' has no attribute 'allowed_tools'
+
+    tests\test_harness_files.py:234: AttributeError
+    =========================== short test summary info ===========================
+    FAILED tests/test_harness_files.py::test_worker_commands_are_written_for_kahnban_the_git_verbs_and_the_boards_test_commands
+    FAILED tests/test_harness_files.py::test_worker_commands_keep_a_workers_entry_that_is_already_there
+    FAILED tests/test_harness_files.py::test_worker_commands_without_a_board_write_nothing_and_print_the_command
+    FAILED tests/test_harness_files.py::test_a_board_test_command_with_a_quote_is_left_out_of_the_command
+
+    full output: plans/tickets/.artifacts/KB-010-20261026-163559.log
