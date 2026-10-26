@@ -10,8 +10,8 @@ Generated: 2026-10-26 19:19
 | :--- | ---: |
 | 0-backlog | 7 |
 | 1-refining | 0 |
-| 2-ready | 1 |
-| 3-in-progress | 0 |
+| 2-ready | 0 |
+| 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 2 |
 
@@ -31,15 +31,15 @@ Generated: 2026-10-26 19:19
 
 _empty_
 
-## 2-ready (1)
+## 2-ready (0)
+
+_empty_
+
+## 3-in-progress (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-003 | Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move | unassigned | - | 2026-10-26 |
-
-## 3-in-progress (0)
-
-_empty_
+| KB-003 | Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move | claude-coder | ticket/KB-003 | 2026-10-26 |
 
 ## 4-verifying (0)
 

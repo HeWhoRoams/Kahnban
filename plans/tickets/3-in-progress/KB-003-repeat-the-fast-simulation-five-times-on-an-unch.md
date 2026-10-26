@@ -1,10 +1,10 @@
 ---
 id: KB-003
 title: Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: claude-coder
+branch: ticket/KB-003
+worktree: .worktrees/KB-003
 created: 2026-10-25
 updated: 2026-10-26
 legacy_id: ""
@@ -50,3 +50,4 @@ python -m pytest tests/test_sim_compare.py -q
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 19:19 - manual move 0-backlog -> 1-refining: refine
 - 2026-10-26 19:19 - ready gate passed -> 2-ready | contract 73553383573b7909
+- 2026-10-26 19:19 - claimed by claude-coder -> 3-in-progress
