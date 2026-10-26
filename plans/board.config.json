@@ -42,5 +42,20 @@
   "ingest": {
     "heading_level": null,
     "section_aliases": {}
-  }
+  },
+  "test_patterns": [
+    "test/*",
+    "spec/*",
+    "*/tests/*",
+    "*/test/*",
+    "*/spec/*",
+    "*/__tests__/*",
+    "test_*",
+    "*_test.*",
+    "*.test.*",
+    "*.spec.*",
+    "*_spec.*",
+    "tests/live/*",
+    "tests/conftest.py"
+  ]
 }
