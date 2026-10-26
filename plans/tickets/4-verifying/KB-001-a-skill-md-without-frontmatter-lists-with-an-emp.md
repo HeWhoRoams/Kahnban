@@ -22,7 +22,7 @@ verified_sha: 71934668a71646bdcbe5a22a346781ccd429a860
 reviewer: Tim Niles
 approved_sha: 71934668a71646bdcbe5a22a346781ccd429a860
 approval_sig: fab84d32111cc2a15cf4587a44469a1fb1a6b087a4138754d4385a206a915b6f
-integrated_sha: ""
+integrated_sha: c0e536357f059b9f6e9574e13badc5b5ce7fbfa8
 ---
 
 ## Problem
@@ -109,3 +109,9 @@ python -m pytest tests/test_skills_sources.py -q
 
     full output: plans/tickets/.artifacts/KB-001-20261025-175224.log
 - 2026-10-26 13:28 - approved by Tim Niles at 71934668a716
+- 2026-10-26 13:29 - integrated into main | merge-commit: c0e536357f059b9f6e9574e13badc5b5ce7fbfa8
+    $ merge ticket/KB-001 onto main d27aa3ae2d57
+    === INTEGRATION: FEATURE TESTS ===
+    ..............                                                           [100%]
+
+    full output: plans/tickets/.artifacts/KB-001-20261026-132950.log
