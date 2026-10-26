@@ -1,7 +1,7 @@
 ---
 id: KB-010
 title: "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test"
-status: verifying
+status: done
 owner: claude-coder
 branch: ticket/KB-010
 worktree: .worktrees/KB-010
@@ -331,3 +331,4 @@ python -m pytest tests/test_harness_files.py -q
     707 tests, 8 workers, 182s, all passed
 
     full output: plans/tickets/.artifacts/KB-010-20261026-181740.log
+- 2026-10-26 18:21 - done gate passed -> 5-done | merge-commit: a1f8aba28fc5f71d28f287f78ca1958845d344a3

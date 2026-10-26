@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T18:17:40",
+  "generated": "2026-10-26T18:21:04",
   "generator": "kahnban",
   "columns": [
     {
@@ -105,23 +105,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-010",
-          "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-          "status": "verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-010",
-          "worktree": ".worktrees/KB-010",
-          "updated": "2026-10-26",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-001",
@@ -132,14 +121,24 @@
           "worktree": "",
           "updated": "2026-10-26",
           "column": "5-done"
+        },
+        {
+          "id": "KB-010",
+          "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
+          "status": "done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-010",
+          "worktree": ".worktrees/KB-010",
+          "updated": "2026-10-26",
+          "column": "5-done"
         }
       ]
     }
   ],
   "metrics": {
-    "done": 1,
-    "first_pass_yield": 1.0,
-    "median_cycle_hours": 19.6,
+    "done": 2,
+    "first_pass_yield": 0.5,
+    "median_cycle_hours": 21.55,
     "tickets": {
       "KB-001": {
         "verify_attempts": 1,
@@ -199,7 +198,7 @@
         "verify_attempts": 3,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 23.5
       }
     }
   }

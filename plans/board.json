@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T18:17:40",
+  "generated": "2026-10-26T18:21:04",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -139,31 +139,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-010",
-          "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-010",
-          "worktree": ".worktrees/KB-010",
-          "description": "A headless `claude -p --permission-mode acceptEdits` worker is asked to approve `git add`, `git commit` and `kahnban approve`, and a headless worker cannot answer. Three live runs with Haiku (2026-10-25 and 26) and a probe show it: with nothing allowed the coder cannot commit; with the rules in the project's `.claude/settings.json` (`permissions.allow`) it still cannot, because a headless worker ignores them; with `--allowedTools` on the command line it can. So the rules belong in the worker command, which lives in `plans/board.config.json` where the adopter reviews it.",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/skills.py",
-            "src/kahnban/cli.py",
-            "tests/test_harness_files.py"
-          ],
-          "updated": "2026-10-26"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-001",
@@ -179,6 +160,24 @@
           "blast_radius": [
             "src/kahnban/skills.py",
             "tests/test_skills_sources.py"
+          ],
+          "updated": "2026-10-26"
+        },
+        {
+          "id": "KB-010",
+          "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
+          "status": "done",
+          "column": "5-done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-010",
+          "worktree": ".worktrees/KB-010",
+          "description": "A headless `claude -p --permission-mode acceptEdits` worker is asked to approve `git add`, `git commit` and `kahnban approve`, and a headless worker cannot answer. Three live runs with Haiku (2026-10-25 and 26) and a probe show it: with nothing allowed the coder cannot commit; with the rules in the project's `.claude/settings.json` (`permissions.allow`) it still cannot, because a headless worker ignores them; with `--allowedTools` on the command line it can. So the rules belong in the worker command, which lives in `plans/board.config.json` where the adopter reviews it.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/skills.py",
+            "src/kahnban/cli.py",
+            "tests/test_harness_files.py"
           ],
           "updated": "2026-10-26"
         }
@@ -298,24 +297,6 @@
       "blast_radius": [],
       "updated": "2026-10-25"
     },
-    "KB-010": {
-      "id": "KB-010",
-      "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "claude-coder",
-      "branch": "ticket/KB-010",
-      "worktree": ".worktrees/KB-010",
-      "description": "A headless `claude -p --permission-mode acceptEdits` worker is asked to approve `git add`, `git commit` and `kahnban approve`, and a headless worker cannot answer. Three live runs with Haiku (2026-10-25 and 26) and a probe show it: with nothing allowed the coder cannot commit; with the rules in the project's `.claude/settings.json` (`permissions.allow`) it still cannot, because a headless worker ignores them; with `--allowedTools` on the command line it can. So the rules belong in the worker command, which lives in `plans/board.config.json` where the adopter reviews it.",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/skills.py",
-        "src/kahnban/cli.py",
-        "tests/test_harness_files.py"
-      ],
-      "updated": "2026-10-26"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -330,6 +311,24 @@
       "blast_radius": [
         "src/kahnban/skills.py",
         "tests/test_skills_sources.py"
+      ],
+      "updated": "2026-10-26"
+    },
+    "KB-010": {
+      "id": "KB-010",
+      "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
+      "status": "done",
+      "column": "5-done",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-010",
+      "worktree": ".worktrees/KB-010",
+      "description": "A headless `claude -p --permission-mode acceptEdits` worker is asked to approve `git add`, `git commit` and `kahnban approve`, and a headless worker cannot answer. Three live runs with Haiku (2026-10-25 and 26) and a probe show it: with nothing allowed the coder cannot commit; with the rules in the project's `.claude/settings.json` (`permissions.allow`) it still cannot, because a headless worker ignores them; with `--allowedTools` on the command line it can. So the rules belong in the worker command, which lives in `plans/board.config.json` where the adopter reviews it.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/skills.py",
+        "src/kahnban/cli.py",
+        "tests/test_harness_files.py"
       ],
       "updated": "2026-10-26"
     }
