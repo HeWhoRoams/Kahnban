@@ -124,23 +124,13 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
-    },
-    {
-      "name": "2-ready",
-      "count": 0,
-      "tickets": []
-    },
-    {
-      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-010",
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "refining",
+          "column": "1-refining",
           "owner": "claude-coder",
           "branch": "",
           "worktree": "",
@@ -155,6 +145,16 @@
           "updated": "2026-10-26"
         }
       ]
+    },
+    {
+      "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "4-verifying",
@@ -301,8 +301,8 @@
     "KB-010": {
       "id": "KB-010",
       "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "refining",
+      "column": "1-refining",
       "owner": "claude-coder",
       "branch": "",
       "worktree": "",
