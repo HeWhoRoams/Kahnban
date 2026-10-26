@@ -31,8 +31,18 @@ def test_a_description_comes_from_the_frontmatter_then_the_first_heading_then_th
     assert skills._read_skill_description(front) == "Does the thing."
     assert skills._read_skill_description(heading) == "Title of b"
     assert skills._read_skill_description(plain) == "just a line"
-    assert skills._read_skill_description(bare) == ""  # without frontmatter a skill lists with no description
+    assert skills._read_skill_description(bare) == "no frontmatter at all"
     assert skills._read_skill_description(tmp_path / "missing.md") == ""
+
+
+def test_a_bare_skill_file_is_described_by_its_first_heading_or_line(tmp_path: Path) -> None:
+    heading = write_skill(tmp_path, "h", "# Heading of the skill\nmore text\n")
+    line = write_skill(tmp_path, "l", "\nFirst line of the skill\n# later heading\n")
+    broken = write_skill(tmp_path, "b", "---\nnot: closed\n# Title after broken frontmatter\n")
+
+    assert skills._read_skill_description(heading) == "Heading of the skill"
+    assert skills._read_skill_description(line) == "First line of the skill"
+    assert skills._read_skill_description(broken) != ""
 
 
 def test_a_project_skill_shadows_the_bundled_one_of_the_same_name(tmp_path: Path) -> None:
