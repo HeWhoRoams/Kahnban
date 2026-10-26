@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T19:19:49",
+  "generated": "2026-10-26T19:21:30",
   "generator": "kahnban",
   "columns": [
     {
@@ -90,24 +90,24 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-003",
           "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
-          "status": "in-progress",
+          "status": "verifying",
           "owner": "claude-coder",
           "branch": "ticket/KB-003",
           "worktree": ".worktrees/KB-003",
           "updated": "2026-10-26",
-          "column": "3-in-progress"
+          "column": "4-verifying"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -154,7 +154,7 @@
         "cycle_hours": null
       },
       "KB-003": {
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null

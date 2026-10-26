@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T19:19:49",
+  "generated": "2026-10-26T19:21:30",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -120,13 +120,18 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-003",
           "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "verifying",
+          "column": "4-verifying",
           "owner": "claude-coder",
           "branch": "ticket/KB-003",
           "worktree": ".worktrees/KB-003",
@@ -141,11 +146,6 @@
           "updated": "2026-10-26"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -291,8 +291,8 @@
     "KB-003": {
       "id": "KB-003",
       "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "verifying",
+      "column": "4-verifying",
       "owner": "claude-coder",
       "branch": "ticket/KB-003",
       "worktree": ".worktrees/KB-003",
