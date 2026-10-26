@@ -9,8 +9,8 @@ Generated: 2026-10-26 19:19
 | Column | Tickets |
 | :--- | ---: |
 | 0-backlog | 7 |
-| 1-refining | 1 |
-| 2-ready | 0 |
+| 1-refining | 0 |
+| 2-ready | 1 |
 | 3-in-progress | 0 |
 | 4-verifying | 0 |
 | 5-done | 2 |
@@ -27,15 +27,15 @@ Generated: 2026-10-26 19:19
 | KB-008 | Parallel workers in kahnban run (leases already allow it) | unassigned | - | 2026-10-25 |
 | KB-009 | The citadel portability smoke test (plan.md phase 4) | unassigned | - | 2026-10-25 |
 
-## 1-refining (1)
+## 1-refining (0)
+
+_empty_
+
+## 2-ready (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-003 | Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move | unassigned | - | 2026-10-26 |
-
-## 2-ready (0)
-
-_empty_
 
 ## 3-in-progress (0)
 

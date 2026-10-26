@@ -1,7 +1,7 @@
 ---
 id: KB-003
 title: Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -16,6 +16,8 @@ source_doc: ""
 source_anchor: ""
 source_hash: ""
 validation_class: headless-verified
+contract_hash: 73553383573b7909
+confirmed: ""
 ---
 
 ## Problem
@@ -47,3 +49,4 @@ python -m pytest tests/test_sim_compare.py -q
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 19:19 - manual move 0-backlog -> 1-refining: refine
+- 2026-10-26 19:19 - ready gate passed -> 2-ready | contract 73553383573b7909
