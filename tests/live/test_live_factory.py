@@ -80,8 +80,11 @@ def toy_repo(path: Path) -> Path:
     # acceptEdits alone does not let a headless worker run `git add` or `git commit` (the first live run ended there),
     # so the git commands a coder needs are allowed by name; the guard still blocks push, --no-verify and the rest.
     git_tools = " ".join(f'"Bash(git {verb}:*)"' for verb in ("add", "commit", "status", "diff", "log", "rm", "mv"))
-    tools = "" if FLAG else f" --allowedTools {git_tools}"
-    config["workers"] = {"default": f"claude -p --model {MODEL} --agent kahnban-{{role}} --permission-mode acceptEdits{tools}"}
+    if FLAG:  # the install flag must have written a worker command that works; only the model is added
+        assert config["workers"]["default"].startswith("claude -p --agent kahnban-{role}"), config.get("workers")
+        config["workers"]["default"] = config["workers"]["default"].replace("claude -p", f"claude -p --model {MODEL}", 1)
+    else:
+        config["workers"] = {"default": f"claude -p --model {MODEL} --agent kahnban-{{role}} --permission-mode acceptEdits --allowedTools {git_tools}"}
     config["worker_timeout_sec"] = 900
     (path / "plans" / "board.config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
     sh("git", "add", "-A", cwd=path)
