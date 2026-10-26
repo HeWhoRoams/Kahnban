@@ -49,4 +49,4 @@ _empty_
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-001 | A SKILL.md without frontmatter lists with an empty description | claude-coder | - | 2026-10-26 |
-| KB-010 | The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test | claude-coder | ticket/KB-010 | 2026-10-26 |
+| KB-010 | The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test | claude-coder | - | 2026-10-26 |

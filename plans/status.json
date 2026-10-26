@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T18:21:04",
+  "generated": "2026-10-26T18:21:05",
   "generator": "kahnban",
   "columns": [
     {
@@ -127,8 +127,8 @@
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
           "status": "done",
           "owner": "claude-coder",
-          "branch": "ticket/KB-010",
-          "worktree": ".worktrees/KB-010",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-26",
           "column": "5-done"
         }
