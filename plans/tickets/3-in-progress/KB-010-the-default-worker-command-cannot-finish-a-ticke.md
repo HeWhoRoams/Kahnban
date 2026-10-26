@@ -1,10 +1,10 @@
 ---
 id: KB-010
 title: "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test"
-status: ready
+status: in-progress
 owner: claude-coder
-branch: ""
-worktree: ""
+branch: ticket/KB-010
+worktree: .worktrees/KB-010
 created: 2026-10-25
 updated: 2026-10-26
 legacy_id: ""
@@ -206,3 +206,4 @@ python -m pytest tests/test_harness_files.py -q
 - 2026-10-26 16:34 - abandoned (the settings.json rules are ignored by a headless worker (probe 2026-10-26); the flag writes the worker command instead) | cleanup: removed worktree: KB-010; deleted branch: ticket/KB-010
 - 2026-10-26 16:34 - manual move 4-verifying -> 1-refining: contract rewritten: the flag writes --allowedTools into the worker command, not settings.json
 - 2026-10-26 16:34 - ready gate passed -> 2-ready | contract 1b28ef7875c87d85
+- 2026-10-26 16:34 - claimed by claude-coder -> 3-in-progress
