@@ -1,7 +1,7 @@
 ---
 id: KB-001
 title: A SKILL.md without frontmatter lists with an empty description
-status: verifying
+status: done
 owner: claude-coder
 branch: ticket/KB-001
 worktree: .worktrees/KB-001
@@ -115,3 +115,4 @@ python -m pytest tests/test_skills_sources.py -q
     ..............                                                           [100%]
 
     full output: plans/tickets/.artifacts/KB-001-20261026-132950.log
+- 2026-10-26 13:30 - done gate passed -> 5-done | merge-commit: c0e536357f059b9f6e9574e13badc5b5ce7fbfa8
