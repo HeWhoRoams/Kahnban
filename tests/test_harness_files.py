@@ -168,3 +168,67 @@ def test_cursors_follow_up_cap_follows_max_stop_nudges(repo: Path) -> None:
     assert any("out-of-date" in problem for problem in skills_check.audit(repo))  # the file still says 4
     skills.install_skills(repo, harness="cursor")
     assert json.loads(cursor.read_text(encoding="utf-8"))["hooks"]["stop"][0]["loop_limit"] == 3
+
+
+# --- the worker command a headless Claude worker needs (opt-in) -----------------------------------
+
+
+def workers_of(repo: Path) -> dict:
+    return json.loads((repo / "plans" / "board.config.json").read_text(encoding="utf-8")).get("workers", {})
+
+
+def test_worker_commands_are_left_alone_unless_asked(repo: Path) -> None:
+    from conftest import scaffold_board
+
+    scaffold_board(repo, {})
+    settings = repo / ".claude" / "settings.json"
+    settings.parent.mkdir()
+    settings.write_text(json.dumps({"permissions": {"allow": ["Bash(ls)"]}}), encoding="utf-8")
+    before = (repo / "plans" / "board.config.json").read_text(encoding="utf-8")
+
+    skills.install_skills(repo, harness="claude")
+
+    assert json.loads(settings.read_text(encoding="utf-8"))["permissions"] == {"allow": ["Bash(ls)"]}
+    assert (repo / "plans" / "board.config.json").read_text(encoding="utf-8") == before
+
+
+def test_worker_commands_are_written_for_kahnban_the_git_verbs_and_the_boards_test_commands(repo: Path) -> None:
+    from conftest import scaffold_board
+    from kahnban.cli import main
+
+    scaffold_board(repo, {"validation_command": "python -m pytest -q", "regression_command": "python tests/all.py"})
+
+    assert main(["--project-root", str(repo), "skills", "install", "--harness", "claude", "--allow-worker-commands"]) == 0
+
+    command = workers_of(repo)["default"]
+    assert command.startswith("claude -p --agent kahnban-{role} --permission-mode acceptEdits --allowedTools ")
+    for rule in ("Bash(kahnban:*)", "Bash(git add:*)", "Bash(git commit:*)", "Bash(python -m pytest -q:*)", "Bash(python tests/all.py:*)"):
+        assert f'"{rule}"' in command
+    assert "git push" not in command and "Bash(git:*)" not in command
+
+
+def test_worker_commands_keep_a_workers_entry_that_is_already_there(repo: Path) -> None:
+    from conftest import scaffold_board
+
+    scaffold_board(repo, {"workers": {"default": "my-own-agent --role {role}"}})
+
+    result = skills.install_skills(repo, harness="claude", allow_worker_commands=True)
+
+    assert workers_of(repo) == {"default": "my-own-agent --role {role}"}
+    assert any("already has workers" in m for m in result["messages"])
+
+
+def test_worker_commands_without_a_board_write_nothing_and_print_the_command(tmp_path: Path) -> None:
+    result = skills.install_skills(tmp_path, harness="claude", allow_worker_commands=True)
+
+    assert not (tmp_path / "plans").exists()
+    assert any("No board here yet" in m and "--allowedTools" in m for m in result["messages"])
+    assert "permissions" not in json.loads((tmp_path / ".claude" / "settings.json").read_text(encoding="utf-8"))
+
+
+def test_a_board_test_command_with_a_quote_is_left_out_of_the_command(repo: Path) -> None:
+    from conftest import scaffold_board
+
+    scaffold_board(repo, {"validation_command": 'python -c "print(1)"'})
+
+    assert not [t for t in skills.allowed_tools(repo) if "print" in t]
