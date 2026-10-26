@@ -191,6 +191,7 @@ A spec lists one observable outcome per line under `## Requirements` (`- R1: ...
 
 ```powershell
 kahnban skills install --harness claude   # or gemini, cursor, all: agent files + guard hook; commit .claude/ (.gemini/, .cursor/)
+kahnban skills install --harness claude --allow-worker-commands   # opt in: also writes workers.default (claude -p with the commands each role needs) when the board has no workers
 kahnban skills check                      # exit 1 if skills, roles, agent files or the lock disagree
 kahnban skills lock                       # pin skills and .kahnban/hooks by SHA-256 (install does this too)
 kahnban run --max-steps 20                # until the board is idle or every open ticket is parked

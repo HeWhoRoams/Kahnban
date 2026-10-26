@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Headless workers
+- `kahnban skills install --harness claude --allow-worker-commands` writes `workers.default` into `plans/board.config.json` when the board has no workers: `claude -p --agent kahnban-{role} --permission-mode acceptEdits --allowedTools ...`, allowing `kahnban`, the git verbs a worker needs (never `git push`) and the board's test commands. Without the flag, install changes nothing, and an existing `workers` entry is never overwritten. The rules go in the command because a headless `claude -p` ignores `permissions.allow` in project settings. Live proof: a Haiku agent took a toy ticket to done in 4 steps.
+
 ### Crash recovery
 - A lock file (`.claim.lock`, and the attempts and stop-nudge locks) records `pid`, `host` and time. A waiter that finds the lock of a process on this machine that no longer exists breaks it at once instead of waiting out the 300-second age limit; anything it cannot judge still falls back to the age rule. Only one waiter wins a break, and a lock made in the meantime is left alone. A release now retries when a waiter has the file open, which on Windows had made the holder's delete fail silently.
 - A ticket that reached `5-done` but was killed before `cleanup` is finished by the next run (`finish_cleanup`), and `kahnban lint` warns about it (BL20). `kahnban next` says when the board is idle only because a live lease is still held.
