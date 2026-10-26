@@ -25,6 +25,7 @@
     "Log"
   ],
   "validation_command": "python tests/run_parallel.py -j 8",
+  "regression_command": "python tests/run_parallel.py -j 8",
   "require_proof": true,
   "require_review": true,
   "require_integration": true,
