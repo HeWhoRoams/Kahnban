@@ -27,20 +27,19 @@ integrated_sha: ""
 
 ## Problem
 A headless `claude -p --permission-mode acceptEdits` worker is asked to approve `git add`, `git commit` and
-`kahnban approve`, and a headless worker cannot answer. Two live runs with Haiku (2026-10-25) show it: the first
-coder finished its work and could not commit it; with git allowed by name the second got through refine, implement
-and verify, and the reviewer then never ran `kahnban approve` or `kahnban reject`.
+`kahnban approve`, and a headless worker cannot answer. Three live runs with Haiku (2026-10-25 and 26) and a
+probe show it: with nothing allowed the coder cannot commit; with the rules in the project's
+`.claude/settings.json` (`permissions.allow`) it still cannot, because a headless worker ignores them; with
+`--allowedTools` on the command line it can. So the rules belong in the worker command, which lives in
+`plans/board.config.json` where the adopter reviews it.
 
-`kahnban skills install` has always left a project's permissions alone, and an existing test pins that. So the
-rules a worker needs are opt-in: `kahnban skills install --harness claude --allow-worker-commands` writes them
-into `.claude/settings.json` (decided with the user, 2026-10-26). The guard still refuses push, `--no-verify`
-and every command outside a role.
+`kahnban skills install` has never touched a project's permissions, so this is opt-in: `kahnban skills install --harness claude --allow-worker-commands` writes `workers.default` when the board has none (decided with the user, 2026-10-26). The guard still refuses push, `--no-verify` and every command outside a role.
 
 ## Acceptance criteria
-- [x] installing for claude without the flag leaves the project's permissions exactly as found (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_are_left`)
-- [x] with --allow-worker-commands it writes permissions.allow with the kahnban command and the git verbs a worker needs, and never git push (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_are_written`)
-- [x] with the flag, other settings and rules are kept and nothing is added twice (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_keep`)
-- [x] with the flag, the board's validation and regression commands are allowed too (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_include_the_board`)
+- [ ] installing without the flag changes neither the settings permissions nor the board's workers (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_are_left`)
+- [ ] with --allow-worker-commands and a board that has no workers, workers.default becomes a claude -p command allowing kahnban, the git verbs a worker needs and the board's test commands, and never git push (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_are_written`)
+- [ ] a workers entry that is already there is never overwritten (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_keep`)
+- [ ] with no board, nothing is written and the command to use is printed (test: `python -m pytest tests/test_harness_files.py -q -k worker_commands_without_a_board`)
 
 ## Blast radius
 - `src/kahnban/skills.py`
@@ -48,10 +47,10 @@ and every command outside a role.
 - `tests/test_harness_files.py`
 
 ## Implementation notes
-- Cherry-pick `74a5a99` from `ticket/kb010-saved` (the first version, on by default), then move its three helpers (`CLAUDE_ALLOWED`, `allowed_tools`, `merge_permissions`) from `harnesses.py` into `skills.py`: the blast-radius cap is three files.
-- `install_skills(..., allow_worker_commands=False)`; the claude harness calls `merge_permissions` only when it is true. `skills install` gets `--allow-worker-commands`.
+- Port the flag and `allowed_tools` from `ticket/kb010-saved2`; drop `merge_permissions` and the settings.json write, which a headless worker ignores.
+- `worker_command(root)` builds `claude -p --agent kahnban-{role} --permission-mode acceptEdits --allowedTools "..."`; a board test command containing a double quote is left out.
 - Specific git verbs (add, commit, status, diff, log, rm, mv), never `git:*`.
-- Proof beyond the unit tests: `KAHNBAN_LIVE=1 python -m pytest tests/live` with the flag should get a toy ticket past review.
+- Proof beyond the unit tests: `KAHNBAN_LIVE=1 KAHNBAN_LIVE_FLAG=1 python -m pytest tests/live` should get a toy ticket past review.
 
 ## Validation
 ```
