@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-25T18:50:50",
+  "generated": "2026-10-26T13:28:38",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -170,7 +170,7 @@
             "src/kahnban/skills.py",
             "tests/test_skills_sources.py"
           ],
-          "updated": "2026-10-25"
+          "updated": "2026-10-26"
         }
       ]
     },
@@ -322,7 +322,7 @@
         "src/kahnban/skills.py",
         "tests/test_skills_sources.py"
       ],
-      "updated": "2026-10-25"
+      "updated": "2026-10-26"
     }
   }
 }

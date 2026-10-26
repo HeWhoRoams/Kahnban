@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-25T18:50:50",
+  "generated": "2026-10-26T13:28:38",
   "generator": "kahnban",
   "columns": [
     {
@@ -124,7 +124,7 @@
           "owner": "claude-coder",
           "branch": "ticket/KB-001",
           "worktree": ".worktrees/KB-001",
-          "updated": "2026-10-25",
+          "updated": "2026-10-26",
           "column": "4-verifying"
         }
       ]
