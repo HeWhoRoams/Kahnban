@@ -1,30 +1,16 @@
 {
-  "generated": "2026-10-26T18:21:05",
+  "generated": "2026-10-26T19:19:38",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 8,
+      "count": 7,
       "tickets": [
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [],
-          "updated": "2026-10-25"
-        },
-        {
-          "id": "KB-003",
-          "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
           "status": "backlog",
           "column": "0-backlog",
           "owner": "unassigned",
@@ -124,8 +110,27 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-003",
+          "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "The simulation baseline was made in one run and compared in one later run (docs/gap-fix-plan.md, G6). Two matching runs do not show that a metric never moves, and the tolerances in `tests/sim/compare.py` are guesses. A metric that moves on an unchanged tree would block every pull request. `python tests/run_sim.py stability` should run the chosen scenarios N times (default 5) on the same tree, report which metrics moved, and let `compare` skip those, so only metrics that never move are gated.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "tests/sim/compare.py",
+            "tests/sim/__main__.py",
+            "tests/test_sim_compare.py"
+          ],
+          "updated": "2026-10-26"
+        }
+      ]
     },
     {
       "name": "2-ready",
@@ -188,20 +193,6 @@
     "KB-002": {
       "id": "KB-002",
       "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [],
-      "updated": "2026-10-25"
-    },
-    "KB-003": {
-      "id": "KB-003",
-      "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
       "status": "backlog",
       "column": "0-backlog",
       "owner": "unassigned",
@@ -296,6 +287,24 @@
       "blocked_on": "",
       "blast_radius": [],
       "updated": "2026-10-25"
+    },
+    "KB-003": {
+      "id": "KB-003",
+      "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "The simulation baseline was made in one run and compared in one later run (docs/gap-fix-plan.md, G6). Two matching runs do not show that a metric never moves, and the tolerances in `tests/sim/compare.py` are guesses. A metric that moves on an unchanged tree would block every pull request. `python tests/run_sim.py stability` should run the chosen scenarios N times (default 5) on the same tree, report which metrics moved, and let `compare` skip those, so only metrics that never move are gated.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "tests/sim/compare.py",
+        "tests/sim/__main__.py",
+        "tests/test_sim_compare.py"
+      ],
+      "updated": "2026-10-26"
     },
     "KB-001": {
       "id": "KB-001",
