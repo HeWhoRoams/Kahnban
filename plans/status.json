@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T14:42:42",
+  "generated": "2026-10-26T14:42:44",
   "generator": "kahnban",
   "columns": [
     {
@@ -95,24 +95,24 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-010",
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-010",
+          "worktree": ".worktrees/KB-010",
           "updated": "2026-10-26",
-          "column": "2-ready"
+          "column": "3-in-progress"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",

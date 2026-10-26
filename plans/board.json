@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T14:42:42",
+  "generated": "2026-10-26T14:42:44",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -129,16 +129,21 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-010",
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-010",
+          "worktree": ".worktrees/KB-010",
           "description": "A headless `claude -p --permission-mode acceptEdits` worker is asked to approve `git add`, `git commit` and `kahnban approve`, and a headless worker cannot answer. Two live runs with Haiku (2026-10-25) show it: the first coder finished its work and could not commit it; with git allowed by name the second got through refine, implement and verify, and the reviewer then never ran `kahnban approve` or `kahnban reject`. The worker command `kahnban run` documents therefore cannot finish a ticket. `kahnban skills install --harness claude` already owns `.claude/settings.json` (the guard hooks), so it should also write the permission rules the roles need; the guard still refuses push, `--no-verify` and every command outside a role.",
           "depends_on": [],
           "blocked_on": "",
@@ -150,11 +155,6 @@
           "updated": "2026-10-26"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",
@@ -301,11 +301,11 @@
     "KB-010": {
       "id": "KB-010",
       "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-010",
+      "worktree": ".worktrees/KB-010",
       "description": "A headless `claude -p --permission-mode acceptEdits` worker is asked to approve `git add`, `git commit` and `kahnban approve`, and a headless worker cannot answer. Two live runs with Haiku (2026-10-25) show it: the first coder finished its work and could not commit it; with git allowed by name the second got through refine, implement and verify, and the reviewer then never ran `kahnban approve` or `kahnban reject`. The worker command `kahnban run` documents therefore cannot finish a ticket. `kahnban skills install --harness claude` already owns `.claude/settings.json` (the guard hooks), so it should also write the permission rules the roles need; the guard still refuses push, `--no-verify` and every command outside a role.",
       "depends_on": [],
       "blocked_on": "",
