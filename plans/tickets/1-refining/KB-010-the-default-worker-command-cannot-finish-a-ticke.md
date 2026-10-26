@@ -24,26 +24,29 @@ confirmed: ""
 A headless `claude -p --permission-mode acceptEdits` worker is asked to approve `git add`, `git commit` and
 `kahnban approve`, and a headless worker cannot answer. Two live runs with Haiku (2026-10-25) show it: the first
 coder finished its work and could not commit it; with git allowed by name the second got through refine, implement
-and verify, and the reviewer then never ran `kahnban approve` or `kahnban reject`. The worker command `kahnban run`
-documents therefore cannot finish a ticket. `kahnban skills install --harness claude` already owns `.claude/settings.json`
-(the guard hooks), so it should also write the permission rules the roles need; the guard still refuses push,
-`--no-verify` and every command outside a role.
+and verify, and the reviewer then never ran `kahnban approve` or `kahnban reject`.
+
+`kahnban skills install` has always left a project's permissions alone, and an existing test pins that. So the
+rules a worker needs are opt-in: `kahnban skills install --harness claude --allow-worker-commands` writes them
+into `.claude/settings.json` (decided with the user, 2026-10-26). The guard still refuses push, `--no-verify`
+and every command outside a role.
 
 ## Acceptance criteria
-- [ ] installing for claude writes permissions.allow with the kahnban command and the git verbs a worker needs (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_are_written`)
-- [ ] re-installing keeps every other setting and every rule already there, and adds nothing twice (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_keep`)
-- [ ] the board's validation and regression commands are allowed too, when a board exists (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_include_the_board`)
+- [ ] installing for claude without the flag leaves the project's permissions exactly as found (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_are_left`)
+- [ ] with --allow-worker-commands it writes permissions.allow with the kahnban command and the git verbs a worker needs, and never git push (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_are_written`)
+- [ ] with the flag, other settings and rules are kept and nothing is added twice (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_keep`)
+- [ ] with the flag, the board's validation and regression commands are allowed too (test: `python -m pytest tests/test_harness_files.py -q -k claude_permissions_include_the_board`)
 
 ## Blast radius
-- `src/kahnban/harnesses.py`
 - `src/kahnban/skills.py`
+- `src/kahnban/cli.py`
 - `tests/test_harness_files.py`
 
 ## Implementation notes
-- `harnesses.merge_permissions(path, tools, messages)` adds missing entries to `permissions.allow`; `allowed_tools(root)` is the fixed list plus `Bash(<command>:*)` for the board's validation and regression commands.
-- Called from `skills._configure_agent_harness` for the claude harness only.
-- Specific git verbs (add, commit, status, diff, log, rm, mv), never `git:*`; `Bash(kahnban:*)` is safe because the guard checks the role.
-- Proof beyond the unit tests: `KAHNBAN_LIVE=1 python -m pytest tests/live` should get a toy ticket past review.
+- Cherry-pick `74a5a99` from `ticket/kb010-saved` (the first version, on by default), then move its three helpers (`CLAUDE_ALLOWED`, `allowed_tools`, `merge_permissions`) from `harnesses.py` into `skills.py`: the blast-radius cap is three files.
+- `install_skills(..., allow_worker_commands=False)`; the claude harness calls `merge_permissions` only when it is true. `skills install` gets `--allow-worker-commands`.
+- Specific git verbs (add, commit, status, diff, log, rm, mv), never `git:*`.
+- Proof beyond the unit tests: `KAHNBAN_LIVE=1 python -m pytest tests/live` with the flag should get a toy ticket past review.
 
 ## Validation
 ```
