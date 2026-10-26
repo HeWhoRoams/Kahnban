@@ -3,8 +3,8 @@ id: KB-010
 title: "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test"
 status: verifying
 owner: claude-coder
-branch: ticket/KB-010
-worktree: .worktrees/KB-010
+branch: ""
+worktree: ""
 created: 2026-10-25
 updated: 2026-10-26
 legacy_id: ""
@@ -204,3 +204,4 @@ python -m pytest tests/test_harness_files.py -q
     FAILED tests/test_harness_files.py::test_a_settings_file_that_is_not_json_is_left_alone_with_a_message
 
     full output: plans/tickets/.artifacts/KB-010-20261026-160336.log
+- 2026-10-26 16:34 - abandoned (the settings.json rules are ignored by a headless worker (probe 2026-10-26); the flag writes the worker command instead) | cleanup: removed worktree: KB-010; deleted branch: ticket/KB-010
