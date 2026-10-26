@@ -54,3 +54,26 @@ python -m pytest tests/test_harness_files.py -q
 - 2026-10-25 18:50 - created -> 0-backlog | captured
 - 2026-10-26 14:42 - ready gate passed -> 2-ready | contract 45e5c3958f8b8cb6
 - 2026-10-26 14:42 - claimed by claude-coder -> 3-in-progress
+- 2026-10-26 14:43 - verify exit=1 in 201.9s (cwd=KB-010) (no transition)
+    verifying ticket/KB-010 at 74a5a9942150; Running Tier 1 (Feature Tests): python -m pytest tests/test_harness_files.py -q; Running Tier 2 (Regression Tests): python tests/run_parallel.py -j 8
+    $ [python -m pytest tests/test_harness_files.py -q] && [3/3 criterion tests] && [python tests/run_parallel.py -j 8]
+    === TIER 1: FEATURE TESTS ===
+    ..................................                                       [100%]
+
+
+    === ACCEPTANCE CRITERIA ===
+    [PASS] $ python -m pytest tests/test_harness_files.py -q -k claude_permissions_are_written
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_harness_files.py -q -k claude_permissions_keep
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_harness_files.py -q -k claude_permissions_include_the_board
+    .                                                                        [100%]
+
+
+    === TIER 2: REGRESSION TESTS ===
+    FAILED tests/test_factory_run.py::test_skills_install_adds_agents_and_one_guard_hook
+    706 tests, 8 workers, 189s, FAILURES
+
+    full output: plans/tickets/.artifacts/KB-010-20261026-144351.log
