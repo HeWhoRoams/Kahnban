@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T22:44:03",
+  "generated": "2026-10-26T22:44:58",
   "generator": "kahnban",
   "columns": [
     {
@@ -60,24 +60,24 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-006",
           "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
-          "status": "in-progress",
+          "status": "verifying",
           "owner": "claude-coder",
           "branch": "ticket/KB-006",
           "worktree": ".worktrees/KB-006",
           "updated": "2026-10-26",
-          "column": "3-in-progress"
+          "column": "4-verifying"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -191,7 +191,7 @@
       "KB-006": {
         "by_owner": {},
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
