@@ -3,8 +3,8 @@ id: KB-006
 title: "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access"
 status: done
 owner: claude-coder
-branch: ticket/KB-006
-worktree: .worktrees/KB-006
+branch: ""
+worktree: ""
 created: 2026-10-25
 updated: 2026-10-26
 legacy_id: ""
@@ -183,3 +183,4 @@ python -m pytest tests/test_contract_signature.py -q
     full output: plans/tickets/.artifacts/KB-006-20261026-232315.log
 - 2026-10-26 23:30 - contract sealed once by hand with the engine key: frozen by `ready` before contract_sig existed; hash verified equal to the body first (decided with the user)
 - 2026-10-26 23:30 - done gate passed -> 5-done | merge-commit: 6f2caf9f430f0d07b83ff8c8a432e3fa1ba0b49c
+- 2026-10-26 23:30 - cleanup: removed worktree: KB-006; deleted branch: ticket/KB-006

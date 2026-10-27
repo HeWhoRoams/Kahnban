@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T23:30:27",
+  "generated": "2026-10-26T23:30:28",
   "generator": "kahnban",
   "columns": [
     {
@@ -117,8 +117,8 @@
           "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
           "status": "done",
           "owner": "claude-coder",
-          "branch": "ticket/KB-006",
-          "worktree": ".worktrees/KB-006",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-26",
           "column": "5-done"
         },
