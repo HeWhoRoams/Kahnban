@@ -19,9 +19,9 @@ validation_class: headless-verified
 contract_hash: f8680312d43d6fe4
 confirmed: ""
 verified_sha: 5957e8e4c77098d5a266b65fc03d7ce8229a6927
-reviewer: ""
-approved_sha: ""
-approval_sig: ""
+reviewer: Tim Niles
+approved_sha: 5957e8e4c77098d5a266b65fc03d7ce8229a6927
+approval_sig: 98f8d69bf36b9c81c1f058336b7125a3abc205fb4ca400760641175f471de6b6
 integrated_sha: ""
 ---
 
@@ -169,3 +169,4 @@ python -m pytest tests/test_contract_signature.py -q
     FAILED tests/test_contract_signature.py::test_an_unsigned_contract_is_refused_only_when_signatures_are_required
 
     full output: plans/tickets/.artifacts/KB-006-20261026-224458.log
+- 2026-10-26 23:23 - approved by Tim Niles at 5957e8e4c770
