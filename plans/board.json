@@ -1,30 +1,16 @@
 {
-  "generated": "2026-10-26T23:30:28",
+  "generated": "2026-10-26T23:32:20",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 4,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [],
-          "updated": "2026-10-25"
-        },
-        {
-          "id": "KB-007",
-          "title": "Reviewer identity that is not self-asserted",
           "status": "backlog",
           "column": "0-backlog",
           "owner": "unassigned",
@@ -68,8 +54,28 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-007",
+          "title": "Reviewer identity that is not self-asserted",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "`kahnban approve --reviewer <name>` records whatever name is typed. The owner check compares two strings, so a typo, a worker or a second hat can approve under any other name. Decided with the user (2026-10-26): registered reviewer keys.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/trust.py",
+            "src/kahnban/core.py",
+            "src/kahnban/cli.py",
+            "tests/test_reviewer_keys.py"
+          ],
+          "updated": "2026-10-26"
+        }
+      ]
     },
     {
       "name": "2-ready",
@@ -223,20 +229,6 @@
       "blast_radius": [],
       "updated": "2026-10-25"
     },
-    "KB-007": {
-      "id": "KB-007",
-      "title": "Reviewer identity that is not self-asserted",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [],
-      "updated": "2026-10-25"
-    },
     "KB-008": {
       "id": "KB-008",
       "title": "Parallel workers in kahnban run (leases already allow it)",
@@ -264,6 +256,25 @@
       "blocked_on": "",
       "blast_radius": [],
       "updated": "2026-10-25"
+    },
+    "KB-007": {
+      "id": "KB-007",
+      "title": "Reviewer identity that is not self-asserted",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "`kahnban approve --reviewer <name>` records whatever name is typed. The owner check compares two strings, so a typo, a worker or a second hat can approve under any other name. Decided with the user (2026-10-26): registered reviewer keys.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/trust.py",
+        "src/kahnban/core.py",
+        "src/kahnban/cli.py",
+        "tests/test_reviewer_keys.py"
+      ],
+      "updated": "2026-10-26"
     },
     "KB-001": {
       "id": "KB-001",

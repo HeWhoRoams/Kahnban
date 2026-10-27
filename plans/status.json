@@ -1,24 +1,14 @@
 {
-  "generated": "2026-10-26T23:30:28",
+  "generated": "2026-10-26T23:32:20",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 4,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-25",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-007",
-          "title": "Reviewer identity that is not self-asserted",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -50,8 +40,19 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-007",
+          "title": "Reviewer identity that is not self-asserted",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-26",
+          "column": "1-refining"
+        }
+      ]
     },
     {
       "name": "2-ready",
