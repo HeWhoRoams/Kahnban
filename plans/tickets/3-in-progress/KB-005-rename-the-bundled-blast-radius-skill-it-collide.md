@@ -1,10 +1,10 @@
 ---
 id: KB-005
 title: "Rename the bundled blast-radius skill: it collides with the ticket field of the same name"
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: claude-coder
+branch: ticket/KB-005
+worktree: .worktrees/KB-005
 created: 2026-10-25
 updated: 2026-10-26
 legacy_id: ""
@@ -59,3 +59,4 @@ python -m kahnban skills check
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 22:25 - manual move 0-backlog -> 1-refining: refine
 - 2026-10-26 22:25 - ready gate passed -> 2-ready | contract 1ef52016b0f3a7a1
+- 2026-10-26 22:25 - claimed by claude-coder -> 3-in-progress

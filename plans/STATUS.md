@@ -10,8 +10,8 @@ Generated: 2026-10-26 22:25
 | :--- | ---: |
 | 0-backlog | 5 |
 | 1-refining | 0 |
-| 2-ready | 1 |
-| 3-in-progress | 0 |
+| 2-ready | 0 |
+| 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 4 |
 
@@ -29,15 +29,15 @@ Generated: 2026-10-26 22:25
 
 _empty_
 
-## 2-ready (1)
+## 2-ready (0)
+
+_empty_
+
+## 3-in-progress (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-005 | Rename the bundled blast-radius skill: it collides with the ticket field of the same name | unassigned | - | 2026-10-26 |
-
-## 3-in-progress (0)
-
-_empty_
+| KB-005 | Rename the bundled blast-radius skill: it collides with the ticket field of the same name | claude-coder | ticket/KB-005 | 2026-10-26 |
 
 ## 4-verifying (0)
 
