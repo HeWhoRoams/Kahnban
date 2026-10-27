@@ -1,7 +1,7 @@
 ---
 id: KB-004
 title: "Break down status.json metrics per role: which worker caused the rejections"
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -16,6 +16,8 @@ source_doc: ""
 source_anchor: ""
 source_hash: ""
 validation_class: headless-verified
+contract_hash: 74031f925bb25faf
+confirmed: ""
 ---
 
 ## Problem
@@ -47,3 +49,4 @@ python -m pytest tests/test_factory_run.py -q
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 20:04 - manual move 0-backlog -> 1-refining: refine
+- 2026-10-26 20:04 - ready gate passed -> 2-ready | contract 74031f925bb25faf

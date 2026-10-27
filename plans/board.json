@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T20:04:32",
+  "generated": "2026-10-26T20:04:33",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -96,13 +96,18 @@
     },
     {
       "name": "1-refining",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "2-ready",
       "count": 1,
       "tickets": [
         {
           "id": "KB-004",
           "title": "Break down status.json metrics per role: which worker caused the rejections",
-          "status": "refining",
-          "column": "1-refining",
+          "status": "ready",
+          "column": "2-ready",
           "owner": "unassigned",
           "branch": "",
           "worktree": "",
@@ -117,11 +122,6 @@
           "updated": "2026-10-26"
         }
       ]
-    },
-    {
-      "name": "2-ready",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "3-in-progress",
@@ -281,8 +281,8 @@
     "KB-004": {
       "id": "KB-004",
       "title": "Break down status.json metrics per role: which worker caused the rejections",
-      "status": "refining",
-      "column": "1-refining",
+      "status": "ready",
+      "column": "2-ready",
       "owner": "unassigned",
       "branch": "",
       "worktree": "",

@@ -9,8 +9,8 @@ Generated: 2026-10-26 20:04
 | Column | Tickets |
 | :--- | ---: |
 | 0-backlog | 6 |
-| 1-refining | 1 |
-| 2-ready | 0 |
+| 1-refining | 0 |
+| 2-ready | 1 |
 | 3-in-progress | 0 |
 | 4-verifying | 0 |
 | 5-done | 3 |
@@ -26,15 +26,15 @@ Generated: 2026-10-26 20:04
 | KB-008 | Parallel workers in kahnban run (leases already allow it) | unassigned | - | 2026-10-25 |
 | KB-009 | The citadel portability smoke test (plan.md phase 4) | unassigned | - | 2026-10-25 |
 
-## 1-refining (1)
+## 1-refining (0)
+
+_empty_
+
+## 2-ready (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-004 | Break down status.json metrics per role: which worker caused the rejections | unassigned | - | 2026-10-26 |
-
-## 2-ready (0)
-
-_empty_
 
 ## 3-in-progress (0)
 
