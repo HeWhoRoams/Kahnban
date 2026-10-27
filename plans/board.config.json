@@ -32,7 +32,7 @@
   "require_spec": false,
   "require_signed_approvals": true,
   "strict_hooks": true,
-  "max_blast_radius_files": 12,
+  "max_blast_radius_files": 3,
   "stale_after_days": 3,
   "allowed_commands": [],
   "design_doc_roots": [
