@@ -3,8 +3,8 @@ id: KB-005
 title: "Rename the bundled blast-radius skill: it collides with the ticket field of the same name"
 status: done
 owner: claude-coder
-branch: ticket/KB-005
-worktree: .worktrees/KB-005
+branch: ""
+worktree: ""
 created: 2026-10-25
 updated: 2026-10-26
 legacy_id: ""
@@ -134,3 +134,4 @@ python -m kahnban skills check] && [2/2 criterion tests] && [python tests/run_pa
 
     full output: plans/tickets/.artifacts/KB-005-20261026-223934.log
 - 2026-10-26 22:43 - done gate passed -> 5-done | merge-commit: 1093f017c6139bd45f4be48f43b48926b25f0998
+- 2026-10-26 22:43 - cleanup: removed worktree: KB-005; deleted branch: ticket/KB-005

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T22:43:14",
+  "generated": "2026-10-26T22:43:15",
   "generator": "kahnban",
   "columns": [
     {
@@ -117,8 +117,8 @@
           "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
           "status": "done",
           "owner": "claude-coder",
-          "branch": "ticket/KB-005",
-          "worktree": ".worktrees/KB-005",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-26",
           "column": "5-done"
         },
