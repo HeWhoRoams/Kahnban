@@ -10,8 +10,8 @@ Generated: 2026-10-26 22:44
 | :--- | ---: |
 | 0-backlog | 4 |
 | 1-refining | 0 |
-| 2-ready | 1 |
-| 3-in-progress | 0 |
+| 2-ready | 0 |
+| 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 5 |
 
@@ -28,15 +28,15 @@ Generated: 2026-10-26 22:44
 
 _empty_
 
-## 2-ready (1)
+## 2-ready (0)
+
+_empty_
+
+## 3-in-progress (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-006 | Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access | unassigned | - | 2026-10-26 |
-
-## 3-in-progress (0)
-
-_empty_
+| KB-006 | Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access | claude-coder | ticket/KB-006 | 2026-10-26 |
 
 ## 4-verifying (0)
 
