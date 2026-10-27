@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T22:39:34",
+  "generated": "2026-10-26T22:43:14",
   "generator": "kahnban",
   "columns": [
     {
@@ -75,23 +75,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-005",
-          "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
-          "status": "verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-005",
-          "worktree": ".worktrees/KB-005",
-          "updated": "2026-10-26",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 4,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-001",
@@ -124,6 +113,16 @@
           "column": "5-done"
         },
         {
+          "id": "KB-005",
+          "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
+          "status": "done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-005",
+          "worktree": ".worktrees/KB-005",
+          "updated": "2026-10-26",
+          "column": "5-done"
+        },
+        {
           "id": "KB-010",
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
           "status": "done",
@@ -144,9 +143,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 4,
-    "first_pass_yield": 0.75,
-    "median_cycle_hours": 24.85,
+    "done": 5,
+    "first_pass_yield": 0.8,
+    "median_cycle_hours": 26.2,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -186,7 +185,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 28.9
       },
       "KB-006": {
         "by_owner": {},
