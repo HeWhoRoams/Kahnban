@@ -1,24 +1,14 @@
 {
-  "generated": "2026-10-26T20:03:55",
+  "generated": "2026-10-26T20:04:32",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 7,
+      "count": 6,
       "tickets": [
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-25",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-004",
-          "title": "Break down status.json metrics per role: which worker caused the rejections",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -80,8 +70,19 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-004",
+          "title": "Break down status.json metrics per role: which worker caused the rejections",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-26",
+          "column": "1-refining"
+        }
+      ]
     },
     {
       "name": "2-ready",
