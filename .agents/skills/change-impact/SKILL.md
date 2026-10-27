@@ -1,9 +1,9 @@
 ---
-name: blast-radius
+name: change-impact
 description: "Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up. Use for 'blast radius of X', 'what could this break', or reviewing a small diff you don't trust."
 ---
 
-# Blast radius
+# Change impact
 
 Find what a change breaks somewhere else, before it ships. Use for "blast radius of X", "what could this break", or reviewing a small diff you don't trust yet.
 
@@ -13,7 +13,7 @@ Listing the callers is not the job. The agent can grep those in a second. The jo
 
 ## Don't trust your own writeup
 
-A blast-radius writeup that sounds right is worthless. It reads as convincing whether or not it's true. So don't hand back the writeup. Find the one or two facts the whole thing depends on and prove them by running code.
+A change-impact writeup that sounds right is worthless. It reads as convincing whether or not it's true. So don't hand back the writeup. Find the one or two facts the whole thing depends on and prove them by running code.
 
 ### How sure are you
 
