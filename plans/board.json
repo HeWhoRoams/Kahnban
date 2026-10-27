@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T22:25:09",
+  "generated": "2026-10-26T22:25:10",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -82,13 +82,18 @@
     },
     {
       "name": "1-refining",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "2-ready",
       "count": 1,
       "tickets": [
         {
           "id": "KB-005",
           "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
-          "status": "refining",
-          "column": "1-refining",
+          "status": "ready",
+          "column": "2-ready",
           "owner": "unassigned",
           "branch": "",
           "worktree": "",
@@ -111,11 +116,6 @@
           "updated": "2026-10-26"
         }
       ]
-    },
-    {
-      "name": "2-ready",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "3-in-progress",
@@ -279,8 +279,8 @@
     "KB-005": {
       "id": "KB-005",
       "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
-      "status": "refining",
-      "column": "1-refining",
+      "status": "ready",
+      "column": "2-ready",
       "owner": "unassigned",
       "branch": "",
       "worktree": "",

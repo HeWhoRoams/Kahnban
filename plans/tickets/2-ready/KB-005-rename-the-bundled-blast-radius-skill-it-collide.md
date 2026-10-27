@@ -1,7 +1,7 @@
 ---
 id: KB-005
 title: "Rename the bundled blast-radius skill: it collides with the ticket field of the same name"
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -16,6 +16,8 @@ source_doc: ""
 source_anchor: ""
 source_hash: ""
 validation_class: headless-verified
+contract_hash: 1ef52016b0f3a7a1
+confirmed: ""
 ---
 
 ## Problem
@@ -56,3 +58,4 @@ python -m kahnban skills check
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 22:25 - manual move 0-backlog -> 1-refining: refine
+- 2026-10-26 22:25 - ready gate passed -> 2-ready | contract 1ef52016b0f3a7a1
