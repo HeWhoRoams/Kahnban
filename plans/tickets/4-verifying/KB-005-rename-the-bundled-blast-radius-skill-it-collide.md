@@ -22,7 +22,7 @@ verified_sha: 4a03df13f52a76c221bc77f2ce85fca4a076a2df
 reviewer: Tim Niles
 approved_sha: 4a03df13f52a76c221bc77f2ce85fca4a076a2df
 approval_sig: 1353ede6636fd40c60d95b48c7080ae43542f0eb5fcb68290920a4bb0fc6d2f0
-integrated_sha: ""
+integrated_sha: 1093f017c6139bd45f4be48f43b48926b25f0998
 ---
 
 ## Problem
@@ -119,3 +119,17 @@ python -m kahnban skills check] && [2/2 criterion tests] && [python tests/run_pa
     [line 1 of 2 exited 1; rest skipped]
     full output: plans/tickets/.artifacts/KB-005-20261026-222619.log
 - 2026-10-26 22:39 - approved by Tim Niles at 4a03df13f52a
+- 2026-10-26 22:39 - integrated into main | merge-commit: 1093f017c6139bd45f4be48f43b48926b25f0998
+    $ merge ticket/KB-005 onto main 4e1f8c9cac86
+    === INTEGRATION: FEATURE TESTS ===
+    $ python -m pytest tests/test_skills_sources.py -q
+    ................                                                         [100%]
+
+    $ python -m kahnban skills check
+    [OK] skills, roles and generated agent files agree
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    715 tests, 8 workers, 200s, all passed
+
+    full output: plans/tickets/.artifacts/KB-005-20261026-223934.log
