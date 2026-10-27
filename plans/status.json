@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T22:23:30",
+  "generated": "2026-10-26T22:23:31",
   "generator": "kahnban",
   "columns": [
     {
@@ -117,8 +117,8 @@
           "title": "Break down status.json metrics per role: which worker caused the rejections",
           "status": "done",
           "owner": "claude-coder",
-          "branch": "ticket/KB-004",
-          "worktree": ".worktrees/KB-004",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-26",
           "column": "5-done"
         },
