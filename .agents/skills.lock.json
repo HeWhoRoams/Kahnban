@@ -1,11 +1,11 @@
 {
   "version": 1,
   "files": {
-    ".agents/skills/blast-radius/SKILL.md": "4571dedc097942cd485df2c99a175dda4c908a09d72a5d1daf7551e05c1544d1",
+    ".agents/skills/change-impact/SKILL.md": "62e5351c32ec7d9d846bbaad5c503fe8d259afb5ee66fcd026861760e24078f4",
     ".agents/skills/code-review/SKILL.md": "b9b5fdd57c12f9784ee40fc9609d905e21702a9d5b680870849e25d92c0a5b74",
     ".agents/skills/coder-agent/SKILL.md": "36254c3695b66f3434470f922d413eb8f0147e061250527e709c60c568979ad3",
     ".agents/skills/create-verification-skill/SKILL.md": "d05aa34a6134aea0bb65128fc0128f4c40b06997d7253207bf6cf3e3ed9735bd",
-    ".agents/skills/factory-mode/SKILL.md": "d50a640af68bafc795c2340f34787a14f787fb123ab8ae38eb71ab57c79769c5",
+    ".agents/skills/factory-mode/SKILL.md": "62758720cb38801b918522fb28f19cd6a0eb39baac3f266ebcb20a1bef120a5c",
     ".agents/skills/grill-with-docs/SKILL.md": "b550032fb808c57c25b798c82f5a858088cdbf4c4feeeca1ed4aab7bef90b41e",
     ".agents/skills/harvest-learnings/SKILL.md": "244c1143e962bb6b1f35b3af4f1bb22cc9f98a4ff25385aef8fba0022c5cb64a",
     ".agents/skills/how/SKILL.md": "983e4a840d7bbf9cc0230470d541c6baa6f8052194641f12733b1526f00ec04b",

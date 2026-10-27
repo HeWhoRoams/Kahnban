@@ -207,3 +207,21 @@ def test_the_whole_listing_failing_keeps_the_bundle(tmp_path: Path, monkeypatch:
 
     assert "tdd" in installed
     assert any("Remote fetch from pstack failed" in m for m in messages)
+
+
+BUNDLE = Path(skills.__file__).resolve().parent / "templates" / "skills"
+
+
+def test_the_bundle_ships_change_impact_and_no_blast_radius_skill() -> None:
+    names = {path.name for path in BUNDLE.iterdir() if path.is_dir()}
+
+    assert "change-impact" in names
+    assert "blast-radius" not in names
+    assert "name: change-impact" in (BUNDLE / "change-impact" / "SKILL.md").read_text(encoding="utf-8")
+
+
+def test_change_impact_is_referenced_by_factory_mode() -> None:
+    text = (BUNDLE / "factory-mode" / "SKILL.md").read_text(encoding="utf-8")
+
+    assert "`/change-impact`" in text
+    assert "`/blast-radius`" not in text
