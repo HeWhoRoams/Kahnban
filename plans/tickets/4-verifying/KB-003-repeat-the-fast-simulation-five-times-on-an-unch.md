@@ -22,7 +22,7 @@ verified_sha: f0de2811bd32b853c566d71d95c2b500dc34dabc
 reviewer: Tim Niles
 approved_sha: f0de2811bd32b853c566d71d95c2b500dc34dabc
 approval_sig: c2a4d875ad3ed4121ce086dd62a1ac5526c109211ca96492da760f290f3fe465
-integrated_sha: ""
+integrated_sha: c2ebf614e33c0d9ea711d7d64c2761d61cbf8b5e
 ---
 
 ## Problem
@@ -228,3 +228,13 @@ python -m pytest tests/test_sim_compare.py -q
 
     full output: plans/tickets/.artifacts/KB-003-20261026-192130.log
 - 2026-10-26 20:00 - approved by Tim Niles at f0de2811bd32
+- 2026-10-26 20:00 - integrated into main | merge-commit: c2ebf614e33c0d9ea711d7d64c2761d61cbf8b5e
+    $ merge ticket/KB-003 onto main e28fde9fdaf8
+    === INTEGRATION: FEATURE TESTS ===
+    ...........                                                              [100%]
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    710 tests, 8 workers, 175s, all passed
+
+    full output: plans/tickets/.artifacts/KB-003-20261026-200026.log
