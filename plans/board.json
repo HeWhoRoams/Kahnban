@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T20:00:26",
+  "generated": "2026-10-26T20:03:54",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -125,31 +125,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-003",
-          "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-003",
-          "worktree": ".worktrees/KB-003",
-          "description": "The simulation baseline was made in one run and compared in one later run (docs/gap-fix-plan.md, G6). Two matching runs do not show that a metric never moves, and the tolerances in `tests/sim/compare.py` are guesses. A metric that moves on an unchanged tree would block every pull request. `python tests/run_sim.py stability` should run the chosen scenarios N times (default 5) on the same tree, report which metrics moved, and let `compare` skip those, so only metrics that never move are gated.",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "tests/sim/compare.py",
-            "tests/sim/__main__.py",
-            "tests/test_sim_compare.py"
-          ],
-          "updated": "2026-10-26"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-001",
@@ -165,6 +146,24 @@
           "blast_radius": [
             "src/kahnban/skills.py",
             "tests/test_skills_sources.py"
+          ],
+          "updated": "2026-10-26"
+        },
+        {
+          "id": "KB-003",
+          "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
+          "status": "done",
+          "column": "5-done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-003",
+          "worktree": ".worktrees/KB-003",
+          "description": "The simulation baseline was made in one run and compared in one later run (docs/gap-fix-plan.md, G6). Two matching runs do not show that a metric never moves, and the tolerances in `tests/sim/compare.py` are guesses. A metric that moves on an unchanged tree would block every pull request. `python tests/run_sim.py stability` should run the chosen scenarios N times (default 5) on the same tree, report which metrics moved, and let `compare` skip those, so only metrics that never move are gated.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "tests/sim/compare.py",
+            "tests/sim/__main__.py",
+            "tests/test_sim_compare.py"
           ],
           "updated": "2026-10-26"
         },
@@ -288,24 +287,6 @@
       "blast_radius": [],
       "updated": "2026-10-25"
     },
-    "KB-003": {
-      "id": "KB-003",
-      "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "claude-coder",
-      "branch": "ticket/KB-003",
-      "worktree": ".worktrees/KB-003",
-      "description": "The simulation baseline was made in one run and compared in one later run (docs/gap-fix-plan.md, G6). Two matching runs do not show that a metric never moves, and the tolerances in `tests/sim/compare.py` are guesses. A metric that moves on an unchanged tree would block every pull request. `python tests/run_sim.py stability` should run the chosen scenarios N times (default 5) on the same tree, report which metrics moved, and let `compare` skip those, so only metrics that never move are gated.",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "tests/sim/compare.py",
-        "tests/sim/__main__.py",
-        "tests/test_sim_compare.py"
-      ],
-      "updated": "2026-10-26"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -320,6 +301,24 @@
       "blast_radius": [
         "src/kahnban/skills.py",
         "tests/test_skills_sources.py"
+      ],
+      "updated": "2026-10-26"
+    },
+    "KB-003": {
+      "id": "KB-003",
+      "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
+      "status": "done",
+      "column": "5-done",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-003",
+      "worktree": ".worktrees/KB-003",
+      "description": "The simulation baseline was made in one run and compared in one later run (docs/gap-fix-plan.md, G6). Two matching runs do not show that a metric never moves, and the tolerances in `tests/sim/compare.py` are guesses. A metric that moves on an unchanged tree would block every pull request. `python tests/run_sim.py stability` should run the chosen scenarios N times (default 5) on the same tree, report which metrics moved, and let `compare` skip those, so only metrics that never move are gated.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "tests/sim/compare.py",
+        "tests/sim/__main__.py",
+        "tests/test_sim_compare.py"
       ],
       "updated": "2026-10-26"
     },

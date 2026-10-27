@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T20:00:26",
+  "generated": "2026-10-26T20:03:54",
   "generator": "kahnban",
   "columns": [
     {
@@ -95,23 +95,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-003",
-          "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
-          "status": "verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-003",
-          "worktree": ".worktrees/KB-003",
-          "updated": "2026-10-26",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-001",
@@ -120,6 +109,16 @@
           "owner": "claude-coder",
           "branch": "",
           "worktree": "",
+          "updated": "2026-10-26",
+          "column": "5-done"
+        },
+        {
+          "id": "KB-003",
+          "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
+          "status": "done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-003",
+          "worktree": ".worktrees/KB-003",
           "updated": "2026-10-26",
           "column": "5-done"
         },
@@ -137,9 +136,9 @@
     }
   ],
   "metrics": {
-    "done": 2,
-    "first_pass_yield": 0.5,
-    "median_cycle_hours": 21.55,
+    "done": 3,
+    "first_pass_yield": 0.67,
+    "median_cycle_hours": 23.5,
     "tickets": {
       "KB-001": {
         "verify_attempts": 1,
@@ -157,7 +156,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 26.2
       },
       "KB-004": {
         "verify_attempts": 0,

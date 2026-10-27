@@ -1,7 +1,7 @@
 ---
 id: KB-003
 title: Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move
-status: verifying
+status: done
 owner: claude-coder
 branch: ticket/KB-003
 worktree: .worktrees/KB-003
@@ -238,3 +238,4 @@ python -m pytest tests/test_sim_compare.py -q
     710 tests, 8 workers, 175s, all passed
 
     full output: plans/tickets/.artifacts/KB-003-20261026-200026.log
+- 2026-10-26 20:03 - done gate passed -> 5-done | merge-commit: c2ebf614e33c0d9ea711d7d64c2761d61cbf8b5e
