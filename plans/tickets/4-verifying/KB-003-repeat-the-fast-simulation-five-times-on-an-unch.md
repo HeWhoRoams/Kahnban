@@ -19,9 +19,9 @@ validation_class: headless-verified
 contract_hash: 73553383573b7909
 confirmed: ""
 verified_sha: f0de2811bd32b853c566d71d95c2b500dc34dabc
-reviewer: ""
-approved_sha: ""
-approval_sig: ""
+reviewer: Tim Niles
+approved_sha: f0de2811bd32b853c566d71d95c2b500dc34dabc
+approval_sig: c2a4d875ad3ed4121ce086dd62a1ac5526c109211ca96492da760f290f3fe465
 integrated_sha: ""
 ---
 
@@ -227,3 +227,4 @@ python -m pytest tests/test_sim_compare.py -q
     FAILED tests/test_sim_compare.py::test_the_stability_command_records_what_moved
 
     full output: plans/tickets/.artifacts/KB-003-20261026-192130.log
+- 2026-10-26 20:00 - approved by Tim Niles at f0de2811bd32
