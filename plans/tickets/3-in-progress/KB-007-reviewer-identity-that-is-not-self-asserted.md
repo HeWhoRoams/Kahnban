@@ -1,10 +1,10 @@
 ---
 id: KB-007
 title: Reviewer identity that is not self-asserted
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: claude-coder
+branch: ticket/KB-007
+worktree: .worktrees/KB-007
 created: 2026-10-25
 updated: 2026-10-26
 legacy_id: ""
@@ -58,3 +58,4 @@ python -m pytest tests/test_reviewer_keys.py -q
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 23:32 - manual move 0-backlog -> 1-refining: refine
 - 2026-10-26 23:32 - ready gate passed -> 2-ready | contract 0bf3ef8b8e5113a1
+- 2026-10-26 23:32 - claimed by claude-coder -> 3-in-progress

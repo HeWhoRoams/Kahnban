@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T23:32:20",
+  "generated": "2026-10-26T23:32:22",
   "generator": "kahnban",
   "columns": [
     {
@@ -45,24 +45,24 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-007",
           "title": "Reviewer identity that is not self-asserted",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-007",
+          "worktree": ".worktrees/KB-007",
           "updated": "2026-10-26",
-          "column": "2-ready"
+          "column": "3-in-progress"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",

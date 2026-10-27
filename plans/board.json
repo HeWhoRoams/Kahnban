@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T23:32:20",
+  "generated": "2026-10-26T23:32:22",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -59,16 +59,21 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-007",
           "title": "Reviewer identity that is not self-asserted",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-007",
+          "worktree": ".worktrees/KB-007",
           "description": "`kahnban approve --reviewer <name>` records whatever name is typed. The owner check compares two strings, so a typo, a worker or a second hat can approve under any other name. Decided with the user (2026-10-26): registered reviewer keys.",
           "depends_on": [],
           "blocked_on": "",
@@ -81,11 +86,6 @@
           "updated": "2026-10-26"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",
@@ -260,11 +260,11 @@
     "KB-007": {
       "id": "KB-007",
       "title": "Reviewer identity that is not self-asserted",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-007",
+      "worktree": ".worktrees/KB-007",
       "description": "`kahnban approve --reviewer <name>` records whatever name is typed. The owner check compares two strings, so a typo, a worker or a second hat can approve under any other name. Decided with the user (2026-10-26): registered reviewer keys.",
       "depends_on": [],
       "blocked_on": "",

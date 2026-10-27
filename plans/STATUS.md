@@ -10,8 +10,8 @@ Generated: 2026-10-26 23:32
 | :--- | ---: |
 | 0-backlog | 3 |
 | 1-refining | 0 |
-| 2-ready | 1 |
-| 3-in-progress | 0 |
+| 2-ready | 0 |
+| 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 6 |
 
@@ -27,15 +27,15 @@ Generated: 2026-10-26 23:32
 
 _empty_
 
-## 2-ready (1)
+## 2-ready (0)
+
+_empty_
+
+## 3-in-progress (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-007 | Reviewer identity that is not self-asserted | unassigned | - | 2026-10-26 |
-
-## 3-in-progress (0)
-
-_empty_
+| KB-007 | Reviewer identity that is not self-asserted | claude-coder | ticket/KB-007 | 2026-10-26 |
 
 ## 4-verifying (0)
 
