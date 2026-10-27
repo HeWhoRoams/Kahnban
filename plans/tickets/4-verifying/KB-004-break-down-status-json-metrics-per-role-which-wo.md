@@ -22,7 +22,7 @@ verified_sha: da33841596827a5a33f246655f5c1bf57caa3f42
 reviewer: Tim Niles
 approved_sha: da33841596827a5a33f246655f5c1bf57caa3f42
 approval_sig: 25b48a0c6b3863d52e726178e6b4ca00b52163bdf6a8ec7cae789b74bdfb6d24
-integrated_sha: ""
+integrated_sha: dccfdc7f85b7ae48766820f821f48096161d432b
 ---
 
 ## Problem
@@ -170,3 +170,13 @@ python -m pytest tests/test_factory_run.py -q
 
     full output: plans/tickets/.artifacts/KB-004-20261026-200546.log
 - 2026-10-26 22:19 - approved by Tim Niles at da3384159682
+- 2026-10-26 22:19 - integrated into main | merge-commit: dccfdc7f85b7ae48766820f821f48096161d432b
+    $ merge ticket/KB-004 onto main f1ca9907d54e
+    === INTEGRATION: FEATURE TESTS ===
+    ....................                                                     [100%]
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    713 tests, 8 workers, 180s, all passed
+
+    full output: plans/tickets/.artifacts/KB-004-20261026-221942.log
