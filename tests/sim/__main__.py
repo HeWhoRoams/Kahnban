@@ -13,7 +13,7 @@ from pathlib import Path
 
 from kahnban import __version__
 
-from .compare import compare, normalize, report
+from .compare import compare, normalize, report, stability_report
 from .scenarios import SCENARIOS, execute
 
 HERE = Path(__file__).resolve().parent
@@ -91,6 +91,12 @@ def main(argv: list[str] | None = None) -> int:
             item.add_argument("--new", metavar="FILE", help="use this scorecard instead of running the scenarios")
             item.add_argument("--accept", action="store_true", help="write the result as the new baseline (only if clean)")
     sub.add_parser("list", help="list scenarios")
+    stable = sub.add_parser("stability", help="run the scenarios several times on this tree and list the metrics that moved")
+    stable.add_argument("ids", nargs="*", help="scenario ids (default: the chosen set)")
+    stable.add_argument("--set", choices=["fast", "full", "all"], default="fast")
+    stable.add_argument("--seed", type=int, default=0)
+    stable.add_argument("--runs", type=int, default=5)
+    stable.add_argument("--accept", action="store_true", help="record the moving metrics as 'unstable' in the baseline, so compare skips them")
     canary = sub.add_parser("canaries", help="break the engine on purpose; every break must turn the simulation red")
     canary.add_argument("names", nargs="*", help="only canaries whose name contains this text")
     args = parser.parse_args(argv)
@@ -103,6 +109,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "list":
         for scenario in SCENARIOS:
             print(f"{scenario.id:4} {scenario.set:5} {scenario.title}")
+        return 0
+
+    if args.command == "stability":
+        runs = [run_scenarios(args) for _ in range(args.runs)]
+        moved = stability_report(runs)
+        print(f"{len(moved)} metric(s) moved over {args.runs} runs: {', '.join(moved) or 'none'}")
+        if args.accept:
+            kept = json.loads(BASELINE.read_text(encoding="utf-8"))
+            BASELINE.write_text(json.dumps({**kept, "unstable": moved}, indent=2) + "\n", encoding="utf-8")
+            print(f"recorded in {BASELINE}")
         return 0
 
     if args.command == "run":
@@ -133,9 +149,11 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         BASELINE.parent.mkdir(exist_ok=True)
         merged = normalize(new)
-        if args.ids and BASELINE.exists():
+        if BASELINE.exists():
             kept = json.loads(BASELINE.read_text(encoding="utf-8"))
-            merged = {**merged, "scenarios": {**kept["scenarios"], **merged["scenarios"]}}
+            merged = {**merged, "unstable": kept.get("unstable", [])}  # accepting a run must not forget what stability found
+            if args.ids:
+                merged = {**merged, "scenarios": {**kept["scenarios"], **merged["scenarios"]}}
         BASELINE.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
         print(f"baseline written to {BASELINE}")
         return 0
