@@ -1,10 +1,10 @@
 ---
 id: KB-004
 title: "Break down status.json metrics per role: which worker caused the rejections"
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: claude-coder
+branch: ticket/KB-004
+worktree: .worktrees/KB-004
 created: 2026-10-25
 updated: 2026-10-26
 legacy_id: ""
@@ -50,3 +50,4 @@ python -m pytest tests/test_factory_run.py -q
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 20:04 - manual move 0-backlog -> 1-refining: refine
 - 2026-10-26 20:04 - ready gate passed -> 2-ready | contract 74031f925bb25faf
+- 2026-10-26 20:04 - claimed by claude-coder -> 3-in-progress

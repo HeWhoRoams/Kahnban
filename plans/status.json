@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T20:04:33",
+  "generated": "2026-10-26T20:04:34",
   "generator": "kahnban",
   "columns": [
     {
@@ -75,24 +75,24 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-004",
           "title": "Break down status.json metrics per role: which worker caused the rejections",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-004",
+          "worktree": ".worktrees/KB-004",
           "updated": "2026-10-26",
-          "column": "2-ready"
+          "column": "3-in-progress"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",

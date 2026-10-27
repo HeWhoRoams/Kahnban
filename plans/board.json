@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T20:04:33",
+  "generated": "2026-10-26T20:04:34",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -101,16 +101,21 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-004",
           "title": "Break down status.json metrics per role: which worker caused the rejections",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-004",
+          "worktree": ".worktrees/KB-004",
           "description": "`status.json` metrics count verify attempts and rejections per ticket and give a board-level first-pass yield, but not who caused them. With several workers, or after changing one worker's prompt, nobody can tell which owner's work fails verify or gets rejected, or which reviewer rejects. The ticket Log already has what is needed: `claimed by <owner>` (and `taken over by <owner>`), `verify exit=N`, and `rejected by <reviewer>:`.",
           "depends_on": [],
           "blocked_on": "",
@@ -122,11 +127,6 @@
           "updated": "2026-10-26"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",
@@ -281,11 +281,11 @@
     "KB-004": {
       "id": "KB-004",
       "title": "Break down status.json metrics per role: which worker caused the rejections",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-004",
+      "worktree": ".worktrees/KB-004",
       "description": "`status.json` metrics count verify attempts and rejections per ticket and give a board-level first-pass yield, but not who caused them. With several workers, or after changing one worker's prompt, nobody can tell which owner's work fails verify or gets rejected, or which reviewer rejects. The ticket Log already has what is needed: `claimed by <owner>` (and `taken over by <owner>`), `verify exit=N`, and `rejected by <reviewer>:`.",
       "depends_on": [],
       "blocked_on": "",
