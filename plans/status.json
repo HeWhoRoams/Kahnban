@@ -1,24 +1,14 @@
 {
-  "generated": "2026-10-26T22:43:15",
+  "generated": "2026-10-26T22:44:01",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 5,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-25",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-006",
-          "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -60,8 +50,19 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-006",
+          "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-26",
+          "column": "1-refining"
+        }
+      ]
     },
     {
       "name": "2-ready",

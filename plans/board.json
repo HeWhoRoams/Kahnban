@@ -1,30 +1,16 @@
 {
-  "generated": "2026-10-26T22:43:15",
+  "generated": "2026-10-26T22:44:01",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 5,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [],
-          "updated": "2026-10-25"
-        },
-        {
-          "id": "KB-006",
-          "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
           "status": "backlog",
           "column": "0-backlog",
           "owner": "unassigned",
@@ -82,8 +68,27 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-006",
+          "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "Approvals are signed with a key kept outside the repository, but the frozen contract is not: `contract_hash` is plain frontmatter, so a worker that edits the acceptance criteria, blast radius or validation can write the matching hash too, and `verify_contract` passes. Sign the hash at the same moments it is written (`ready`, and the freeze at `claim`) with the existing key, store it as `contract_sig`, and check it wherever `verify_contract` runs. With `require_signed_approvals`, a hash without a signature is refused with the way out (`move` back to refining, then `ready`). Limit, to be stated in the README: a worker running as the same OS user can still read the key file, so this is a tripwire. Real isolation is a container or a separate OS user for workers, which is a deployment choice, not engine code.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/trust.py",
+            "src/kahnban/core.py",
+            "tests/test_contract_signature.py"
+          ],
+          "updated": "2026-10-26"
+        }
+      ]
     },
     {
       "name": "2-ready",
@@ -219,20 +224,6 @@
       "blast_radius": [],
       "updated": "2026-10-25"
     },
-    "KB-006": {
-      "id": "KB-006",
-      "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [],
-      "updated": "2026-10-25"
-    },
     "KB-007": {
       "id": "KB-007",
       "title": "Reviewer identity that is not self-asserted",
@@ -274,6 +265,24 @@
       "blocked_on": "",
       "blast_radius": [],
       "updated": "2026-10-25"
+    },
+    "KB-006": {
+      "id": "KB-006",
+      "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "Approvals are signed with a key kept outside the repository, but the frozen contract is not: `contract_hash` is plain frontmatter, so a worker that edits the acceptance criteria, blast radius or validation can write the matching hash too, and `verify_contract` passes. Sign the hash at the same moments it is written (`ready`, and the freeze at `claim`) with the existing key, store it as `contract_sig`, and check it wherever `verify_contract` runs. With `require_signed_approvals`, a hash without a signature is refused with the way out (`move` back to refining, then `ready`). Limit, to be stated in the README: a worker running as the same OS user can still read the key file, so this is a tripwire. Real isolation is a container or a separate OS user for workers, which is a deployment choice, not engine code.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/trust.py",
+        "src/kahnban/core.py",
+        "tests/test_contract_signature.py"
+      ],
+      "updated": "2026-10-26"
     },
     "KB-001": {
       "id": "KB-001",
