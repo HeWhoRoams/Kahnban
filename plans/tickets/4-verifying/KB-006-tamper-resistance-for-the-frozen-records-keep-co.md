@@ -22,7 +22,7 @@ verified_sha: 5957e8e4c77098d5a266b65fc03d7ce8229a6927
 reviewer: Tim Niles
 approved_sha: 5957e8e4c77098d5a266b65fc03d7ce8229a6927
 approval_sig: 98f8d69bf36b9c81c1f058336b7125a3abc205fb4ca400760641175f471de6b6
-integrated_sha: ""
+integrated_sha: 6f2caf9f430f0d07b83ff8c8a432e3fa1ba0b49c
 ---
 
 ## Problem
@@ -170,3 +170,13 @@ python -m pytest tests/test_contract_signature.py -q
 
     full output: plans/tickets/.artifacts/KB-006-20261026-224458.log
 - 2026-10-26 23:23 - approved by Tim Niles at 5957e8e4c770
+- 2026-10-26 23:23 - integrated into main | merge-commit: 6f2caf9f430f0d07b83ff8c8a432e3fa1ba0b49c
+    $ merge ticket/KB-006 onto main 6801c5211706
+    === INTEGRATION: FEATURE TESTS ===
+    ...                                                                      [100%]
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    718 tests, 8 workers, 185s, all passed
+
+    full output: plans/tickets/.artifacts/KB-006-20261026-232315.log
