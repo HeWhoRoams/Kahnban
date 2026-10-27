@@ -737,7 +737,24 @@ def log_metrics(log: str) -> dict[str, Any]:
         if match
     ]
     done = next((when for when, text in entries if text.startswith("done gate passed")), None)
+    owner = "unknown"
+    by_owner: dict[str, dict[str, int]] = {}
+    rejected_by: dict[str, int] = {}
+    for _, text in entries:
+        held = re.match(r"(?:claimed by|taken over by) (\S+)", text)
+        if held:
+            owner = held.group(1)
+        failed = re.match(r"verify exit=(\d+)", text)
+        if failed and failed.group(1) != "0":
+            by_owner.setdefault(owner, {"failed_verifies": 0, "rejections": 0})["failed_verifies"] += 1
+        rejected = re.match(r"rejected by ([^:]*):", text)
+        if rejected:
+            by_owner.setdefault(owner, {"failed_verifies": 0, "rejections": 0})["rejections"] += 1
+            reviewer = rejected.group(1).strip() or "reviewer"
+            rejected_by[reviewer] = rejected_by.get(reviewer, 0) + 1
     return {
+        "by_owner": by_owner,
+        "rejected_by": rejected_by,
         "verify_attempts": sum(text.startswith("verify exit=") for _, text in entries),
         "rejections": sum(text.startswith("rejected by") for _, text in entries),
         "escalations": sum(text.startswith("escalated to a human") for _, text in entries),

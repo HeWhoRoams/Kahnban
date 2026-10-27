@@ -349,7 +349,53 @@ def test_log_metrics_count_attempts_rejections_and_cycle_time() -> None:
 
     metrics = core.log_metrics(log)
 
-    assert metrics == {"verify_attempts": 2, "rejections": 1, "escalations": 0, "cycle_hours": 26.0}
+    assert metrics == {
+        "by_owner": {"unknown": {"failed_verifies": 1, "rejections": 1}},
+        "rejected_by": {"qa": 1},
+        "verify_attempts": 2,
+        "rejections": 1,
+        "escalations": 0,
+        "cycle_hours": 26.0,
+    }
+
+
+def test_log_metrics_blame_the_owner_of_the_latest_claim() -> None:
+    log = "\n".join([
+        "- 2026-10-01 09:00 - claimed by alice -> 3-in-progress",
+        "- 2026-10-01 10:00 - verify exit=1 in 2.0s (cwd=T) (no transition)",
+        "- 2026-10-01 11:00 - rejected by qa:",
+        "    fix it",
+        "- 2026-10-01 12:00 - taken over by bob from alice (no live lease)",
+        "- 2026-10-01 13:00 - rejected by lead:",
+        "    again",
+    ])
+
+    metrics = core.log_metrics(log)
+
+    assert metrics["by_owner"] == {
+        "alice": {"failed_verifies": 1, "rejections": 1},
+        "bob": {"failed_verifies": 0, "rejections": 1},
+    }
+    assert metrics["rejected_by"] == {"qa": 1, "lead": 1}
+
+
+def test_log_metrics_unknown_owner_when_nothing_was_claimed() -> None:
+    assert core.log_metrics("- 2026-10-01 09:00 - verify exit=2 in 1s (cwd=T) (no transition)")["by_owner"] == {
+        "unknown": {"failed_verifies": 1, "rejections": 0}
+    }
+
+
+def test_board_metrics_by_role_sum_every_ticket() -> None:
+    from kahnban import status
+
+    def record(ident: str, log: str) -> dict:
+        return {"id": ident, "metrics": core.log_metrics(log)}
+
+    rejected = "- 2026-10-01 09:00 - claimed by alice -> 3-in-progress\n- 2026-10-01 10:00 - rejected by qa:\n    no"
+    metrics = status._metrics([record("A-1", rejected), record("A-2", rejected)])
+
+    assert metrics["by_owner"] == {"alice": {"failed_verifies": 0, "rejections": 2}}
+    assert metrics["by_reviewer"] == {"qa": 2}
 
 
 def test_a_claim_nobody_moves_is_reported_stale(repo: Path) -> None:
