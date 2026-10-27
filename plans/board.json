@@ -1,30 +1,16 @@
 {
-  "generated": "2026-10-26T22:23:31",
+  "generated": "2026-10-26T22:25:09",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 6,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [],
-          "updated": "2026-10-25"
-        },
-        {
-          "id": "KB-005",
-          "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
           "status": "backlog",
           "column": "0-backlog",
           "owner": "unassigned",
@@ -96,8 +82,35 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-005",
+          "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "The bundled skill `blast-radius` shares its name with the ticket field `## Blast radius`, so `/blast-radius` and the field are easy to confuse (the field is the files a coder may touch; the skill is a method for finding what a change breaks elsewhere). Rename the skill to `change-impact` (decided with the user, 2026-10-26) everywhere it is shipped: the bundle, `adapters/skills`, `.agents/skills` and the lock. Mentions of the ticket field stay as they are. The rename needs more files than the usual limit of 3, so `max_blast_radius_files` is raised for this one ticket and restored when it is done.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/templates/skills/blast-radius/skill.md",
+            "src/kahnban/templates/skills/change-impact/skill.md",
+            "src/kahnban/templates/skills/factory-mode/skill.md",
+            "adapters/skills/blast-radius/skill.md",
+            "adapters/skills/change-impact/skill.md",
+            "adapters/skills/factory-mode/skill.md",
+            ".agents/skills/blast-radius/skill.md",
+            ".agents/skills/change-impact/skill.md",
+            ".agents/skills/factory-mode/skill.md",
+            ".agents/skills.lock.json",
+            "tests/test_skills_sources.py"
+          ],
+          "updated": "2026-10-26"
+        }
+      ]
     },
     {
       "name": "2-ready",
@@ -207,20 +220,6 @@
       "blast_radius": [],
       "updated": "2026-10-25"
     },
-    "KB-005": {
-      "id": "KB-005",
-      "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [],
-      "updated": "2026-10-25"
-    },
     "KB-006": {
       "id": "KB-006",
       "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
@@ -276,6 +275,32 @@
       "blocked_on": "",
       "blast_radius": [],
       "updated": "2026-10-25"
+    },
+    "KB-005": {
+      "id": "KB-005",
+      "title": "Rename the bundled blast-radius skill: it collides with the ticket field of the same name",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "The bundled skill `blast-radius` shares its name with the ticket field `## Blast radius`, so `/blast-radius` and the field are easy to confuse (the field is the files a coder may touch; the skill is a method for finding what a change breaks elsewhere). Rename the skill to `change-impact` (decided with the user, 2026-10-26) everywhere it is shipped: the bundle, `adapters/skills`, `.agents/skills` and the lock. Mentions of the ticket field stay as they are. The rename needs more files than the usual limit of 3, so `max_blast_radius_files` is raised for this one ticket and restored when it is done.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/templates/skills/blast-radius/skill.md",
+        "src/kahnban/templates/skills/change-impact/skill.md",
+        "src/kahnban/templates/skills/factory-mode/skill.md",
+        "adapters/skills/blast-radius/skill.md",
+        "adapters/skills/change-impact/skill.md",
+        "adapters/skills/factory-mode/skill.md",
+        ".agents/skills/blast-radius/skill.md",
+        ".agents/skills/change-impact/skill.md",
+        ".agents/skills/factory-mode/skill.md",
+        ".agents/skills.lock.json",
+        "tests/test_skills_sources.py"
+      ],
+      "updated": "2026-10-26"
     },
     "KB-001": {
       "id": "KB-001",
