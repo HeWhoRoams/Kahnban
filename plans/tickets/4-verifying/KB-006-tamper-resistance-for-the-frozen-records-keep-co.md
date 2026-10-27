@@ -17,6 +17,7 @@ source_anchor: ""
 source_hash: ""
 validation_class: headless-verified
 contract_hash: f8680312d43d6fe4
+contract_sig: 25d7a3d87767958911a4bfb8e3e0378f76b6939110ef4dddd1d9d57fea12201b
 confirmed: ""
 verified_sha: 5957e8e4c77098d5a266b65fc03d7ce8229a6927
 reviewer: Tim Niles
@@ -180,3 +181,4 @@ python -m pytest tests/test_contract_signature.py -q
     718 tests, 8 workers, 185s, all passed
 
     full output: plans/tickets/.artifacts/KB-006-20261026-232315.log
+- 2026-10-26 23:30 - contract sealed once by hand with the engine key: frozen by `ready` before contract_sig existed; hash verified equal to the body first (decided with the user)
