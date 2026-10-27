@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Contract seal and metrics
+- `ready` (and the freeze at `claim`) store `contract_sig`, an HMAC of the ticket id and contract hash made with the approval key. Editing the criteria and the hash together now fails verification; with `require_signed_approvals`, a frozen contract with no signature is refused. A ticket frozen before this change needs `ready` again.
+- `status.json` metrics add `by_owner` and `by_reviewer` (failed verifies and rejections per owner, rejections per reviewer), read from the ticket Log.
+- The bundled `blast-radius` skill is now `change-impact`, so it no longer shares a name with the ticket field.
+- `python tests/run_sim.py stability --runs N` lists the metrics that move on an unchanged tree; `--accept` records them so `compare` skips them. `tests/sim` counts as source for the proof gate on this board.
+
 ### Headless workers
 - `kahnban skills install --harness claude --allow-worker-commands` writes `workers.default` into `plans/board.config.json` when the board has no workers: `claude -p --agent kahnban-{role} --permission-mode acceptEdits --allowedTools ...`, allowing `kahnban`, the git verbs a worker needs (never `git push`) and the board's test commands. Without the flag, install changes nothing, and an existing `workers` entry is never overwritten. The rules go in the command because a headless `claude -p` ignores `permissions.allow` in project settings. Live proof: a Haiku agent took a toy ticket to done in 4 steps.
 
