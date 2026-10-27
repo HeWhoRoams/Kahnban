@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T23:23:15",
+  "generated": "2026-10-26T23:30:27",
   "generator": "kahnban",
   "columns": [
     {
@@ -65,23 +65,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-006",
-          "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
-          "status": "verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-006",
-          "worktree": ".worktrees/KB-006",
-          "updated": "2026-10-26",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 5,
+      "count": 6,
       "tickets": [
         {
           "id": "KB-001",
@@ -124,6 +113,16 @@
           "column": "5-done"
         },
         {
+          "id": "KB-006",
+          "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
+          "status": "done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-006",
+          "worktree": ".worktrees/KB-006",
+          "updated": "2026-10-26",
+          "column": "5-done"
+        },
+        {
           "id": "KB-010",
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
           "status": "done",
@@ -144,9 +143,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 5,
-    "first_pass_yield": 0.8,
-    "median_cycle_hours": 26.2,
+    "done": 6,
+    "first_pass_yield": 0.83,
+    "median_cycle_hours": 27.35,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -194,7 +193,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 29.6
       },
       "KB-007": {
         "by_owner": {},
