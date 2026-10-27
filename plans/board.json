@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T22:19:42",
+  "generated": "2026-10-26T22:23:30",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -111,31 +111,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-004",
-          "title": "Break down status.json metrics per role: which worker caused the rejections",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-004",
-          "worktree": ".worktrees/KB-004",
-          "description": "`status.json` metrics count verify attempts and rejections per ticket and give a board-level first-pass yield, but not who caused them. With several workers, or after changing one worker's prompt, nobody can tell which owner's work fails verify or gets rejected, or which reviewer rejects. The ticket Log already has what is needed: `claimed by <owner>` (and `taken over by <owner>`), `verify exit=N`, and `rejected by <reviewer>:`.",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/core.py",
-            "src/kahnban/status.py",
-            "tests/test_factory_run.py"
-          ],
-          "updated": "2026-10-26"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 3,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-001",
@@ -169,6 +150,24 @@
             "tests/sim/compare.py",
             "tests/sim/__main__.py",
             "tests/test_sim_compare.py"
+          ],
+          "updated": "2026-10-26"
+        },
+        {
+          "id": "KB-004",
+          "title": "Break down status.json metrics per role: which worker caused the rejections",
+          "status": "done",
+          "column": "5-done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-004",
+          "worktree": ".worktrees/KB-004",
+          "description": "`status.json` metrics count verify attempts and rejections per ticket and give a board-level first-pass yield, but not who caused them. With several workers, or after changing one worker's prompt, nobody can tell which owner's work fails verify or gets rejected, or which reviewer rejects. The ticket Log already has what is needed: `claimed by <owner>` (and `taken over by <owner>`), `verify exit=N`, and `rejected by <reviewer>:`.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/core.py",
+            "src/kahnban/status.py",
+            "tests/test_factory_run.py"
           ],
           "updated": "2026-10-26"
         },
@@ -278,24 +277,6 @@
       "blast_radius": [],
       "updated": "2026-10-25"
     },
-    "KB-004": {
-      "id": "KB-004",
-      "title": "Break down status.json metrics per role: which worker caused the rejections",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "claude-coder",
-      "branch": "ticket/KB-004",
-      "worktree": ".worktrees/KB-004",
-      "description": "`status.json` metrics count verify attempts and rejections per ticket and give a board-level first-pass yield, but not who caused them. With several workers, or after changing one worker's prompt, nobody can tell which owner's work fails verify or gets rejected, or which reviewer rejects. The ticket Log already has what is needed: `claimed by <owner>` (and `taken over by <owner>`), `verify exit=N`, and `rejected by <reviewer>:`.",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/core.py",
-        "src/kahnban/status.py",
-        "tests/test_factory_run.py"
-      ],
-      "updated": "2026-10-26"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -328,6 +309,24 @@
         "tests/sim/compare.py",
         "tests/sim/__main__.py",
         "tests/test_sim_compare.py"
+      ],
+      "updated": "2026-10-26"
+    },
+    "KB-004": {
+      "id": "KB-004",
+      "title": "Break down status.json metrics per role: which worker caused the rejections",
+      "status": "done",
+      "column": "5-done",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-004",
+      "worktree": ".worktrees/KB-004",
+      "description": "`status.json` metrics count verify attempts and rejections per ticket and give a board-level first-pass yield, but not who caused them. With several workers, or after changing one worker's prompt, nobody can tell which owner's work fails verify or gets rejected, or which reviewer rejects. The ticket Log already has what is needed: `claimed by <owner>` (and `taken over by <owner>`), `verify exit=N`, and `rejected by <reviewer>:`.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/core.py",
+        "src/kahnban/status.py",
+        "tests/test_factory_run.py"
       ],
       "updated": "2026-10-26"
     },

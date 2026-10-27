@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T22:19:42",
+  "generated": "2026-10-26T22:23:30",
   "generator": "kahnban",
   "columns": [
     {
@@ -85,23 +85,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-004",
-          "title": "Break down status.json metrics per role: which worker caused the rejections",
-          "status": "verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-004",
-          "worktree": ".worktrees/KB-004",
-          "updated": "2026-10-26",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 3,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-001",
@@ -124,6 +113,16 @@
           "column": "5-done"
         },
         {
+          "id": "KB-004",
+          "title": "Break down status.json metrics per role: which worker caused the rejections",
+          "status": "done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-004",
+          "worktree": ".worktrees/KB-004",
+          "updated": "2026-10-26",
+          "column": "5-done"
+        },
+        {
           "id": "KB-010",
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
           "status": "done",
@@ -137,65 +136,97 @@
     }
   ],
   "metrics": {
-    "done": 3,
-    "first_pass_yield": 0.67,
-    "median_cycle_hours": 23.5,
+    "by_owner": {
+      "claude-coder": {
+        "failed_verifies": 1,
+        "rejections": 0
+      }
+    },
+    "by_reviewer": {},
+    "done": 4,
+    "first_pass_yield": 0.75,
+    "median_cycle_hours": 24.85,
     "tickets": {
       "KB-001": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": 19.6
       },
       "KB-002": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 0,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
       },
       "KB-003": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": 26.2
       },
       "KB-004": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 28.5
       },
       "KB-005": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 0,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
       },
       "KB-006": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 0,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
       },
       "KB-007": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 0,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
       },
       "KB-008": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 0,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
       },
       "KB-009": {
+        "by_owner": {},
+        "rejected_by": {},
         "verify_attempts": 0,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
       },
       "KB-010": {
+        "by_owner": {
+          "claude-coder": {
+            "failed_verifies": 1,
+            "rejections": 0
+          }
+        },
+        "rejected_by": {},
         "verify_attempts": 3,
         "rejections": 0,
         "escalations": 0,

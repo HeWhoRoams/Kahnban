@@ -1,7 +1,7 @@
 ---
 id: KB-004
 title: "Break down status.json metrics per role: which worker caused the rejections"
-status: verifying
+status: done
 owner: claude-coder
 branch: ticket/KB-004
 worktree: .worktrees/KB-004
@@ -180,3 +180,4 @@ python -m pytest tests/test_factory_run.py -q
     713 tests, 8 workers, 180s, all passed
 
     full output: plans/tickets/.artifacts/KB-004-20261026-221942.log
+- 2026-10-26 22:23 - done gate passed -> 5-done | merge-commit: dccfdc7f85b7ae48766820f821f48096161d432b
