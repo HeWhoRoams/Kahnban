@@ -476,6 +476,18 @@ def verify_contract(
             f"with 'kahnban move {ticket_id} {config.refining_column} --reason <why>' "
             "and re-run 'kahnban ready'."
         )
+    signature = str(fields.get("contract_sig") or "").strip()
+    if signature:
+        problem = trust.contract_problem(config.project_root, ticket_id, frozen, signature)
+    elif config.require_signed_approvals:
+        problem = "the frozen contract is unsigned"
+    else:
+        return True
+    if problem:
+        raise GateError(
+            f"{ticket_id}: {problem}. Move the ticket back with "
+            f"'kahnban move {ticket_id} {config.refining_column} --reason <why>' and re-run 'kahnban ready'."
+        )
     return True
 
 
@@ -1359,7 +1371,11 @@ def ready(
         ticket.ticket_id,
         target,
         log_entry=f"ready gate passed -> {target} | contract {frozen}",
-        fm_updates={"contract_hash": frozen, "confirmed": ""},
+        fm_updates={
+            "contract_hash": frozen,
+            "contract_sig": trust.sign_contract(config.project_root, ticket.ticket_id, frozen),
+            "confirmed": "",
+        },
         timestamp=timestamp,
     )
     from kahnban.handoff import get_handoff_path
@@ -1514,6 +1530,7 @@ def claim(
         contract_updates: dict[str, object] = {}
         if not verify_contract(config, ticket.ticket_id, fields, body):
             contract_updates["contract_hash"] = contract_hash(body)
+            contract_updates["contract_sig"] = trust.sign_contract(config.project_root, ticket.ticket_id, contract_updates["contract_hash"])  # type: ignore[arg-type]
             messages.append("contract frozen at claim (ticket skipped the ready gate)")
 
         in_progress = in_progress_radii(config, exclude=ticket.ticket_id)

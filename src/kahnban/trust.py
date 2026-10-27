@@ -170,6 +170,20 @@ def sign(root: Path, approval: Approval) -> str:
     return hmac.new(_key(root), message, hashlib.sha256).hexdigest()
 
 
+def sign_contract(root: Path, ticket_id: str, digest: str) -> str:
+    """The engine's seal on one ticket's frozen contract hash."""
+    return hmac.new(_key(root), f"contract\n{ticket_id}\n{digest}".encode(), hashlib.sha256).hexdigest()
+
+
+def contract_problem(root: Path, ticket_id: str, digest: str, signature: str) -> str:
+    """Why this frozen contract cannot be trusted, or ''. An empty signature is the caller's call."""
+    try:
+        expected = sign_contract(root, ticket_id, digest)
+    except ValueError as error:
+        return str(error)
+    return "" if hmac.compare_digest(expected, signature) else "contract signature does not match its hash; the hash was edited or forged"
+
+
 def signature_problem(root: Path, approval: Approval) -> str:
     """Why this approval cannot be trusted, or ''."""
     if not approval.signature:
