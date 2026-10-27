@@ -136,7 +136,18 @@ def _metrics(records: Iterable[Record]) -> dict[str, Any]:
     }
     done = [m for m in per_ticket.values() if m.get("cycle_hours") is not None]
     clean = [m for m in done if m["verify_attempts"] <= 1 and not m["rejections"]]
+    by_owner: dict[str, dict[str, int]] = {}
+    by_reviewer: dict[str, int] = {}
+    for m in per_ticket.values():
+        for owner, counts in m.get("by_owner", {}).items():
+            total = by_owner.setdefault(owner, {"failed_verifies": 0, "rejections": 0})
+            for key, value in counts.items():
+                total[key] += value
+        for reviewer, count in m.get("rejected_by", {}).items():
+            by_reviewer[reviewer] = by_reviewer.get(reviewer, 0) + count
     return {
+        "by_owner": by_owner,
+        "by_reviewer": by_reviewer,
         "done": len(done),
         "first_pass_yield": round(len(clean) / len(done), 2) if done else None,
         "median_cycle_hours": statistics.median(m["cycle_hours"] for m in done) if done else None,
