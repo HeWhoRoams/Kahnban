@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T20:03:54",
+  "generated": "2026-10-26T20:03:55",
   "generator": "kahnban",
   "columns": [
     {
@@ -117,8 +117,8 @@
           "title": "Repeat the fast simulation five times on an unchanged tree and gate only the metrics that never move",
           "status": "done",
           "owner": "claude-coder",
-          "branch": "ticket/KB-003",
-          "worktree": ".worktrees/KB-003",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-26",
           "column": "5-done"
         },
