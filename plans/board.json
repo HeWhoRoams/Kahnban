@@ -54,13 +54,18 @@
     },
     {
       "name": "1-refining",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "2-ready",
       "count": 1,
       "tickets": [
         {
           "id": "KB-007",
           "title": "Reviewer identity that is not self-asserted",
-          "status": "refining",
-          "column": "1-refining",
+          "status": "ready",
+          "column": "2-ready",
           "owner": "unassigned",
           "branch": "",
           "worktree": "",
@@ -76,11 +81,6 @@
           "updated": "2026-10-26"
         }
       ]
-    },
-    {
-      "name": "2-ready",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "3-in-progress",
@@ -260,8 +260,8 @@
     "KB-007": {
       "id": "KB-007",
       "title": "Reviewer identity that is not self-asserted",
-      "status": "refining",
-      "column": "1-refining",
+      "status": "ready",
+      "column": "2-ready",
       "owner": "unassigned",
       "branch": "",
       "worktree": "",

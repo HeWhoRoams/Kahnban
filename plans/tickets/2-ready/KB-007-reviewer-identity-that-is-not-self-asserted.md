@@ -1,7 +1,7 @@
 ---
 id: KB-007
 title: Reviewer identity that is not self-asserted
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -16,6 +16,9 @@ source_doc: ""
 source_anchor: ""
 source_hash: ""
 validation_class: headless-verified
+contract_hash: 0bf3ef8b8e5113a1
+contract_sig: e08fe92d909316fd4721bc9c79bfda7fade1c08c8194b208b780f5bd3f9f06cd
+confirmed: ""
 ---
 
 ## Problem
@@ -54,3 +57,4 @@ python -m pytest tests/test_reviewer_keys.py -q
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 23:32 - manual move 0-backlog -> 1-refining: refine
+- 2026-10-26 23:32 - ready gate passed -> 2-ready | contract 0bf3ef8b8e5113a1
