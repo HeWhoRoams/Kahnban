@@ -1945,9 +1945,10 @@ def branch_tip(config: Config, branch: str) -> str:
 
 def _signature_problem(config: Config, fields: Mapping[str, object]) -> str:
     """With ``require_signed_approvals``: why this approval is not the engine's own, or ''."""
-    if not config.require_signed_approvals:
-        return ""
-    return trust.signature_problem(config.project_root, trust.Approval.from_fields(fields))
+    approval = trust.Approval.from_fields(fields)
+    if config.require_signed_approvals and (problem := trust.signature_problem(config.project_root, approval)):
+        return problem
+    return trust.reviewer_problem(config.project_root, approval, str(fields.get("reviewer_sig") or "").strip())
 
 
 def _release_problems(
@@ -2267,6 +2268,7 @@ def verify(
                     "reviewer": "",
                     "approved_sha": "",
                     "approval_sig": "",
+                    "reviewer_sig": "",
                     "integrated_sha": "",
                     "confirmed": "",
                 },
@@ -2522,6 +2524,14 @@ def approve(
                 f"{branch} moved since verify ({verified[:12]} -> {tip[:12]}); "
                 "reject it so the new commits are verified"
             )
+        reviewer_sig = ""
+        if trust.registered_reviewers(config.project_root):
+            if worker_role():
+                raise GateError("this project registers its reviewers, so a human reviewer approves; a worker cannot")
+            try:
+                reviewer_sig = trust.sign_reviewer(config.project_root, trust.Approval(ticket.ticket_id, tip, reviewer))
+            except ValueError as error:
+                raise GateError(str(error)) from None
         entry = f"approved by {reviewer}" + (f" at {tip[:12]}" if tip else "")
         if note.strip():
             entry += f": {note.strip()}"
@@ -2532,6 +2542,7 @@ def approve(
             log_entry=entry,
             fm_updates={
                 "reviewer": reviewer,
+                "reviewer_sig": reviewer_sig,
                 "approved_sha": tip,
                 "approval_sig": (
                     trust.sign(config.project_root, trust.Approval(ticket.ticket_id, tip, reviewer))
@@ -2603,6 +2614,7 @@ def reject(
             "reviewer": "",
             "approved_sha": "",
             "approval_sig": "",
+            "reviewer_sig": "",
             "integrated_sha": "",
             "confirmed": "",
         }

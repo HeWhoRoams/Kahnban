@@ -170,6 +170,60 @@ def sign(root: Path, approval: Approval) -> str:
     return hmac.new(_key(root), message, hashlib.sha256).hexdigest()
 
 
+def _reviewers_dir(root: Path) -> Path:
+    name = hashlib.sha256(os.path.normcase(str(root.resolve())).encode()).hexdigest()[:16]
+    return key_dir() / "reviewers" / name
+
+
+def _reviewer_file(root: Path, reviewer: str) -> Path:
+    return _reviewers_dir(root) / (hashlib.sha256(reviewer.strip().lower().encode()).hexdigest()[:16] + ".json")
+
+
+def register_reviewer(root: Path, reviewer: str) -> None:
+    """Give ``reviewer`` a key of their own; refuses a name that already has one."""
+    reviewer = reviewer.strip()
+    if not reviewer:
+        raise ValueError("a reviewer needs a name")
+    path = _reviewer_file(root, reviewer)
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        raise ValueError(f"reviewer '{reviewer}' is already registered") from None
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        json.dump({"name": reviewer, "key": secrets.token_hex(32)}, handle)
+
+
+def registered_reviewers(root: Path) -> list[str]:
+    directory = _reviewers_dir(root)
+    if not directory.is_dir():
+        return []
+    return sorted(json.loads(path.read_text(encoding="utf-8"))["name"] for path in directory.glob("*.json"))
+
+
+def sign_reviewer(root: Path, approval: Approval) -> str:
+    """The reviewer's own seal on an approval; ValueError when that name has no key."""
+    path = _reviewer_file(root, approval.reviewer)
+    if not path.is_file():
+        raise ValueError(f"reviewer '{approval.reviewer}' is not registered; run 'kahnban reviewers add {approval.reviewer}'")
+    key = json.loads(path.read_text(encoding="utf-8"))["key"].encode()
+    message = f"reviewer\n{approval.ticket_id}\n{approval.tip}\n{approval.reviewer.strip().lower()}".encode()
+    return hmac.new(key, message, hashlib.sha256).hexdigest()
+
+
+def reviewer_problem(root: Path, approval: Approval, signature: str) -> str:
+    """Why this approval is not by a registered reviewer, or ''. Empty when no reviewer is registered."""
+    if not registered_reviewers(root):
+        return ""
+    if not signature:
+        return "approval has no reviewer signature; a registered reviewer re-runs 'kahnban approve'"
+    try:
+        expected = sign_reviewer(root, approval)
+    except ValueError as error:
+        return str(error)
+    return "" if hmac.compare_digest(expected, signature) else "reviewer signature does not match the reviewer and tip; it was edited or forged"
+
+
 def sign_contract(root: Path, ticket_id: str, digest: str) -> str:
     """The engine's seal on one ticket's frozen contract hash."""
     return hmac.new(_key(root), f"contract\n{ticket_id}\n{digest}".encode(), hashlib.sha256).hexdigest()
