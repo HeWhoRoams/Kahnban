@@ -1,7 +1,7 @@
 ---
 id: KB-006
 title: "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access"
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -16,6 +16,8 @@ source_doc: ""
 source_anchor: ""
 source_hash: ""
 validation_class: headless-verified
+contract_hash: f8680312d43d6fe4
+confirmed: ""
 ---
 
 ## Problem
@@ -50,3 +52,4 @@ python -m pytest tests/test_contract_signature.py -q
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-26 22:44 - manual move 0-backlog -> 1-refining: refine
+- 2026-10-26 22:44 - ready gate passed -> 2-ready | contract f8680312d43d6fe4

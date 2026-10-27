@@ -50,24 +50,24 @@
     },
     {
       "name": "1-refining",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "2-ready",
       "count": 1,
       "tickets": [
         {
           "id": "KB-006",
           "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
-          "status": "refining",
+          "status": "ready",
           "owner": "unassigned",
           "branch": "",
           "worktree": "",
           "updated": "2026-10-26",
-          "column": "1-refining"
+          "column": "2-ready"
         }
       ]
-    },
-    {
-      "name": "2-ready",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "3-in-progress",

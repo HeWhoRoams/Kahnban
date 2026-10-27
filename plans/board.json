@@ -68,13 +68,18 @@
     },
     {
       "name": "1-refining",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "2-ready",
       "count": 1,
       "tickets": [
         {
           "id": "KB-006",
           "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
-          "status": "refining",
-          "column": "1-refining",
+          "status": "ready",
+          "column": "2-ready",
           "owner": "unassigned",
           "branch": "",
           "worktree": "",
@@ -89,11 +94,6 @@
           "updated": "2026-10-26"
         }
       ]
-    },
-    {
-      "name": "2-ready",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "3-in-progress",
@@ -269,8 +269,8 @@
     "KB-006": {
       "id": "KB-006",
       "title": "Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access",
-      "status": "refining",
-      "column": "1-refining",
+      "status": "ready",
+      "column": "2-ready",
       "owner": "unassigned",
       "branch": "",
       "worktree": "",
