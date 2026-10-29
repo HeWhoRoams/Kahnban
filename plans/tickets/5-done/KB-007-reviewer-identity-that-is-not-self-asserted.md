@@ -1,7 +1,7 @@
 ---
 id: KB-007
 title: Reviewer identity that is not self-asserted
-status: verifying
+status: done
 owner: claude-coder
 branch: ticket/KB-007
 worktree: .worktrees/KB-007
@@ -561,3 +561,4 @@ python -m pytest tests/test_reviewer_keys.py -q
     723 tests, 8 workers, 202s, all passed
 
     full output: plans/tickets/.artifacts/KB-007-20261028-222428.log
+- 2026-10-28 22:28 - done gate passed -> 5-done | merge-commit: 022152efe72b8cfbf96f3e57885e138492bf1ae4

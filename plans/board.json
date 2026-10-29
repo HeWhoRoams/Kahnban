@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-28T22:24:28",
+  "generated": "2026-10-28T22:28:35",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -69,32 +69,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-007",
-          "title": "Reviewer identity that is not self-asserted",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "claude-coder",
-          "branch": "ticket/KB-007",
-          "worktree": ".worktrees/KB-007",
-          "description": "`kahnban approve --reviewer <name>` records whatever name is typed. The owner check compares two strings, so a typo, a worker or a second hat can approve under any other name. Decided with the user (2026-10-26): registered reviewer keys.",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/trust.py",
-            "src/kahnban/core.py",
-            "src/kahnban/cli.py",
-            "tests/test_reviewer_keys.py"
-          ],
-          "updated": "2026-10-28"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 6,
+      "count": 7,
       "tickets": [
         {
           "id": "KB-001",
@@ -194,6 +174,25 @@
           "updated": "2026-10-26"
         },
         {
+          "id": "KB-007",
+          "title": "Reviewer identity that is not self-asserted",
+          "status": "done",
+          "column": "5-done",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-007",
+          "worktree": ".worktrees/KB-007",
+          "description": "`kahnban approve --reviewer <name>` records whatever name is typed. The owner check compares two strings, so a typo, a worker or a second hat can approve under any other name. Decided with the user (2026-10-26): registered reviewer keys.",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/trust.py",
+            "src/kahnban/core.py",
+            "src/kahnban/cli.py",
+            "tests/test_reviewer_keys.py"
+          ],
+          "updated": "2026-10-28"
+        },
+        {
           "id": "KB-010",
           "title": "The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test",
           "status": "done",
@@ -256,25 +255,6 @@
       "blocked_on": "",
       "blast_radius": [],
       "updated": "2026-10-25"
-    },
-    "KB-007": {
-      "id": "KB-007",
-      "title": "Reviewer identity that is not self-asserted",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "claude-coder",
-      "branch": "ticket/KB-007",
-      "worktree": ".worktrees/KB-007",
-      "description": "`kahnban approve --reviewer <name>` records whatever name is typed. The owner check compares two strings, so a typo, a worker or a second hat can approve under any other name. Decided with the user (2026-10-26): registered reviewer keys.",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/trust.py",
-        "src/kahnban/core.py",
-        "src/kahnban/cli.py",
-        "tests/test_reviewer_keys.py"
-      ],
-      "updated": "2026-10-28"
     },
     "KB-001": {
       "id": "KB-001",
@@ -372,6 +352,25 @@
         "tests/test_contract_signature.py"
       ],
       "updated": "2026-10-26"
+    },
+    "KB-007": {
+      "id": "KB-007",
+      "title": "Reviewer identity that is not self-asserted",
+      "status": "done",
+      "column": "5-done",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-007",
+      "worktree": ".worktrees/KB-007",
+      "description": "`kahnban approve --reviewer <name>` records whatever name is typed. The owner check compares two strings, so a typo, a worker or a second hat can approve under any other name. Decided with the user (2026-10-26): registered reviewer keys.",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/trust.py",
+        "src/kahnban/core.py",
+        "src/kahnban/cli.py",
+        "tests/test_reviewer_keys.py"
+      ],
+      "updated": "2026-10-28"
     },
     "KB-010": {
       "id": "KB-010",
