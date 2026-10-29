@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T19:37:32",
+  "generated": "2026-10-29T19:37:37",
   "generator": "kahnban",
   "columns": [
     {
@@ -45,21 +45,11 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 1,
       "tickets": [
         {
           "id": "KB-012",
           "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "2-ready"
-        },
-        {
-          "id": "KB-013",
-          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
           "status": "ready",
           "owner": "unassigned",
           "branch": "",
@@ -71,7 +61,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-011",
@@ -80,6 +70,16 @@
           "owner": "coder-agent",
           "branch": "ticket/KB-011",
           "worktree": ".worktrees/KB-011",
+          "updated": "2026-10-29",
+          "column": "3-in-progress"
+        },
+        {
+          "id": "KB-013",
+          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
+          "status": "in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-013",
+          "worktree": ".worktrees/KB-013",
           "updated": "2026-10-29",
           "column": "3-in-progress"
         }

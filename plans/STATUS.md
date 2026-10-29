@@ -10,8 +10,8 @@ Generated: 2026-10-29 19:37
 | :--- | ---: |
 | 0-backlog | 3 |
 | 1-refining | 0 |
-| 2-ready | 2 |
-| 3-in-progress | 1 |
+| 2-ready | 1 |
+| 3-in-progress | 2 |
 | 4-verifying | 0 |
 | 5-done | 8 |
 
@@ -27,18 +27,18 @@ Generated: 2026-10-29 19:37
 
 _empty_
 
-## 2-ready (2)
+## 2-ready (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-012 | Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error | unassigned | - | 2026-10-29 |
-| KB-013 | Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do | unassigned | - | 2026-10-29 |
 
-## 3-in-progress (1)
+## 3-in-progress (2)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-011 | Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps | coder-agent | ticket/KB-011 | 2026-10-29 |
+| KB-013 | Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do | coder-agent | ticket/KB-013 | 2026-10-29 |
 
 ## 4-verifying (0)
 

@@ -1,10 +1,10 @@
 ---
 id: KB-013
 title: "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do"
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-013
+worktree: .worktrees/KB-013
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -56,3 +56,4 @@ python tests/run_parallel.py -j 8
 ## Log
 - 2026-10-29 19:29 - created -> 0-backlog
 - 2026-10-29 19:37 - ready gate passed -> 2-ready | contract d2e146a4bf5fea9f
+- 2026-10-29 19:37 - claimed by coder-agent -> 3-in-progress
