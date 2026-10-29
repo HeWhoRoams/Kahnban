@@ -4,7 +4,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 5,
+      "count": 6,
       "tickets": [
         {
           "id": "KB-002",
@@ -49,6 +49,16 @@
         {
           "id": "KB-013",
           "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-014",
+          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -279,6 +289,14 @@
         "cycle_hours": null
       },
       "KB-013": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-014": {
         "by_owner": {},
         "rejected_by": {},
         "verify_attempts": 0,
