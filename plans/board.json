@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T19:29:15",
+  "generated": "2026-10-29T19:31:56",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 6,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-002",
@@ -33,20 +33,6 @@
           "description": "",
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
-          "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-011",
-          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
           "blast_radius": [],
           "updated": "2026-10-29"
         },
@@ -101,8 +87,27 @@
     },
     {
       "name": "2-ready",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-011",
+          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/runner.py",
+            "src/kahnban/cli.py",
+            "tests/test_runner_parallel.py"
+          ],
+          "updated": "2026-10-29"
+        }
+      ]
     },
     {
       "name": "3-in-progress",
@@ -302,20 +307,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-011": {
-      "id": "KB-011",
-      "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [],
-      "updated": "2026-10-29"
-    },
     "KB-012": {
       "id": "KB-012",
       "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
@@ -356,6 +347,24 @@
       "depends_on": [],
       "blocked_on": "",
       "blast_radius": [],
+      "updated": "2026-10-29"
+    },
+    "KB-011": {
+      "id": "KB-011",
+      "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/runner.py",
+        "src/kahnban/cli.py",
+        "tests/test_runner_parallel.py"
+      ],
       "updated": "2026-10-29"
     },
     "KB-001": {

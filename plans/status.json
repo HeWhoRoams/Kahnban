@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T19:29:15",
+  "generated": "2026-10-29T19:31:56",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 6,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,16 +19,6 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-011",
-          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -75,8 +65,19 @@
     },
     {
       "name": "2-ready",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-011",
+          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        }
+      ]
     },
     {
       "name": "3-in-progress",
