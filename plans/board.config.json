@@ -57,5 +57,8 @@
     "*_spec.*",
     "tests/live/*",
     "tests/conftest.py"
-  ]
+  ],
+  "workers": {
+    "default": "claude -p --model sonnet --agent kahnban-{role} --permission-mode acceptEdits --allowedTools \"Bash(kahnban:*)\" \"Bash(git add:*)\" \"Bash(git commit:*)\" \"Bash(git status:*)\" \"Bash(git diff:*)\" \"Bash(git log:*)\" \"Bash(git rm:*)\" \"Bash(git mv:*)\" \"Bash(python tests/run_parallel.py -j 8:*)\""
+  }
 }
