@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T08:47:06",
+  "generated": "2026-10-29T08:47:16",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -45,16 +45,21 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-008",
           "title": "Parallel workers in kahnban run (leases already allow it)",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-008",
+          "worktree": ".worktrees/KB-008",
           "description": "`kahnban run` drives one ticket at a time, so a board with several ready tickets waits on each coder in turn. Leases and the dispatcher's free-blast-radius rule already stop two coders from holding overlapping tickets. Decided with the user (2026-10-29): parallel implement only. `kahnban run --jobs N` runs up to N coder workers at once, each in its own worktree. Only the worker subprocess runs off the main thread; claim, verify, review, merge and done stay one at a time, so the merge queue, the board's commits and signing are unchanged. The default is 1, which behaves exactly as before. Limit: tickets with disjoint declared radii can still conflict at merge; the merge queue refuses those as it does today.",
           "depends_on": [],
           "blocked_on": "",
@@ -66,11 +71,6 @@
           "updated": "2026-10-29"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",
@@ -250,11 +250,11 @@
     "KB-008": {
       "id": "KB-008",
       "title": "Parallel workers in kahnban run (leases already allow it)",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "claude-coder",
+      "branch": "ticket/KB-008",
+      "worktree": ".worktrees/KB-008",
       "description": "`kahnban run` drives one ticket at a time, so a board with several ready tickets waits on each coder in turn. Leases and the dispatcher's free-blast-radius rule already stop two coders from holding overlapping tickets. Decided with the user (2026-10-29): parallel implement only. `kahnban run --jobs N` runs up to N coder workers at once, each in its own worktree. Only the worker subprocess runs off the main thread; claim, verify, review, merge and done stay one at a time, so the merge queue, the board's commits and signing are unchanged. The default is 1, which behaves exactly as before. Limit: tickets with disjoint declared radii can still conflict at merge; the merge queue refuses those as it does today.",
       "depends_on": [],
       "blocked_on": "",

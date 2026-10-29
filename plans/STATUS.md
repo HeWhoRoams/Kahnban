@@ -10,8 +10,8 @@ Generated: 2026-10-29 08:47
 | :--- | ---: |
 | 0-backlog | 2 |
 | 1-refining | 0 |
-| 2-ready | 1 |
-| 3-in-progress | 0 |
+| 2-ready | 0 |
+| 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 7 |
 
@@ -26,15 +26,15 @@ Generated: 2026-10-29 08:47
 
 _empty_
 
-## 2-ready (1)
+## 2-ready (0)
+
+_empty_
+
+## 3-in-progress (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-008 | Parallel workers in kahnban run (leases already allow it) | unassigned | - | 2026-10-29 |
-
-## 3-in-progress (0)
-
-_empty_
+| KB-008 | Parallel workers in kahnban run (leases already allow it) | claude-coder | ticket/KB-008 | 2026-10-29 |
 
 ## 4-verifying (0)
 

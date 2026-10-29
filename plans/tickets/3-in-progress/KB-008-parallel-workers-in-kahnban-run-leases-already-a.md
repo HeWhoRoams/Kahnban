@@ -1,10 +1,10 @@
 ---
 id: KB-008
 title: Parallel workers in kahnban run (leases already allow it)
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: claude-coder
+branch: ticket/KB-008
+worktree: .worktrees/KB-008
 created: 2026-10-25
 updated: 2026-10-29
 legacy_id: ""
@@ -52,3 +52,4 @@ python -m pytest tests/test_runner_parallel.py -q
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
 - 2026-10-29 08:47 - ready gate passed -> 2-ready | contract 02f0410cc4b0e1d3
+- 2026-10-29 08:47 - claimed by claude-coder -> 3-in-progress

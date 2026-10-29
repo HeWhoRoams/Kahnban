@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T08:47:06",
+  "generated": "2026-10-29T08:47:16",
   "generator": "kahnban",
   "columns": [
     {
@@ -35,24 +35,24 @@
     },
     {
       "name": "2-ready",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "3-in-progress",
       "count": 1,
       "tickets": [
         {
           "id": "KB-008",
           "title": "Parallel workers in kahnban run (leases already allow it)",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "owner": "claude-coder",
+          "branch": "ticket/KB-008",
+          "worktree": ".worktrees/KB-008",
           "updated": "2026-10-29",
-          "column": "2-ready"
+          "column": "3-in-progress"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",
