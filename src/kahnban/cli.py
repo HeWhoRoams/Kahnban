@@ -197,7 +197,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     from kahnban import runner
 
     config = _load(args)
-    result = runner.run(config, max_steps=args.max_steps)
+    result = runner.run(config, max_steps=args.max_steps, jobs=args.jobs)
     marker = "[WARN]" if result.parked else "[OK]"
     print(f"{marker} {result.stopped} ({len(result.steps)} step(s))")
     for ticket in result.parked:
@@ -773,6 +773,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="drive the board with the configured workers until it is idle",
     )
     run_parser.add_argument("--max-steps", type=int, default=20, help="stop after N steps")
+    run_parser.add_argument("--jobs", type=int, default=1, help="coder workers to run at once (default 1)")
     run_parser.set_defaults(handler=cmd_run)
 
     lease_parser = subparsers.add_parser(

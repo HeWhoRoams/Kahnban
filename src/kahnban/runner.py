@@ -14,6 +14,7 @@ import signal
 import subprocess
 import time
 from collections.abc import Callable
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -70,11 +71,16 @@ def run(
     config: core.Config,
     *,
     max_steps: int = 20,
+    jobs: int = 1,
     echo: Callable[[str], None] = print,
 ) -> RunResult:
     """Drive the board until it is idle, every open ticket is parked, or
     ``max_steps`` is reached. A ticket that comes back to the same action more
-    than ``max_attempts`` times is escalated to a human and skipped."""
+    than ``max_attempts`` times is escalated to a human and skipped.
+
+    With ``jobs`` > 1 up to that many coder workers run at once, each in its own
+    worktree. Only the worker runs off the main thread: claims, verifies, reviews and
+    merges stay one at a time, so the merge queue and the board's commits never race."""
     if not config.workers:
         raise RunStop(_NO_WORKER.format(role="any role"))
     drifted = trust.lock_problems(config.project_root)
@@ -86,8 +92,22 @@ def run(
     for problem in drifted:
         echo(f"[WARN] {problem}")
     result = RunResult(log_path=_log_path(config))
+    flight = _Flight(config, result, echo, jobs)
+    try:
+        _loop(config, result, flight, max_steps, echo)
+    finally:
+        flight.drain()
+    if flight.stop:
+        raise flight.stop
+    return result
+
+
+def _loop(config: core.Config, result: RunResult, flight: _Flight, max_steps: int, echo: Callable[[str], None]) -> None:
     curated = False  # the curator gets one turn per run; then the board moves on
     for number in range(1, max_steps + 1):
+        flight.harvest(number)
+        if flight.stop:
+            return
         rec = dispatcher.resolve_next_action(config, skip_harvest=curated)
         if rec.action == "harvest_learnings":
             curated = True
@@ -101,6 +121,12 @@ def run(
             result.steps.append(Step(number, rec.action, None, outcome))
             echo(f"[{number}] {rec.action}: {outcome}")
             continue
+        if flight.wants(rec):
+            flight.start(number, rec)
+            continue
+        if flight.active and (rec.action == "idle" or flight.full(rec)):
+            flight.wait(number)  # a finished worker may unblock the next step
+            continue
         if rec.action == "idle":
             result.parked = _parked(config)
             result.stopped = (
@@ -110,32 +136,112 @@ def run(
                 else rec.summary
             )
             _guard_summary(result, echo)
-            return result
+            return
         ticket = rec.ticket_id or ""
-        entry = attempts.bump(config, rec.action, ticket, _progress(config, ticket))
-        if entry.count > config.max_attempts:
-            reason = (
-                f"'{rec.action}' made no progress after {config.max_attempts} attempts; "
-                f"last: {entry.last}"
-            )
-            core.escalate(config, ticket, reason[:300])
-            outcome = f"escalated: {reason}"
-        else:
+        outcome = _admit(config, rec, ticket)
+        if outcome is None:
             try:
                 outcome = _step(config, rec, result.log_path)
             except RunStop:
                 raise
             except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
                 outcome = f"refused: {error}"
-        # One line, details kept: a refusal's paths are on its continuation lines.
-        summary = " ".join(part.strip() for part in outcome.splitlines() if part.strip())
-        attempts.note(config, rec.action, ticket, summary.replace('"', "'"))
-        result.steps.append(Step(number, rec.action, rec.ticket_id, outcome))
-        echo(f"[{number}] {rec.action} {ticket}: {summary[:400]}")
+        _note(config, result, number, rec, outcome, echo)
+    flight.drain(max_steps)
     result.stopped = f"stopped after {max_steps} steps"
     result.parked = _parked(config)
     _guard_summary(result, echo)
-    return result
+
+
+def _admit(config: core.Config, rec: dispatcher.DispatchRecommendation, ticket: str) -> str | None:
+    """Count this attempt; an outcome (an escalation) once the ticket has used them all, else None."""
+    entry = attempts.bump(config, rec.action, ticket, _progress(config, ticket))
+    if entry.count <= config.max_attempts:
+        return None
+    reason = f"'{rec.action}' made no progress after {config.max_attempts} attempts; last: {entry.last}"
+    core.escalate(config, ticket, reason[:300])
+    return f"escalated: {reason}"
+
+
+def _note(
+    config: core.Config,
+    result: RunResult,
+    number: int,
+    rec: dispatcher.DispatchRecommendation,
+    outcome: str,
+    echo: Callable[[str], None],
+) -> None:
+    ticket = rec.ticket_id or ""
+    # One line, details kept: a refusal's paths are on its continuation lines.
+    summary = " ".join(part.strip() for part in outcome.splitlines() if part.strip())
+    attempts.note(config, rec.action, ticket, summary.replace('"', "'"))
+    result.steps.append(Step(number, rec.action, rec.ticket_id, outcome))
+    echo(f"[{number}] {rec.action} {ticket}: {summary[:400]}")
+
+
+_CODING = ("claim_and_implement", "resume_worktree", "revise_implementation")
+
+
+class _Flight:
+    """The coder workers running right now (none unless ``jobs`` > 1)."""
+
+    def __init__(self, config: core.Config, result: RunResult, echo: Callable[[str], None], jobs: int) -> None:
+        self.config, self.result, self.echo, self.jobs = config, result, echo, max(jobs, 1)
+        self.pool = ThreadPoolExecutor(self.jobs) if self.jobs > 1 else None
+        self.active: dict[Future[int], dispatcher.DispatchRecommendation] = {}
+        self.stop: RunStop | None = None  # the first worker failure that ends the run
+
+    def full(self, rec: dispatcher.DispatchRecommendation) -> bool:
+        return self.pool is not None and rec.action in _CODING and len(self.active) >= self.jobs
+
+    def wants(self, rec: dispatcher.DispatchRecommendation) -> bool:
+        return self.pool is not None and rec.action in _CODING and not self.full(rec)
+
+    def start(self, number: int, rec: dispatcher.DispatchRecommendation) -> None:
+        ticket = rec.ticket_id or ""
+        outcome = _admit(self.config, rec, ticket)
+        if outcome is None:
+            try:
+                if rec.action == "claim_and_implement":
+                    core.claim(self.config, ticket, CODER, create_worktree=True)
+                else:
+                    core.lease(self.config, ticket, CODER)
+                assert self.pool is not None
+                self.active[self.pool.submit(_code, self.config, rec, self.result.log_path)] = rec
+                self.echo(f"[{number}] {rec.action} {ticket}: worker started ({len(self.active)}/{self.jobs})")
+                return
+            except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
+                outcome = f"refused: {error}"
+        _note(self.config, self.result, number, rec, outcome, self.echo)
+
+    def wait(self, number: int) -> None:
+        wait(self.active, return_when=FIRST_COMPLETED)
+        self.harvest(number)
+
+    def drain(self, number: int = 0) -> None:
+        if self.active:
+            wait(self.active)
+            self.harvest(number)
+        if self.pool:
+            self.pool.shutdown()
+
+    def harvest(self, number: int) -> None:
+        """Verify each worker that has finished; its lease is held until then."""
+        for future in [f for f in self.active if f.done()]:
+            rec = self.active.pop(future)
+            ticket = rec.ticket_id or ""
+            try:
+                try:
+                    code = future.result()
+                finally:
+                    core.drop_lease(self.config, ticket)
+                outcome = _verified(self.config, ticket, code)
+            except RunStop as error:
+                self.stop = self.stop or error
+                continue
+            except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
+                outcome = f"refused: {error}"
+            _note(self.config, self.result, number, rec, outcome, self.echo)
 
 
 def guard_log_path(log: Path) -> Path:
@@ -225,23 +331,26 @@ def _await_human(config: core.Config, ticket: str) -> str:
     return f"paused for a human before {gate}: run 'kahnban confirm {ticket}'"
 
 
-def _implement(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path) -> str:
+def _code(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path) -> int:
+    """Run the coder in the ticket's worktree, renewing its lease; the caller drops the lease."""
     ticket = rec.ticket_id or ""
     tree = config.project_root / ".worktrees" / ticket
     if not tree.is_dir():
-        core.drop_lease(config, ticket)
         raise core.GateError(f"{ticket} has no worktree; the runner only drives worktree tickets")
+    code, _ = _work(config, roles.CODER, rec, tree, log, heartbeat=lambda: core.write_lease(config, ticket, CODER))
+    return code
+
+
+def _implement(config: core.Config, rec: dispatcher.DispatchRecommendation, log: Path) -> str:
+    ticket = rec.ticket_id or ""
     try:
-        code, _ = _work(
-            config,
-            roles.CODER,
-            rec,
-            tree,
-            log,
-            heartbeat=lambda: core.write_lease(config, ticket, CODER),
-        )
+        code = _code(config, rec, log)
     finally:
         core.drop_lease(config, ticket)
+    return _verified(config, ticket, code)
+
+
+def _verified(config: core.Config, ticket: str, code: int) -> str:
     if core.find_ticket(config, ticket).column != config.in_progress_column:
         return f"worker exit {code}; ticket already moved on"
     result = core.verify(config, ticket)
