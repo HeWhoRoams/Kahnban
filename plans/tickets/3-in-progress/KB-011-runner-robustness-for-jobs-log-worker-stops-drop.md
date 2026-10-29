@@ -1,10 +1,10 @@
 ---
 id: KB-011
 title: "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps"
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-011
+worktree: .worktrees/KB-011
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -64,3 +64,4 @@ python tests/run_parallel.py -j 8
 ## Log
 - 2026-10-29 19:29 - created -> 0-backlog
 - 2026-10-29 19:31 - ready gate passed -> 2-ready | contract 620f208e460cac0b
+- 2026-10-29 19:32 - claimed by coder-agent -> 3-in-progress
