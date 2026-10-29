@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-28T22:28:35",
+  "generated": "2026-10-28T22:28:40",
   "generator": "kahnban",
   "columns": [
     {
@@ -117,8 +117,8 @@
           "title": "Reviewer identity that is not self-asserted",
           "status": "done",
           "owner": "claude-coder",
-          "branch": "ticket/KB-007",
-          "worktree": ".worktrees/KB-007",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-28",
           "column": "5-done"
         },

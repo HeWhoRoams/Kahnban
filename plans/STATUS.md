@@ -48,5 +48,5 @@ _empty_
 | KB-004 | Break down status.json metrics per role: which worker caused the rejections | claude-coder | - | 2026-10-26 |
 | KB-005 | Rename the bundled blast-radius skill: it collides with the ticket field of the same name | claude-coder | - | 2026-10-26 |
 | KB-006 | Tamper resistance for the frozen records: keep contract and approval records out of the workers' write access | claude-coder | - | 2026-10-26 |
-| KB-007 | Reviewer identity that is not self-asserted | claude-coder | ticket/KB-007 | 2026-10-28 |
+| KB-007 | Reviewer identity that is not self-asserted | claude-coder | - | 2026-10-28 |
 | KB-010 | The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test | claude-coder | - | 2026-10-26 |
