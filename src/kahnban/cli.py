@@ -193,6 +193,13 @@ def cmd_merge(args: argparse.Namespace) -> int:
     return EXIT_REFUSED
 
 
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError(f"must be at least 1, got {parsed}")
+    return parsed
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     from kahnban import runner
 
@@ -773,7 +780,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="drive the board with the configured workers until it is idle",
     )
     run_parser.add_argument("--max-steps", type=int, default=20, help="stop after N steps")
-    run_parser.add_argument("--jobs", type=int, default=1, help="coder workers to run at once (default 1)")
+    run_parser.add_argument("--jobs", type=_positive_int, default=1, help="coder workers to run at once (default 1)")
     run_parser.set_defaults(handler=cmd_run)
 
     lease_parser = subparsers.add_parser(
