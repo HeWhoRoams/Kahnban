@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T19:32:03",
+  "generated": "2026-10-29T19:36:51",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 5,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-002",
@@ -33,20 +33,6 @@
           "description": "",
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
-          "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-012",
-          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
           "blast_radius": [],
           "updated": "2026-10-29"
         },
@@ -87,8 +73,27 @@
     },
     {
       "name": "2-ready",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-012",
+          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/trust.py",
+            "src/kahnban/cli.py",
+            "tests/test_reviewer_keys.py"
+          ],
+          "updated": "2026-10-29"
+        }
+      ]
     },
     {
       "name": "3-in-progress",
@@ -307,20 +312,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-012": {
-      "id": "KB-012",
-      "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [],
-      "updated": "2026-10-29"
-    },
     "KB-013": {
       "id": "KB-013",
       "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
@@ -347,6 +338,24 @@
       "depends_on": [],
       "blocked_on": "",
       "blast_radius": [],
+      "updated": "2026-10-29"
+    },
+    "KB-012": {
+      "id": "KB-012",
+      "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/trust.py",
+        "src/kahnban/cli.py",
+        "tests/test_reviewer_keys.py"
+      ],
       "updated": "2026-10-29"
     },
     "KB-011": {

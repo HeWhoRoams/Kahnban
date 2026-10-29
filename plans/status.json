@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T19:32:03",
+  "generated": "2026-10-29T19:36:51",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 5,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,16 +19,6 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-012",
-          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -65,8 +55,19 @@
     },
     {
       "name": "2-ready",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-012",
+          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        }
+      ]
     },
     {
       "name": "3-in-progress",
