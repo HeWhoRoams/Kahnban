@@ -1,24 +1,14 @@
 {
-  "generated": "2026-10-28T22:28:40",
+  "generated": "2026-10-29T08:47:06",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-002",
           "title": "Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-25",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-008",
-          "title": "Parallel workers in kahnban run (leases already allow it)",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -45,8 +35,19 @@
     },
     {
       "name": "2-ready",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-008",
+          "title": "Parallel workers in kahnban run (leases already allow it)",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        }
+      ]
     },
     {
       "name": "3-in-progress",

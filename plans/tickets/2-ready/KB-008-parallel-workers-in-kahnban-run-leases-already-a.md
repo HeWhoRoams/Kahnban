@@ -1,12 +1,12 @@
 ---
 id: KB-008
 title: Parallel workers in kahnban run (leases already allow it)
-status: backlog
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-10-29
 legacy_id: ""
 design_docs: []
 depends_on: []
@@ -16,6 +16,9 @@ source_doc: ""
 source_anchor: ""
 source_hash: ""
 validation_class: headless-verified
+contract_hash: 02f0410cc4b0e1d3
+contract_sig: 4c9e69822adfd608b5f87796cbc766339e5ff483aa06e7fc9f20bd5e437cc8d1
+confirmed: ""
 ---
 
 ## Problem
@@ -48,3 +51,4 @@ python -m pytest tests/test_runner_parallel.py -q
 
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
+- 2026-10-29 08:47 - ready gate passed -> 2-ready | contract 02f0410cc4b0e1d3
