@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T19:29:06",
+  "generated": "2026-10-29T19:29:07",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 4,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-002",
@@ -53,6 +53,20 @@
         {
           "id": "KB-012",
           "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+          "status": "backlog",
+          "column": "0-backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-013",
+          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
           "status": "backlog",
           "column": "0-backlog",
           "owner": "unassigned",
@@ -291,6 +305,20 @@
     "KB-012": {
       "id": "KB-012",
       "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+      "status": "backlog",
+      "column": "0-backlog",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [],
+      "updated": "2026-10-29"
+    },
+    "KB-013": {
+      "id": "KB-013",
+      "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
       "status": "backlog",
       "column": "0-backlog",
       "owner": "unassigned",

@@ -8,14 +8,14 @@ Generated: 2026-10-29 19:29
 
 | Column | Tickets |
 | :--- | ---: |
-| 0-backlog | 4 |
+| 0-backlog | 5 |
 | 1-refining | 0 |
 | 2-ready | 0 |
 | 3-in-progress | 0 |
 | 4-verifying | 0 |
 | 5-done | 8 |
 
-## 0-backlog (4)
+## 0-backlog (5)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
@@ -23,6 +23,7 @@ Generated: 2026-10-29 19:29
 | KB-009 | The citadel portability smoke test (plan.md phase 4) | unassigned | - | 2026-10-25 |
 | KB-011 | Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps | unassigned | - | 2026-10-29 |
 | KB-012 | Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error | unassigned | - | 2026-10-29 |
+| KB-013 | Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do | unassigned | - | 2026-10-29 |
 
 ## 1-refining (0)
 
