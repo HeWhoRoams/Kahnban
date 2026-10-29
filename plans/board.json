@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T08:47:16",
+  "generated": "2026-10-29T08:47:24",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -50,13 +50,18 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-008",
           "title": "Parallel workers in kahnban run (leases already allow it)",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "verifying",
+          "column": "4-verifying",
           "owner": "claude-coder",
           "branch": "ticket/KB-008",
           "worktree": ".worktrees/KB-008",
@@ -71,11 +76,6 @@
           "updated": "2026-10-29"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -250,8 +250,8 @@
     "KB-008": {
       "id": "KB-008",
       "title": "Parallel workers in kahnban run (leases already allow it)",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "verifying",
+      "column": "4-verifying",
       "owner": "claude-coder",
       "branch": "ticket/KB-008",
       "worktree": ".worktrees/KB-008",
