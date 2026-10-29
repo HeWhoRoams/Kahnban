@@ -6,11 +6,11 @@ owner: unassigned
 branch: ""
 worktree: ""
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-10-29
 legacy_id: ""
 design_docs: []
 depends_on: []
-blocked_on: ""
+blocked_on: "human: needs Linux and GitHub CI; not runnable locally"
 junctions: []
 source_doc: ""
 source_anchor: ""
@@ -33,3 +33,4 @@ python tests/run_parallel.py -j 8
 
 ## Log
 - 2026-10-25 17:51 - created -> 0-backlog | captured
+- 2026-10-29 19:29 - escalated to a human: needs Linux and GitHub CI; not runnable locally

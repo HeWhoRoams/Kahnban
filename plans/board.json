@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T19:29:07",
+  "generated": "2026-10-29T19:29:14",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -18,9 +18,9 @@
           "worktree": "",
           "description": "",
           "depends_on": [],
-          "blocked_on": "",
+          "blocked_on": "human: needs Linux and GitHub CI; not runnable locally",
           "blast_radius": [],
-          "updated": "2026-10-25"
+          "updated": "2026-10-29"
         },
         {
           "id": "KB-009",
@@ -284,9 +284,9 @@
       "worktree": "",
       "description": "",
       "depends_on": [],
-      "blocked_on": "",
+      "blocked_on": "human: needs Linux and GitHub CI; not runnable locally",
       "blast_radius": [],
-      "updated": "2026-10-25"
+      "updated": "2026-10-29"
     },
     "KB-009": {
       "id": "KB-009",
