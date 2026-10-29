@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T19:29:14",
+  "generated": "2026-10-29T19:29:15",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -32,9 +32,9 @@
           "worktree": "",
           "description": "",
           "depends_on": [],
-          "blocked_on": "",
+          "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-25"
+          "updated": "2026-10-29"
         },
         {
           "id": "KB-011",
@@ -298,9 +298,9 @@
       "worktree": "",
       "description": "",
       "depends_on": [],
-      "blocked_on": "",
+      "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
       "blast_radius": [],
-      "updated": "2026-10-25"
+      "updated": "2026-10-29"
     },
     "KB-011": {
       "id": "KB-011",
