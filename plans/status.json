@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T19:36:51",
+  "generated": "2026-10-29T19:37:32",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 4,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,16 +19,6 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-013",
-          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -55,11 +45,21 @@
     },
     {
       "name": "2-ready",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-012",
           "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        },
+        {
+          "id": "KB-013",
+          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
           "status": "ready",
           "owner": "unassigned",
           "branch": "",

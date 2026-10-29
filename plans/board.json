@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T19:36:51",
+  "generated": "2026-10-29T19:37:32",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 4,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-002",
@@ -37,20 +37,6 @@
           "updated": "2026-10-29"
         },
         {
-          "id": "KB-013",
-          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
           "id": "KB-014",
           "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
           "status": "backlog",
@@ -73,7 +59,7 @@
     },
     {
       "name": "2-ready",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-012",
@@ -90,6 +76,24 @@
             "src/kahnban/trust.py",
             "src/kahnban/cli.py",
             "tests/test_reviewer_keys.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-013",
+          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "tests/sim/compare.py",
+            "tests/sim/__main__.py",
+            "tests/test_sim_compare.py"
           ],
           "updated": "2026-10-29"
         }
@@ -312,20 +316,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-013": {
-      "id": "KB-013",
-      "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [],
-      "updated": "2026-10-29"
-    },
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -355,6 +345,24 @@
         "src/kahnban/trust.py",
         "src/kahnban/cli.py",
         "tests/test_reviewer_keys.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-013": {
+      "id": "KB-013",
+      "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "tests/sim/compare.py",
+        "tests/sim/__main__.py",
+        "tests/test_sim_compare.py"
       ],
       "updated": "2026-10-29"
     },
