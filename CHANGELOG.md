@@ -5,6 +5,7 @@
 ### Contract seal and metrics
 - `ready` (and the freeze at `claim`) store `contract_sig`, an HMAC of the ticket id and contract hash made with the approval key. Editing the criteria and the hash together now fails verification; with `require_signed_approvals`, a frozen contract with no signature is refused. A ticket frozen before this change needs `ready` again.
 - `status.json` metrics add `by_owner` and `by_reviewer` (failed verifies and rejections per owner, rejections per reviewer), read from the ticket Log.
+- `kahnban reviewers add NAME` / `list`: registered reviewer keys. Once any reviewer is registered, only they can `approve`; the approval carries `reviewer_sig`, checked at `merge` and `done`. No registered reviewer, no change. Workers cannot register or approve; same-user key files stay readable.
 - The bundled `blast-radius` skill is now `change-impact`, so it no longer shares a name with the ticket field.
 - `python tests/run_sim.py stability --runs N` lists the metrics that move on an unchanged tree; `--accept` records them so `compare` skips them. `tests/sim` counts as source for the proof gate on this board.
 
