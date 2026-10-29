@@ -3,8 +3,8 @@ id: KB-008
 title: Parallel workers in kahnban run (leases already allow it)
 status: done
 owner: claude-coder
-branch: ticket/KB-008
-worktree: .worktrees/KB-008
+branch: ""
+worktree: ""
 created: 2026-10-25
 updated: 2026-10-29
 legacy_id: ""
@@ -124,3 +124,4 @@ python -m pytest tests/test_runner_parallel.py -q
 
     full output: plans/tickets/.artifacts/KB-008-20261029-093641.log
 - 2026-10-29 09:40 - done gate passed -> 5-done | merge-commit: 1a3fd9dbb8f41f0ff545e548fde5b7c38d94ed9c
+- 2026-10-29 09:40 - cleanup: no worktree to remove

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T09:40:15",
+  "generated": "2026-10-29T09:40:30",
   "generator": "kahnban",
   "columns": [
     {
@@ -117,8 +117,8 @@
           "title": "Parallel workers in kahnban run (leases already allow it)",
           "status": "done",
           "owner": "claude-coder",
-          "branch": "ticket/KB-008",
-          "worktree": ".worktrees/KB-008",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         },
