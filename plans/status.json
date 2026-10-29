@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T09:40:30",
+  "generated": "2026-10-29T19:29:06",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-002",
@@ -24,6 +24,16 @@
           "branch": "",
           "worktree": "",
           "updated": "2026-10-25",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-011",
+          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
           "column": "0-backlog"
         }
       ]
@@ -231,6 +241,14 @@
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": 23.5
+      },
+      "KB-011": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
       }
     }
   }

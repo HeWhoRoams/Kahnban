@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T09:40:30",
+  "generated": "2026-10-29T19:29:06",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-002",
@@ -35,6 +35,20 @@
           "blocked_on": "",
           "blast_radius": [],
           "updated": "2026-10-25"
+        },
+        {
+          "id": "KB-011",
+          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+          "status": "backlog",
+          "column": "0-backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [],
+          "updated": "2026-10-29"
         }
       ]
     },
@@ -245,6 +259,20 @@
       "blocked_on": "",
       "blast_radius": [],
       "updated": "2026-10-25"
+    },
+    "KB-011": {
+      "id": "KB-011",
+      "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+      "status": "backlog",
+      "column": "0-backlog",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [],
+      "updated": "2026-10-29"
     },
     "KB-001": {
       "id": "KB-001",
