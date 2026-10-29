@@ -151,6 +151,20 @@ def cmd_approve(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def cmd_reviewers(args: argparse.Namespace) -> int:
+    root = _load(args).project_root
+    if args.reviewers_action == "add":
+        try:
+            trust.register_reviewer(root, args.name)
+        except ValueError as error:
+            raise core.GateError(str(error)) from None
+        print(f"[OK] registered reviewer '{args.name.strip()}'; 'kahnban approve' now needs a registered reviewer")
+        return EXIT_OK
+    names = trust.registered_reviewers(root)
+    print("\n".join(names) if names else "No reviewers registered (any --reviewer name is accepted).")
+    return EXIT_OK
+
+
 def cmd_reject(args: argparse.Namespace) -> int:
     message = _read_text_argument(args.message, args.message_file)
     if not message:
@@ -726,6 +740,15 @@ def build_parser() -> argparse.ArgumentParser:
     approve.add_argument("--reviewer", required=True, help="who is approving (not the owner)")
     approve.add_argument("--note", help="optional review note for the Log")
     approve.set_defaults(handler=cmd_approve)
+
+    reviewers = subparsers.add_parser(
+        "reviewers",
+        parents=[board], help="register the people who may approve (once any is registered, only they can)")
+    reviewers_sub = reviewers.add_subparsers(dest="reviewers_action", required=True)
+    reviewers_add = reviewers_sub.add_parser("add", parents=[board], help="give a reviewer a key of their own")
+    reviewers_add.add_argument("name")
+    reviewers_sub.add_parser("list", parents=[board], help="list the registered reviewers")
+    reviewers.set_defaults(handler=cmd_reviewers)
 
     reject = subparsers.add_parser(
         "reject",
