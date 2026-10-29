@@ -6,7 +6,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 3,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-002",
@@ -39,6 +39,20 @@
         {
           "id": "KB-011",
           "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+          "status": "backlog",
+          "column": "0-backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-012",
+          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
           "status": "backlog",
           "column": "0-backlog",
           "owner": "unassigned",
@@ -263,6 +277,20 @@
     "KB-011": {
       "id": "KB-011",
       "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+      "status": "backlog",
+      "column": "0-backlog",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [],
+      "updated": "2026-10-29"
+    },
+    "KB-012": {
+      "id": "KB-012",
+      "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
       "status": "backlog",
       "column": "0-backlog",
       "owner": "unassigned",
