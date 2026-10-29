@@ -24,7 +24,7 @@ reviewer: Tim Niles
 approved_sha: 1c502470170084c1d4879a101a99bc437bb37232
 approval_sig: f748cc9117e844e121f3173fd215cd2bb568debbfd73613cbdf77923142e5fc0
 reviewer_sig: ""
-integrated_sha: ""
+integrated_sha: 1a3fd9dbb8f41f0ff545e548fde5b7c38d94ed9c
 ---
 
 ## Problem
@@ -113,3 +113,13 @@ python -m pytest tests/test_runner_parallel.py -q
 
     full output: plans/tickets/.artifacts/KB-008-20261029-084724.log
 - 2026-10-29 09:36 - approved by Tim Niles at 1c5024701700
+- 2026-10-29 09:36 - integrated into main | merge-commit: 1a3fd9dbb8f41f0ff545e548fde5b7c38d94ed9c
+    $ merge ticket/KB-008 onto main e5e9418feaf5
+    === INTEGRATION: FEATURE TESTS ===
+    ..                                                                       [100%]
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    725 tests, 8 workers, 189s, all passed
+
+    full output: plans/tickets/.artifacts/KB-008-20261029-093641.log
