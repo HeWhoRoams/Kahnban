@@ -106,6 +106,44 @@ def test_unstable_metrics_in_the_baseline_are_not_gated() -> None:
     assert normalize(base)["unstable"] == ["S1 steps_to_done"]
 
 
+def test_stability_report_covers_the_union() -> None:
+    from sim.compare import stability_report
+
+    first = copy.deepcopy(CARD)
+    del first["scenarios"]["S1"]["metrics"]["steps_to_done"]  # cards[0] is missing a metric the others have
+    second = changed(steps_to_done=9)
+
+    assert stability_report([first, second]) == ["S1 steps_to_done"]
+
+
+def test_stability_report_handles_a_missing_scenario() -> None:
+    from sim.compare import stability_report
+
+    first = copy.deepcopy(CARD)
+    second = copy.deepcopy(CARD)
+    del second["scenarios"]["S1"]  # a run where the scenario didn't happen at all
+
+    result = stability_report([first, second])
+
+    assert result  # reported as moved, not a KeyError
+    assert all(line.startswith("S1 ") for line in result)
+
+
+def test_stability_accept_without_baseline(tmp_path, monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    import pytest
+
+    from sim import __main__ as sim_main
+
+    baseline = tmp_path / "scorecard.json"  # does not exist
+    monkeypatch.setattr(sim_main, "BASELINE", baseline)
+
+    with pytest.raises(SystemExit) as exc:
+        sim_main.main(["stability", "S1", "--runs", "1", "--accept"])
+
+    assert exc.value.code != 0
+    assert "run `compare --accept` first" in str(exc.value.code)
+
+
 def test_the_stability_command_records_what_moved(tmp_path, monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
     import json
 
