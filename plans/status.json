@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:44:54",
+  "generated": "2026-10-29T20:57:13",
   "generator": "kahnban",
   "columns": [
     {
@@ -242,24 +242,24 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-012",
           "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-          "status": "in-progress",
+          "status": "verifying",
           "owner": "coder-agent",
           "branch": "ticket/KB-012",
           "worktree": ".worktrees/KB-012",
           "updated": "2026-10-29",
-          "column": "3-in-progress"
+          "column": "4-verifying"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -485,7 +485,7 @@
           }
         },
         "rejected_by": {},
-        "verify_attempts": 1,
+        "verify_attempts": 2,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null

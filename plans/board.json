@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:44:54",
+  "generated": "2026-10-29T20:57:13",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -888,13 +888,18 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-012",
           "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "verifying",
+          "column": "4-verifying",
           "owner": "coder-agent",
           "branch": "ticket/KB-012",
           "worktree": ".worktrees/KB-012",
@@ -909,11 +914,6 @@
           "updated": "2026-10-29"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -1978,8 +1978,8 @@
     "KB-012": {
       "id": "KB-012",
       "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "verifying",
+      "column": "4-verifying",
       "owner": "coder-agent",
       "branch": "ticket/KB-012",
       "worktree": ".worktrees/KB-012",

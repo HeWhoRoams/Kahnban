@@ -1,7 +1,7 @@
 ---
 id: KB-012
 title: "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error"
-status: in-progress
+status: verifying
 owner: coder-agent
 branch: ticket/KB-012
 worktree: .worktrees/KB-012
@@ -19,6 +19,12 @@ validation_class: headless-verified
 contract_hash: 2097b578f5077dac
 contract_sig: 18b488248360049bef828dbbfa5059b61965d9e09ad517c7c24c40c820fcfe64
 confirmed: ""
+verified_sha: 497e92b090cfe5f17f516e59e1ea63741128ad55
+reviewer: ""
+approved_sha: ""
+approval_sig: ""
+reviewer_sig: ""
+integrated_sha: ""
 ---
 
 ## Problem
@@ -46,10 +52,10 @@ json file gives a one-line refusal; the existing five tests keep passing.
 Full context: docs/remediation-plan-3.md (code-review findings, 2026-10-29). Keep the blast radius to the files named above and write the tests first.
 
 ## Acceptance criteria
-- [ ] `kahnban reviewers add NAME` writes `NAME` (never the key), case-insensitively de-duplicated, into a committed `plans/reviewers.json`, in addition to the existing per-machine key it already creates (test: `python -m pytest tests/test_reviewer_keys.py -q -k reviewers_add_writes_the_committed_registry`)
-- [ ] once `plans/reviewers.json` names a reviewer, that name being required carries over to a checkout with an empty local key directory: `core.approve`/`core.merge` for that reviewer refuse with `"reviewer 'NAME' has no key on this machine; run 'kahnban reviewers add NAME' here"` instead of silently treating no reviewers as registered (test: `python -m pytest tests/test_reviewer_keys.py -q -k committed_registry_without_a_local_key_refuses`)
-- [ ] a corrupt (unreadable/invalid-JSON) `plans/reviewers.json` makes `core.merge` refuse with a one-line `GateError` naming the path, not a traceback (test: `python -m pytest tests/test_reviewer_keys.py -q -k corrupt_reviewers_file_refuses_cleanly`)
-- [ ] the five existing reviewer-key tests keep passing unchanged (test: `python -m pytest tests/test_reviewer_keys.py -q`)
+- [x] `kahnban reviewers add NAME` writes `NAME` (never the key), case-insensitively de-duplicated, into a committed `plans/reviewers.json`, in addition to the existing per-machine key it already creates (test: `python -m pytest tests/test_reviewer_keys.py -q -k reviewers_add_writes_the_committed_registry`)
+- [x] once `plans/reviewers.json` names a reviewer, that name being required carries over to a checkout with an empty local key directory: `core.approve`/`core.merge` for that reviewer refuse with `"reviewer 'NAME' has no key on this machine; run 'kahnban reviewers add NAME' here"` instead of silently treating no reviewers as registered (test: `python -m pytest tests/test_reviewer_keys.py -q -k committed_registry_without_a_local_key_refuses`)
+- [x] a corrupt (unreadable/invalid-JSON) `plans/reviewers.json` makes `core.merge` refuse with a one-line `GateError` naming the path, not a traceback (test: `python -m pytest tests/test_reviewer_keys.py -q -k corrupt_reviewers_file_refuses_cleanly`)
+- [x] the five existing reviewer-key tests keep passing unchanged (test: `python -m pytest tests/test_reviewer_keys.py -q`)
 
 ## Blast radius
 - `src/kahnban/trust.py`
@@ -169,3 +175,124 @@ python tests/run_parallel.py -j 8
 
     [line 1 of 2 exited 1; rest skipped]
     full output: plans/tickets/.artifacts/KB-012-20261029-203512.log
+- 2026-10-29 20:57 - verify exit=0 in 470.7s (cwd=KB-012) -> 4-verifying
+    verifying ticket/KB-012 at 497e92b090cf; Running Tier 1 (Feature Tests): python -m pytest tests/test_reviewer_keys.py -q
+python tests/run_parallel.py -j 8; Running Tier 2 (Regression Tests): python tests/run_parallel.py -j 8
+    $ [python -m pytest tests/test_reviewer_keys.py -q
+python tests/run_parallel.py -j 8] && [4/4 criterion tests] && [python tests/run_parallel.py -j 8] && [red check vs 4091e15a9abb]
+    === TIER 1: FEATURE TESTS ===
+    $ python -m pytest tests/test_reviewer_keys.py -q
+    ........                                                                 [100%]
+
+    $ python tests/run_parallel.py -j 8
+    736 tests, 8 workers, 179s, all passed
+
+
+    === ACCEPTANCE CRITERIA ===
+    [PASS] $ python -m pytest tests/test_reviewer_keys.py -q -k reviewers_add_writes_the_committed_registry
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_reviewer_keys.py -q -k committed_registry_without_a_local_key_refuses
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_reviewer_keys.py -q -k corrupt_reviewers_file_refuses_cleanly
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_reviewer_keys.py -q
+    ........                                                                 [100%]
+
+
+    === TIER 2: REGRESSION TESTS ===
+    736 tests, 8 workers, 184s, all passed
+
+
+    === RED CHECK: FEATURE TESTS ON THE BASE SOURCE (must fail) ===
+    $ python -m pytest tests/test_reviewer_keys.py -q
+    .....FFF                                                                 [100%]
+    ================================== FAILURES ===================================
+    ______________ test_reviewers_add_writes_the_committed_registry _______________
+
+    repo = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-838/test_reviewers_add_writes_the_0/scratch')
+
+        def test_reviewers_add_writes_the_committed_registry(repo: Path) -> None:
+            factory_board(repo)
+            root = ["--project-root", str(repo)]
+            registry_path = repo / "plans" / "reviewers.json"
+
+            assert cli.main(["reviewers", "add", "Tim Niles", *root]) == 0
+    >       registry = json.loads(registry_path.read_text(encoding="utf-8"))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    tests\test_reviewer_keys.py:98: 
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+        return PathBase.read_text(self, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+        with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    self = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-838/test_reviewers_add_writes_the_0/scratch/plans/reviewers.json')
+    mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+        def open(self, mode='r', buffering=-1, encoding=None,
+                 errors=None, newline=None):
+            """
+            Open the file pointed to by this path and return a file object, as
+            the built-in open() function does.
+            """
+            if "b" not in mode:
+                encoding = io.text_encoding(encoding)
+    >       return io.open(self, mode, buffering, encoding, errors, newline)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\User\\AppData\\Local\\Temp\\pytest-of-User\\pytest-838\\test_reviewers_add_writes_the_0\\scratch\\plans\\reviewers.json'
+
+    C:\Users\User\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+    ---------------------------- Captured stdout call -----------------------------
+    [OK] registered reviewer 'Tim Niles'; 'kahnban approve' now needs a registered reviewer
+    _____________ test_committed_registry_without_a_local_key_refuses _____________
+
+    repo = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-838/test_committed_registry_withou0/scratch')
+
+        def test_committed_registry_without_a_local_key_refuses(repo: Path) -> None:
+            config = factory_board(repo)
+            verified(config)
+            cli.main(["reviewers", "add", "alice", "--project-root", str(repo)])
+            core.approve(config, "TST-001", "alice")
+
+            # a fresh checkout: the committed registry still names alice, but there is no local key for her
+            # (only her key is gone; the engine's own signing key, which signed the frozen contract, stays put)
+            trust._reviewer_file(config.project_root, "alice").unlink()
+            message = "reviewer 'alice' has no key on this machine; run 'kahnban reviewers add alice' here"
+
+    >       with pytest.raises(core.GateError, match=message):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    E       Failed: DID NOT RAISE <class 'kahnban.config.GateError'>
+
+    tests\test_reviewer_keys.py:120: Failed
+    ---------------------------- Captured stdout call -----------------------------
+    [OK] registered reviewer 'alice'; 'kahnban approve' now needs a registered reviewer
+    _________________ test_corrupt_reviewers_file_refuses_cleanly _________________
+
+    repo = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-838/test_corrupt_reviewers_file_re0/scratch')
+
+        def test_corrupt_reviewers_file_refuses_cleanly(repo: Path) -> None:
+            config = factory_board(repo)
+            verified(config)
+            core.approve(config, "TST-001", "alice")  # no registered reviewers yet, so this needs no signature
+
+            (repo / "plans" / "reviewers.json").write_text("{not json", encoding="utf-8")
+
+    >       with pytest.raises(core.GateError, match=r"plans/reviewers\.json is unreadable"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    E       Failed: DID NOT RAISE <class 'kahnban.config.GateError'>
+
+    tests\test_reviewer_keys.py:133: Failed
+    =========================== short test summary info ===========================
+    FAILED tests/test_reviewer_keys.py::test_reviewers_add_writes_the_committed_registry
+    FAILED tests/test_reviewer_keys.py::test_committed_registry_without_a_local_key_refuses
+    FAILED tests/test_reviewer_keys.py::test_corrupt_reviewers_file_refuses_cleanly
+
+    [line 1 of 2 exited 1; rest skipped]
+    full output: plans/tickets/.artifacts/KB-012-20261029-205713.log
