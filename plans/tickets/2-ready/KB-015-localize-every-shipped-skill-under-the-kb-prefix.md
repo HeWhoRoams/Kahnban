@@ -10,7 +10,7 @@ updated: 2026-10-29
 legacy_id: ""
 design_docs: []
 depends_on: []
-blocked_on: "human: 'claim_and_implement' made no progress after 3 attempts; last: refused: worktree path already exists: C:\\github\\kahnban\\.worktrees\\KB-015"
+blocked_on: ""
 junctions: []
 source_doc: .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md
 source_anchor: tickets/localize-every-shipped-skill-under-the-k
@@ -331,3 +331,4 @@ python -m pytest tests/test_skill_localization.py -q
 - 2026-10-29 23:20 - re-ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/localize-every-shipped-skill-under-the-k (source_hash d825b39e1294)
 - 2026-10-29 23:20 - ready gate passed -> 2-ready | contract 98bf897322080243
 - 2026-10-29 23:24 - escalated to a human: 'claim_and_implement' made no progress after 3 attempts; last: refused: worktree path already exists: C:\github\kahnban\.worktrees\KB-015
+- 2026-10-29 23:24 - unblocked: stale worktree from the pre-amend attempt was removed; the corrected contract is ready to claim

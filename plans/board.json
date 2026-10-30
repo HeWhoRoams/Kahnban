@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:24:23",
+  "generated": "2026-10-29T23:24:41",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -496,7 +496,7 @@
           "worktree": "",
           "description": "",
           "depends_on": [],
-          "blocked_on": "human: 'claim_and_implement' made no progress after 3 attempts; last: refused: worktree path already exists: C:\\github\\kahnban\\.worktrees\\KB-015",
+          "blocked_on": "",
           "blast_radius": [
             "src/kahnban/templates/skills/change-impact/skill.md",
             "src/kahnban/templates/skills/code-review/skill.md",
@@ -1590,7 +1590,7 @@
       "worktree": "",
       "description": "",
       "depends_on": [],
-      "blocked_on": "human: 'claim_and_implement' made no progress after 3 attempts; last: refused: worktree path already exists: C:\\github\\kahnban\\.worktrees\\KB-015",
+      "blocked_on": "",
       "blast_radius": [
         "src/kahnban/templates/skills/change-impact/skill.md",
         "src/kahnban/templates/skills/code-review/skill.md",
