@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:26:57",
+  "generated": "2026-10-29T23:27:59",
   "generator": "kahnban",
   "columns": [
     {
@@ -30,7 +30,7 @@
     },
     {
       "name": "1-refining",
-      "count": 12,
+      "count": 11,
       "tickets": [
         {
           "id": "KB-016",
@@ -133,16 +133,6 @@
           "column": "1-refining"
         },
         {
-          "id": "KB-032",
-          "title": "Ingest warns on traceability and size problems",
-          "status": "refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "1-refining"
-        },
-        {
           "id": "KB-033",
           "title": "Reject and escalate capture learnings",
           "status": "refining",
@@ -156,7 +146,7 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-015",
@@ -171,6 +161,16 @@
         {
           "id": "KB-027",
           "title": "Dispatch waits on unfinished dependencies",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        },
+        {
+          "id": "KB-032",
+          "title": "Ingest warns on traceability and size problems",
           "status": "ready",
           "owner": "unassigned",
           "branch": "",
