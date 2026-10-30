@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:18:41",
+  "generated": "2026-10-30T00:25:22",
   "generator": "kahnban",
   "columns": [
     {
@@ -177,23 +177,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-014",
-          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-014",
-          "worktree": ".worktrees/KB-014",
-          "updated": "2026-10-30",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 17,
+      "count": 18,
       "tickets": [
         {
           "id": "KB-001",
@@ -306,6 +295,16 @@
           "column": "5-done"
         },
         {
+          "id": "KB-014",
+          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-014",
+          "worktree": ".worktrees/KB-014",
+          "updated": "2026-10-30",
+          "column": "5-done"
+        },
+        {
           "id": "KB-023",
           "title": "Add the MIT licence with third-party notices",
           "status": "done",
@@ -380,9 +379,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 17,
-    "first_pass_yield": 0.88,
-    "median_cycle_hours": 3.2,
+    "done": 18,
+    "first_pass_yield": 0.83,
+    "median_cycle_hours": 4.050000000000001,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -509,7 +508,7 @@
         "verify_attempts": 2,
         "rejections": 0,
         "escalations": 1,
-        "cycle_hours": null
+        "cycle_hours": 4.9
       },
       "KB-015": {
         "by_owner": {

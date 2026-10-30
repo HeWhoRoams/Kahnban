@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:18:41",
+  "generated": "2026-10-30T00:25:22",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -771,30 +771,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-014",
-          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-014",
-          "worktree": ".worktrees/KB-014",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/core.py",
-            "tests/test_reviewer_keys.py"
-          ],
-          "updated": "2026-10-30"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 17,
+      "count": 18,
       "tickets": [
         {
           "id": "KB-001",
@@ -1001,6 +983,23 @@
             "tests/test_sim_compare.py"
           ],
           "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-014",
+          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-014",
+          "worktree": ".worktrees/KB-014",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/core.py",
+            "tests/test_reviewer_keys.py"
+          ],
+          "updated": "2026-10-30"
         },
         {
           "id": "KB-023",
@@ -1856,23 +1855,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-014": {
-      "id": "KB-014",
-      "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-014",
-      "worktree": ".worktrees/KB-014",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/core.py",
-        "tests/test_reviewer_keys.py"
-      ],
-      "updated": "2026-10-30"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -2078,6 +2060,23 @@
         "tests/test_sim_compare.py"
       ],
       "updated": "2026-10-29"
+    },
+    "KB-014": {
+      "id": "KB-014",
+      "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-014",
+      "worktree": ".worktrees/KB-014",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/core.py",
+        "tests/test_reviewer_keys.py"
+      ],
+      "updated": "2026-10-30"
     },
     "KB-023": {
       "id": "KB-023",

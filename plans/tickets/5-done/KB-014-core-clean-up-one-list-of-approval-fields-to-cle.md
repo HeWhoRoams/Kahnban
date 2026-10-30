@@ -1,7 +1,7 @@
 ---
 id: KB-014
 title: "Core clean-up: one list of approval fields to clear, rename _signature_problem"
-status: verifying
+status: done
 owner: coder-agent
 branch: ticket/KB-014
 worktree: .worktrees/KB-014
@@ -167,3 +167,4 @@ python tests/run_parallel.py -j 8] && [3/3 criterion tests] && [python tests/run
     754 tests, 8 workers, 181s, all passed
 
     full output: plans/tickets/.artifacts/KB-014-20261030-001841.log
+- 2026-10-30 00:25 - done gate passed -> 5-done | merge-commit: 71b0d8c7de89fca349a97bbabd402089e33c2783
