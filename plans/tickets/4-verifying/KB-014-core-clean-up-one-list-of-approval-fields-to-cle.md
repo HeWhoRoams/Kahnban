@@ -1,12 +1,12 @@
 ---
 id: KB-014
 title: "Core clean-up: one list of approval fields to clear, rename _signature_problem"
-status: in-progress
+status: verifying
 owner: coder-agent
 branch: ticket/KB-014
 worktree: .worktrees/KB-014
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-10-30
 legacy_id: ""
 design_docs: [docs/remediation-plan-3.md]
 depends_on: []
@@ -19,6 +19,12 @@ validation_class: headless-verified
 contract_hash: 1e0d5fe012da54e4
 contract_sig: b229f9ee9849180e08393686e6e639b10c309589fbff3ac86c82687b441c5c74
 confirmed: ""
+verified_sha: 9bb3beac645019bdfe28da57265c066d094b05ed
+reviewer: ""
+approved_sha: ""
+approval_sig: ""
+reviewer_sig: ""
+integrated_sha: ""
 ---
 
 ## Problem
@@ -35,9 +41,9 @@ Files: `src/kahnban/core.py`, `tests/test_reviewer_keys.py` (name use only).
 Full context: docs/remediation-plan-3.md (code-review findings, 2026-10-29). Keep the blast radius to the files named above and write the tests first.
 
 ## Acceptance criteria
-- [ ] `verify` and `reject` clear the same approval fields (`reviewer`, `approved_sha`, `approval_sig`, `reviewer_sig`, `integrated_sha`, `confirmed`) via one module-level `_APPROVAL_FIELDS` mapping in `core.py`, not two duplicated dict literals (test: `python -m pytest tests/test_reviewer_keys.py -q -k approval_fields_mapping_is_shared`)
-- [ ] `core._signature_problem` is renamed to `core._approval_problem` (no remaining reference to the old name anywhere in `src/`) and its docstring says it checks both the engine HMAC and the reviewer seal (test: `python -m pytest tests/test_reviewer_keys.py -q -k approval_problem_checks_hmac_and_seal`)
-- [ ] no behaviour change: the existing reviewer-key suite and the full regression suite still pass (test: `python tests/run_parallel.py -j 8`)
+- [x] `verify` and `reject` clear the same approval fields (`reviewer`, `approved_sha`, `approval_sig`, `reviewer_sig`, `integrated_sha`, `confirmed`) via one module-level `_APPROVAL_FIELDS` mapping in `core.py`, not two duplicated dict literals (test: `python -m pytest tests/test_reviewer_keys.py -q -k approval_fields_mapping_is_shared`)
+- [x] `core._signature_problem` is renamed to `core._approval_problem` (no remaining reference to the old name anywhere in `src/`) and its docstring says it checks both the engine HMAC and the reviewer seal (test: `python -m pytest tests/test_reviewer_keys.py -q -k approval_problem_checks_hmac_and_seal`)
+- [x] no behaviour change: the existing reviewer-key suite and the full regression suite still pass (test: `python tests/run_parallel.py -j 8`)
 
 ## Blast radius
 - `src/kahnban/core.py`
@@ -90,3 +96,58 @@ python tests/run_parallel.py -j 8
     full output: plans/tickets/.artifacts/KB-014-20261029-212229.log
 - 2026-10-29 22:16 - escalated to a human: 'resume_worktree' made no progress after 3 attempts; last: coder worker command exited 1; fix the worker setup and re-run (full output in C:\github\kahnban\plans\tickets\.artifacts\run-20261029-212733.log): You've hit your session limit · resets 9:40pm (America/New_York)
 - 2026-10-29 23:59 - unblocked: escalated only by the 21:27 usage-limit worker failures, which have cleared; retry the coder
+- 2026-10-30 00:07 - verify exit=0 in 631.3s (cwd=KB-014) -> 4-verifying
+    verifying ticket/KB-014 at 9bb3beac6450; Running Tier 1 (Feature Tests): python -m pytest tests/test_reviewer_keys.py -q
+python tests/run_parallel.py -j 8; Running Tier 2 (Regression Tests): python tests/run_parallel.py -j 8
+    $ [python -m pytest tests/test_reviewer_keys.py -q
+python tests/run_parallel.py -j 8] && [3/3 criterion tests] && [python tests/run_parallel.py -j 8] && [red check vs 742c0c7591ce]
+    === TIER 1: FEATURE TESTS ===
+    $ python -m pytest tests/test_reviewer_keys.py -q
+    ...........                                                              [100%]
+
+    $ python tests/run_parallel.py -j 8
+    739 tests, 8 workers, 187s, all passed
+
+
+    === ACCEPTANCE CRITERIA ===
+    [PASS] $ python -m pytest tests/test_reviewer_keys.py -q -k approval_fields_mapping_is_shared
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_reviewer_keys.py -q -k approval_problem_checks_hmac_and_seal
+    .                                                                        [100%]
+
+    [PASS] $ python tests/run_parallel.py -j 8
+    739 tests, 8 workers, 175s, all passed
+
+
+    === TIER 2: REGRESSION TESTS ===
+    739 tests, 8 workers, 182s, all passed
+
+
+    === RED CHECK: FEATURE TESTS ON THE BASE SOURCE (must fail) ===
+    $ python -m pytest tests/test_reviewer_keys.py -q
+    ........F.F                                                              [100%]
+    ================================== FAILURES ===================================
+    ___________________ test_approval_fields_mapping_is_shared ____________________
+
+        def test_approval_fields_mapping_is_shared() -> None:
+            # One module-level mapping, not two duplicated dict literals in verify() and reject().
+    >       assert core._APPROVAL_FIELDS == {name: "" for name in APPROVAL_FIELD_NAMES}
+                   ^^^^^^^^^^^^^^^^^^^^^
+    E       AttributeError: module 'kahnban.core' has no attribute '_APPROVAL_FIELDS'
+
+    tests\test_reviewer_keys.py:143: AttributeError
+    _________________ test_approval_problem_checks_hmac_and_seal __________________
+
+        def test_approval_problem_checks_hmac_and_seal() -> None:
+    >       assert not hasattr(core, "_signature_problem")
+    E       AssertionError: assert not True
+    E        +  where True = hasattr(core, '_signature_problem')
+
+    tests\test_reviewer_keys.py:172: AssertionError
+    =========================== short test summary info ===========================
+    FAILED tests/test_reviewer_keys.py::test_approval_fields_mapping_is_shared - ...
+    FAILED tests/test_reviewer_keys.py::test_approval_problem_checks_hmac_and_seal
+
+    [line 1 of 2 exited 1; rest skipped]
+    full output: plans/tickets/.artifacts/KB-014-20261030-000729.log

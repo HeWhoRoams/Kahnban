@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:59:40",
+  "generated": "2026-10-30T00:07:29",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -766,13 +766,18 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-014",
           "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "verifying",
+          "column": "4-verifying",
           "owner": "coder-agent",
           "branch": "ticket/KB-014",
           "worktree": ".worktrees/KB-014",
@@ -783,14 +788,9 @@
             "src/kahnban/core.py",
             "tests/test_reviewer_keys.py"
           ],
-          "updated": "2026-10-29"
+          "updated": "2026-10-30"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -1859,8 +1859,8 @@
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "verifying",
+      "column": "4-verifying",
       "owner": "coder-agent",
       "branch": "ticket/KB-014",
       "worktree": ".worktrees/KB-014",
@@ -1871,7 +1871,7 @@
         "src/kahnban/core.py",
         "tests/test_reviewer_keys.py"
       ],
-      "updated": "2026-10-29"
+      "updated": "2026-10-30"
     },
     "KB-001": {
       "id": "KB-001",
