@@ -26,9 +26,9 @@ built, what has been proven, and the limits that are known.
 
 ## Proven
 
-- 343 tests on the latest local run (3.13 and 3.11), including one regression test per
+- A regression suite (3.13 and 3.11), including one regression test per
   audit probe (A–K) in `tests/test_factory_gates.py`, `tests/test_factory_run.py` and
-  `tests/test_spec_gates.py`.
+  `tests/test_spec_gates.py`; see `python tests/run_parallel.py` for the current count.
 - Live smoke test (2026-10-22): headless `claude -p --model haiku` workers took a ticket
   from `2-ready` to `5-done` unattended; the guard hook blocked a reviewer's file write
   inside a real Claude Code session.
@@ -54,7 +54,7 @@ built, what has been proven, and the limits that are known.
   caught by it.
 - Reviewer identity is the name passed to `--reviewer`.
 - Leases are local files: they arbitrate workers on one machine.
-- `kahnban run` works one ticket at a time, and its retry counts reset per run.
+- `kahnban run`'s retry counts reset per run.
 - The red check proves the tests depend on the change, not that they fail for the right
   reason; a test-only ticket cannot pass strict proof.
 - Live agents have only run on toy tickets (one-line changes). How they handle real
