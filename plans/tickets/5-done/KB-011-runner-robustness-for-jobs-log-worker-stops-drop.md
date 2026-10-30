@@ -1,7 +1,7 @@
 ---
 id: KB-011
 title: "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps"
-status: verifying
+status: done
 owner: coder-agent
 branch: ticket/KB-011
 worktree: .worktrees/KB-011
@@ -308,3 +308,4 @@ python tests/run_parallel.py -j 8] && [6/6 criterion tests] && [python tests/run
     730 tests, 8 workers, 179s, all passed
 
     full output: plans/tickets/.artifacts/KB-011-20261029-201044.log
+- 2026-10-29 20:17 - done gate passed -> 5-done | merge-commit: b750cfcd45adeab038ba6fec00e079652305782a
