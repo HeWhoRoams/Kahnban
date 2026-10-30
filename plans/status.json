@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:42:04",
+  "generated": "2026-10-30T00:45:17",
   "generator": "kahnban",
   "columns": [
     {
@@ -167,23 +167,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-027",
-          "title": "Dispatch waits on unfinished dependencies",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-027",
-          "worktree": ".worktrees/KB-027",
-          "updated": "2026-10-30",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 18,
+      "count": 19,
       "tickets": [
         {
           "id": "KB-001",
@@ -346,6 +335,16 @@
           "column": "5-done"
         },
         {
+          "id": "KB-027",
+          "title": "Dispatch waits on unfinished dependencies",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-027",
+          "worktree": ".worktrees/KB-027",
+          "updated": "2026-10-30",
+          "column": "5-done"
+        },
+        {
           "id": "KB-031",
           "title": "Ingest report shows spec with covers",
           "status": "done",
@@ -380,9 +379,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 18,
-    "first_pass_yield": 0.83,
-    "median_cycle_hours": 4.050000000000001,
+    "done": 19,
+    "first_pass_yield": 0.84,
+    "median_cycle_hours": 4.0,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -618,7 +617,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 4.0
       },
       "KB-028": {
         "by_owner": {},

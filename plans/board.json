@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:42:04",
+  "generated": "2026-10-30T00:45:17",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -753,31 +753,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-027",
-          "title": "Dispatch waits on unfinished dependencies",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-027",
-          "worktree": ".worktrees/KB-027",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/dispatcher.py",
-            "src/kahnban/core.py",
-            "tests/test_dispatch_dependencies.py"
-          ],
-          "updated": "2026-10-30"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 18,
+      "count": 19,
       "tickets": [
         {
           "id": "KB-001",
@@ -1073,6 +1054,24 @@
             "tests/test_status_docs.py"
           ],
           "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-027",
+          "title": "Dispatch waits on unfinished dependencies",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-027",
+          "worktree": ".worktrees/KB-027",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/dispatcher.py",
+            "src/kahnban/core.py",
+            "tests/test_dispatch_dependencies.py"
+          ],
+          "updated": "2026-10-30"
         },
         {
           "id": "KB-031",
@@ -1838,24 +1837,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-027": {
-      "id": "KB-027",
-      "title": "Dispatch waits on unfinished dependencies",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-027",
-      "worktree": ".worktrees/KB-027",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/dispatcher.py",
-        "src/kahnban/core.py",
-        "tests/test_dispatch_dependencies.py"
-      ],
-      "updated": "2026-10-30"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -2150,6 +2131,24 @@
         "tests/test_status_docs.py"
       ],
       "updated": "2026-10-29"
+    },
+    "KB-027": {
+      "id": "KB-027",
+      "title": "Dispatch waits on unfinished dependencies",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-027",
+      "worktree": ".worktrees/KB-027",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/dispatcher.py",
+        "src/kahnban/core.py",
+        "tests/test_dispatch_dependencies.py"
+      ],
+      "updated": "2026-10-30"
     },
     "KB-031": {
       "id": "KB-031",
