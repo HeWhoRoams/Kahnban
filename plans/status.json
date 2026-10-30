@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T21:13:10",
+  "generated": "2026-10-29T22:16:33",
   "generator": "kahnban",
   "columns": [
     {
@@ -375,7 +375,7 @@
         "rejections": 0
       },
       "coder-agent": {
-        "failed_verifies": 1,
+        "failed_verifies": 2,
         "rejections": 0
       }
     },
@@ -499,11 +499,16 @@
         "cycle_hours": 0.9
       },
       "KB-014": {
-        "by_owner": {},
+        "by_owner": {
+          "coder-agent": {
+            "failed_verifies": 1,
+            "rejections": 0
+          }
+        },
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
-        "escalations": 0,
+        "escalations": 1,
         "cycle_hours": null
       },
       "KB-015": {

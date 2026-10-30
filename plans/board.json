@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T21:13:10",
+  "generated": "2026-10-29T22:16:33",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -609,7 +609,7 @@
           "worktree": ".worktrees/KB-014",
           "description": "",
           "depends_on": [],
-          "blocked_on": "",
+          "blocked_on": "human: 'resume_worktree' made no progress after 3 attempts; last: coder worker command exited 1; fix the worker setup and re-run (full output in C:\\github\\kahnban\\plans\\tickets\\.artifacts\\run-20261029-212733.log): You've hit your session limit · resets 9:40pm (America/New_York)",
           "blast_radius": [
             "src/kahnban/core.py",
             "tests/test_reviewer_keys.py"
@@ -1694,7 +1694,7 @@
       "worktree": ".worktrees/KB-014",
       "description": "",
       "depends_on": [],
-      "blocked_on": "",
+      "blocked_on": "human: 'resume_worktree' made no progress after 3 attempts; last: coder worker command exited 1; fix the worker setup and re-run (full output in C:\\github\\kahnban\\plans\\tickets\\.artifacts\\run-20261029-212733.log): You've hit your session limit · resets 9:40pm (America/New_York)",
       "blast_radius": [
         "src/kahnban/core.py",
         "tests/test_reviewer_keys.py"
