@@ -1,10 +1,10 @@
 ---
 id: KB-015
 title: Localize every shipped skill under the kb- prefix
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-015
+worktree: .worktrees/KB-015
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -303,3 +303,4 @@ python -m pytest tests/test_skill_localization.py -q
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/localize-every-shipped-skill-under-the-k
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
 - 2026-10-29 20:44 - ready gate passed -> 2-ready | contract f7ba8882bc61f282
+- 2026-10-29 21:13 - claimed by coder-agent -> 3-in-progress

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T21:13:06",
+  "generated": "2026-10-29T21:13:10",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -503,16 +503,127 @@
     },
     {
       "name": "2-ready",
-      "count": 6,
+      "count": 5,
       "tickets": [
         {
-          "id": "KB-015",
-          "title": "Localize every shipped skill under the kb- prefix",
+          "id": "KB-023",
+          "title": "Add the MIT licence with third-party notices",
           "status": "ready",
           "column": "2-ready",
           "owner": "unassigned",
           "branch": "",
           "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "license",
+            "third_party_notices.md",
+            "tests/test_license.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/cli.py",
+            "tests/test_lint_help.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-026",
+          "title": "Status docs stop making stale claims",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "implementation_status.md",
+            "next_steps.md",
+            "tests/test_status_docs.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-027",
+          "title": "Dispatch waits on unfinished dependencies",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/dispatcher.py",
+            "src/kahnban/core.py",
+            "tests/test_dispatch_dependencies.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-031",
+          "title": "Ingest report shows spec with covers",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/ingest.py",
+            "tests/test_ingest_traceability.py"
+          ],
+          "updated": "2026-10-29"
+        }
+      ]
+    },
+    {
+      "name": "3-in-progress",
+      "count": 2,
+      "tickets": [
+        {
+          "id": "KB-014",
+          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-014",
+          "worktree": ".worktrees/KB-014",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/core.py",
+            "tests/test_reviewer_keys.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-015",
+          "title": "Localize every shipped skill under the kb- prefix",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-015",
+          "worktree": ".worktrees/KB-015",
           "description": "",
           "depends_on": [],
           "blocked_on": "",
@@ -776,117 +887,6 @@
             "tests/test_contracts.py",
             ".agents/skills.lock.json",
             "tests/test_skill_localization.py"
-          ],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-023",
-          "title": "Add the MIT licence with third-party notices",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "license",
-            "third_party_notices.md",
-            "tests/test_license.py"
-          ],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/cli.py",
-            "tests/test_lint_help.py"
-          ],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-026",
-          "title": "Status docs stop making stale claims",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "implementation_status.md",
-            "next_steps.md",
-            "tests/test_status_docs.py"
-          ],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-027",
-          "title": "Dispatch waits on unfinished dependencies",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/dispatcher.py",
-            "src/kahnban/core.py",
-            "tests/test_dispatch_dependencies.py"
-          ],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-031",
-          "title": "Ingest report shows spec with covers",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/ingest.py",
-            "tests/test_ingest_traceability.py"
-          ],
-          "updated": "2026-10-29"
-        }
-      ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-014",
-          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-          "status": "in-progress",
-          "column": "3-in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-014",
-          "worktree": ".worktrees/KB-014",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/core.py",
-            "tests/test_reviewer_keys.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1596,14 +1596,119 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-015": {
-      "id": "KB-015",
-      "title": "Localize every shipped skill under the kb- prefix",
+    "KB-023": {
+      "id": "KB-023",
+      "title": "Add the MIT licence with third-party notices",
       "status": "ready",
       "column": "2-ready",
       "owner": "unassigned",
       "branch": "",
       "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "license",
+        "third_party_notices.md",
+        "tests/test_license.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-025": {
+      "id": "KB-025",
+      "title": "lint help names the real rule range",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/cli.py",
+        "tests/test_lint_help.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-026": {
+      "id": "KB-026",
+      "title": "Status docs stop making stale claims",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "implementation_status.md",
+        "next_steps.md",
+        "tests/test_status_docs.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-027": {
+      "id": "KB-027",
+      "title": "Dispatch waits on unfinished dependencies",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/dispatcher.py",
+        "src/kahnban/core.py",
+        "tests/test_dispatch_dependencies.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-031": {
+      "id": "KB-031",
+      "title": "Ingest report shows spec with covers",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/ingest.py",
+        "tests/test_ingest_traceability.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-014": {
+      "id": "KB-014",
+      "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-014",
+      "worktree": ".worktrees/KB-014",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/core.py",
+        "tests/test_reviewer_keys.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-015": {
+      "id": "KB-015",
+      "title": "Localize every shipped skill under the kb- prefix",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-015",
+      "worktree": ".worktrees/KB-015",
       "description": "",
       "depends_on": [],
       "blocked_on": "",
@@ -1867,111 +1972,6 @@
         "tests/test_contracts.py",
         ".agents/skills.lock.json",
         "tests/test_skill_localization.py"
-      ],
-      "updated": "2026-10-29"
-    },
-    "KB-023": {
-      "id": "KB-023",
-      "title": "Add the MIT licence with third-party notices",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "license",
-        "third_party_notices.md",
-        "tests/test_license.py"
-      ],
-      "updated": "2026-10-29"
-    },
-    "KB-025": {
-      "id": "KB-025",
-      "title": "lint help names the real rule range",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/cli.py",
-        "tests/test_lint_help.py"
-      ],
-      "updated": "2026-10-29"
-    },
-    "KB-026": {
-      "id": "KB-026",
-      "title": "Status docs stop making stale claims",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "implementation_status.md",
-        "next_steps.md",
-        "tests/test_status_docs.py"
-      ],
-      "updated": "2026-10-29"
-    },
-    "KB-027": {
-      "id": "KB-027",
-      "title": "Dispatch waits on unfinished dependencies",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/dispatcher.py",
-        "src/kahnban/core.py",
-        "tests/test_dispatch_dependencies.py"
-      ],
-      "updated": "2026-10-29"
-    },
-    "KB-031": {
-      "id": "KB-031",
-      "title": "Ingest report shows spec with covers",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/ingest.py",
-        "tests/test_ingest_traceability.py"
-      ],
-      "updated": "2026-10-29"
-    },
-    "KB-014": {
-      "id": "KB-014",
-      "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-      "status": "in-progress",
-      "column": "3-in-progress",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-014",
-      "worktree": ".worktrees/KB-014",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/core.py",
-        "tests/test_reviewer_keys.py"
       ],
       "updated": "2026-10-29"
     },
