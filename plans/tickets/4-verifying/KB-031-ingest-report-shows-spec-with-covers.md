@@ -22,8 +22,8 @@ contract_hash: 1aa72e92e2f5f414
 contract_sig: a347955db20c35a75e72d0bcfac58641eefda46a634eb118fc6ea66e8fbeedc5
 confirmed: ""
 verified_sha: e1d0eeeaa119fe303e07f2cd26776ca8dcacf094
-reviewer: ""
-approved_sha: ""
+reviewer: qa-reviewer
+approved_sha: e1d0eeeaa119fe303e07f2cd26776ca8dcacf094
 approval_sig: ""
 reviewer_sig: ""
 integrated_sha: ""
@@ -110,3 +110,4 @@ python -m pytest tests/test_ingest_traceability.py -q
     FAILED tests/test_ingest_traceability.py::test_json_report_has_spec_and_covers
 
     full output: plans/tickets/.artifacts/KB-031-20261029-231643.log
+- 2026-10-29 23:20 - approved by qa-reviewer at e1d0eeeaa119
