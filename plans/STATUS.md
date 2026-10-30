@@ -75,4 +75,4 @@ _empty_
 | KB-013 | Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do | coder-agent | - | 2026-10-29 |
 | KB-023 | Add the MIT licence with third-party notices | coder-agent | - | 2026-10-29 |
 | KB-025 | lint help names the real rule range | coder-agent | - | 2026-10-29 |
-| KB-026 | Status docs stop making stale claims | coder-agent | ticket/KB-026 | 2026-10-29 |
+| KB-026 | Status docs stop making stale claims | coder-agent | - | 2026-10-29 |

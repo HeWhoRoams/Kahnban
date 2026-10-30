@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:02:38",
+  "generated": "2026-10-29T23:02:39",
   "generator": "kahnban",
   "columns": [
     {
@@ -360,8 +360,8 @@
           "title": "Status docs stop making stale claims",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-026",
-          "worktree": ".worktrees/KB-026",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         }

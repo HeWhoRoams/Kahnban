@@ -3,8 +3,8 @@ id: KB-026
 title: Status docs stop making stale claims
 status: done
 owner: coder-agent
-branch: ticket/KB-026
-worktree: .worktrees/KB-026
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -117,3 +117,4 @@ python -m pytest tests/test_status_docs.py -q
 
     full output: plans/tickets/.artifacts/KB-026-20261029-225933.log
 - 2026-10-29 23:02 - done gate passed -> 5-done | merge-commit: da3c237525c68fb2ba3b32f3efd14581fe68a188
+- 2026-10-29 23:02 - cleanup: removed worktree: KB-026; deleted branch: ticket/KB-026
