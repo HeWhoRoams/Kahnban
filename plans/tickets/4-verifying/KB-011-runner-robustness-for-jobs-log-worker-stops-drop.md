@@ -22,7 +22,7 @@ confirmed: ""
 verified_sha: 60a3483b2f68b665507801fe6d4753a96ec29b12
 reviewer: qa-reviewer
 approved_sha: 60a3483b2f68b665507801fe6d4753a96ec29b12
-approval_sig: ""
+approval_sig: f2c802085c5eb3eb631d805ffff0df68c0a354770cecf4b8c17a58be0a6c7fe9
 reviewer_sig: ""
 integrated_sha: ""
 ---
@@ -293,3 +293,4 @@ python tests/run_parallel.py -j 8] && [6/6 criterion tests] && [python tests/run
     [line 1 of 2 exited 1; rest skipped]
     full output: plans/tickets/.artifacts/KB-011-20261029-195237.log
 - 2026-10-29 20:10 - approved by qa-reviewer at 60a3483b2f68
+- 2026-10-29 20:10 - approval by qa-reviewer countersigned by the runner at 60a3483b2f68
