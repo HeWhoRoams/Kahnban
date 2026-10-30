@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:24:41",
+  "generated": "2026-10-29T23:26:57",
   "generator": "kahnban",
   "columns": [
     {
@@ -521,7 +521,7 @@
         "rejected_by": {},
         "verify_attempts": 1,
         "rejections": 0,
-        "escalations": 1,
+        "escalations": 2,
         "cycle_hours": null
       },
       "KB-016": {
