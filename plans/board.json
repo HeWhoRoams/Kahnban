@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T21:06:19",
+  "generated": "2026-10-29T21:13:03",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -893,31 +893,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-012",
-          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-012",
-          "worktree": ".worktrees/KB-012",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/trust.py",
-            "src/kahnban/cli.py",
-            "tests/test_reviewer_keys.py"
-          ],
-          "updated": "2026-10-29"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 10,
+      "count": 11,
       "tickets": [
         {
           "id": "KB-001",
@@ -1086,6 +1067,24 @@
             "src/kahnban/runner.py",
             "src/kahnban/cli.py",
             "tests/test_runner_parallel.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-012",
+          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-012",
+          "worktree": ".worktrees/KB-012",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/trust.py",
+            "src/kahnban/cli.py",
+            "tests/test_reviewer_keys.py"
           ],
           "updated": "2026-10-29"
         },
@@ -1975,24 +1974,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-012": {
-      "id": "KB-012",
-      "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-012",
-      "worktree": ".worktrees/KB-012",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/trust.py",
-        "src/kahnban/cli.py",
-        "tests/test_reviewer_keys.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -2160,6 +2141,24 @@
         "src/kahnban/runner.py",
         "src/kahnban/cli.py",
         "tests/test_runner_parallel.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-012": {
+      "id": "KB-012",
+      "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-012",
+      "worktree": ".worktrees/KB-012",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/trust.py",
+        "src/kahnban/cli.py",
+        "tests/test_reviewer_keys.py"
       ],
       "updated": "2026-10-29"
     },
