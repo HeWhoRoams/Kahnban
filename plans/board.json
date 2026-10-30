@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:02:39",
+  "generated": "2026-10-29T23:02:41",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -503,7 +503,7 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 1,
       "tickets": [
         {
           "id": "KB-027",
@@ -522,29 +522,12 @@
             "tests/test_dispatch_dependencies.py"
           ],
           "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-031",
-          "title": "Ingest report shows spec with covers",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/ingest.py",
-            "tests/test_ingest_traceability.py"
-          ],
-          "updated": "2026-10-29"
         }
       ]
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-014",
@@ -834,6 +817,23 @@
             "tests/test_contracts.py",
             ".agents/skills.lock.json",
             "tests/test_skill_localization.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-031",
+          "title": "Ingest report shows spec with covers",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-031",
+          "worktree": ".worktrees/KB-031",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/ingest.py",
+            "tests/test_ingest_traceability.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1614,23 +1614,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-031": {
-      "id": "KB-031",
-      "title": "Ingest report shows spec with covers",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/ingest.py",
-        "tests/test_ingest_traceability.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -1919,6 +1902,23 @@
         "tests/test_contracts.py",
         ".agents/skills.lock.json",
         "tests/test_skill_localization.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-031": {
+      "id": "KB-031",
+      "title": "Ingest report shows spec with covers",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-031",
+      "worktree": ".worktrees/KB-031",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/ingest.py",
+        "tests/test_ingest_traceability.py"
       ],
       "updated": "2026-10-29"
     },

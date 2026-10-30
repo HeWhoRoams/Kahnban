@@ -10,8 +10,8 @@ Generated: 2026-10-29 23:02
 | :--- | ---: |
 | 0-backlog | 2 |
 | 1-refining | 13 |
-| 2-ready | 2 |
-| 3-in-progress | 2 |
+| 2-ready | 1 |
+| 3-in-progress | 3 |
 | 4-verifying | 0 |
 | 5-done | 14 |
 
@@ -40,19 +40,19 @@ Generated: 2026-10-29 23:02
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 2-ready (2)
+## 2-ready (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-027 | Dispatch waits on unfinished dependencies | unassigned | - | 2026-10-29 |
-| KB-031 | Ingest report shows spec with covers | unassigned | - | 2026-10-29 |
 
-## 3-in-progress (2)
+## 3-in-progress (3)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-014 | Core clean-up: one list of approval fields to clear, rename _signature_problem | coder-agent | ticket/KB-014 | 2026-10-29 |
 | KB-015 | Localize every shipped skill under the kb- prefix | coder-agent | ticket/KB-015 | 2026-10-29 |
+| KB-031 | Ingest report shows spec with covers | coder-agent | ticket/KB-031 | 2026-10-29 |
 
 ## 4-verifying (0)
 
