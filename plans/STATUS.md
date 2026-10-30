@@ -8,20 +8,19 @@ Generated: 2026-10-29 20:44
 
 | Column | Tickets |
 | :--- | ---: |
-| 0-backlog | 14 |
-| 1-refining | 6 |
+| 0-backlog | 13 |
+| 1-refining | 7 |
 | 2-ready | 2 |
 | 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 10 |
 
-## 0-backlog (14)
+## 0-backlog (13)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-002 | Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show | unassigned | - | 2026-10-29 |
 | KB-009 | The citadel portability smoke test (plan.md phase 4) | unassigned | - | 2026-10-29 |
-| KB-022 | Upstream installs never overwrite kb- skills | unassigned | - | 2026-10-29 |
 | KB-023 | Add the MIT licence with third-party notices | unassigned | - | 2026-10-29 |
 | KB-024 | Declare the licence in pyproject.toml | unassigned | - | 2026-10-29 |
 | KB-025 | lint help names the real rule range | unassigned | - | 2026-10-29 |
@@ -34,7 +33,7 @@ Generated: 2026-10-29 20:44
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 1-refining (6)
+## 1-refining (7)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
@@ -44,6 +43,7 @@ Generated: 2026-10-29 20:44
 | KB-019 | Ship the kahnban-comment-sicko helper agent | unassigned | - | 2026-10-29 |
 | KB-020 | skills check catches bold and subagent references | unassigned | - | 2026-10-29 |
 | KB-021 | skills install prunes skills it no longer ships | unassigned | - | 2026-10-29 |
+| KB-022 | Upstream installs never overwrite kb- skills | unassigned | - | 2026-10-29 |
 
 ## 2-ready (2)
 
