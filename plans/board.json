@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T21:05:20",
+  "generated": "2026-10-29T21:05:21",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -312,7 +312,7 @@
           "depends_on": [
             "KB-018"
           ],
-          "blocked_on": "",
+          "blocked_on": "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.",
           "blast_radius": [
             "src/kahnban/harnesses.py",
             "src/kahnban/templates/agents/comment-sicko.md",
@@ -1409,7 +1409,7 @@
       "depends_on": [
         "KB-018"
       ],
-      "blocked_on": "",
+      "blocked_on": "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.",
       "blast_radius": [
         "src/kahnban/harnesses.py",
         "src/kahnban/templates/agents/comment-sicko.md",
