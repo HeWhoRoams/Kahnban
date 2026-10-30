@@ -23,7 +23,6 @@ call, in the same shell the run will use.
 - Tamper resistance for the frozen records beyond the guard: run workers in a
   container, or keep contract/approval records outside the agents' write access.
 - Reviewer identity that is not self-asserted.
-- Parallel workers in `kahnban run` (leases already allow it; the loop is sequential).
 - Phase 4 from [plan.md](plan.md): the `citadel` portability smoke test.
 
 ## Working on the engine
