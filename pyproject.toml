@@ -6,6 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "kahnban"
 dynamic = ["version"]
 description = "Portable agentic Kanban workflow engine"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = []
 

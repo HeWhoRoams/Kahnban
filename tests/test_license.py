@@ -13,6 +13,13 @@ def test_mit_license() -> None:
     assert "Permission is hereby granted, free of charge" in text
 
 
+def test_pyproject_declares_license() -> None:
+    text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+
+    assert 'license = "MIT"' in text
+    assert 'license-files = ["LICENSE"]' in text
+
+
 def test_third_party_notices() -> None:
     text = (REPO_ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
 
