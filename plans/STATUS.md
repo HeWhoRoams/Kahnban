@@ -55,4 +55,4 @@ _empty_
 | KB-007 | Reviewer identity that is not self-asserted | claude-coder | - | 2026-10-28 |
 | KB-008 | Parallel workers in kahnban run (leases already allow it) | claude-coder | - | 2026-10-29 |
 | KB-010 | The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test | claude-coder | - | 2026-10-26 |
-| KB-011 | Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps | coder-agent | ticket/KB-011 | 2026-10-29 |
+| KB-011 | Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps | coder-agent | - | 2026-10-29 |

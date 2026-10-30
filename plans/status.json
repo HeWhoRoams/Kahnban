@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:17:06",
+  "generated": "2026-10-29T20:17:07",
   "generator": "kahnban",
   "columns": [
     {
@@ -169,8 +169,8 @@
           "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-011",
-          "worktree": ".worktrees/KB-011",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         }
