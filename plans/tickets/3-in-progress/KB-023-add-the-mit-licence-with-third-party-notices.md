@@ -1,10 +1,10 @@
 ---
 id: KB-023
 title: Add the MIT licence with third-party notices
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-023
+worktree: .worktrees/KB-023
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -45,3 +45,4 @@ python -m pytest tests/test_license.py -q
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/add-the-mit-licence-with-third-party-not
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
 - 2026-10-29 20:44 - ready gate passed -> 2-ready | contract 50939535bb7426aa
+- 2026-10-29 22:16 - claimed by coder-agent -> 3-in-progress

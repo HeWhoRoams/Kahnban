@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:16:33",
+  "generated": "2026-10-29T22:16:36",
   "generator": "kahnban",
   "columns": [
     {
@@ -166,18 +166,8 @@
     },
     {
       "name": "2-ready",
-      "count": 5,
+      "count": 4,
       "tickets": [
-        {
-          "id": "KB-023",
-          "title": "Add the MIT licence with third-party notices",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "2-ready"
-        },
         {
           "id": "KB-025",
           "title": "lint help names the real rule range",
@@ -222,7 +212,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-014",
@@ -241,6 +231,16 @@
           "owner": "coder-agent",
           "branch": "ticket/KB-015",
           "worktree": ".worktrees/KB-015",
+          "updated": "2026-10-29",
+          "column": "3-in-progress"
+        },
+        {
+          "id": "KB-023",
+          "title": "Add the MIT licence with third-party notices",
+          "status": "in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-023",
+          "worktree": ".worktrees/KB-023",
           "updated": "2026-10-29",
           "column": "3-in-progress"
         }

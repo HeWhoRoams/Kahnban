@@ -10,8 +10,8 @@ Generated: 2026-10-29 22:16
 | :--- | ---: |
 | 0-backlog | 2 |
 | 1-refining | 13 |
-| 2-ready | 5 |
-| 3-in-progress | 2 |
+| 2-ready | 4 |
+| 3-in-progress | 3 |
 | 4-verifying | 0 |
 | 5-done | 11 |
 
@@ -40,22 +40,22 @@ Generated: 2026-10-29 22:16
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 2-ready (5)
+## 2-ready (4)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-023 | Add the MIT licence with third-party notices | unassigned | - | 2026-10-29 |
 | KB-025 | lint help names the real rule range | unassigned | - | 2026-10-29 |
 | KB-026 | Status docs stop making stale claims | unassigned | - | 2026-10-29 |
 | KB-027 | Dispatch waits on unfinished dependencies | unassigned | - | 2026-10-29 |
 | KB-031 | Ingest report shows spec with covers | unassigned | - | 2026-10-29 |
 
-## 3-in-progress (2)
+## 3-in-progress (3)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-014 | Core clean-up: one list of approval fields to clear, rename _signature_problem | coder-agent | ticket/KB-014 | 2026-10-29 |
 | KB-015 | Localize every shipped skill under the kb- prefix | coder-agent | ticket/KB-015 | 2026-10-29 |
+| KB-023 | Add the MIT licence with third-party notices | coder-agent | ticket/KB-023 | 2026-10-29 |
 
 ## 4-verifying (0)
 
