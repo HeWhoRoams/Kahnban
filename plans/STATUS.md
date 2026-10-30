@@ -72,6 +72,6 @@ _empty_
 | KB-024 | Declare the licence in pyproject.toml | coder-agent | - | 2026-10-29 |
 | KB-025 | lint help names the real rule range | coder-agent | - | 2026-10-29 |
 | KB-026 | Status docs stop making stale claims | coder-agent | - | 2026-10-29 |
-| KB-027 | Dispatch waits on unfinished dependencies | coder-agent | ticket/KB-027 | 2026-10-30 |
+| KB-027 | Dispatch waits on unfinished dependencies | coder-agent | - | 2026-10-30 |
 | KB-031 | Ingest report shows spec with covers | coder-agent | - | 2026-10-29 |
 | KB-032 | Ingest warns on traceability and size problems | coder-agent | - | 2026-10-29 |

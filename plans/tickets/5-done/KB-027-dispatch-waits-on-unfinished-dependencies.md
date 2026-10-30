@@ -3,8 +3,8 @@ id: KB-027
 title: Dispatch waits on unfinished dependencies
 status: done
 owner: coder-agent
-branch: ticket/KB-027
-worktree: .worktrees/KB-027
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-30
 legacy_id: ""
@@ -155,3 +155,4 @@ python -m pytest tests/test_dispatch_dependencies.py -q
 
     full output: plans/tickets/.artifacts/KB-027-20261030-004204.log
 - 2026-10-30 00:45 - done gate passed -> 5-done | merge-commit: 8f3ae271cc5936888550f661590cd35054a9a365
+- 2026-10-30 00:45 - cleanup: removed worktree: KB-027; deleted branch: ticket/KB-027
