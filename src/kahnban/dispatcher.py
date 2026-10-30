@@ -200,8 +200,20 @@ def resolve_next_action(
     refining_tickets = [t for t in open_tickets if t.column == config.refining_column]
     backlog_tickets = [t for t in open_tickets if t.column == config.backlog_column]
     intake_candidates = refining_tickets or backlog_tickets
-    if intake_candidates and (preferred_role in (None, roles.SPEC_ANALYST)):
-        target = intake_candidates[0]
+    # A ticket listed before its own unfinished, missing, or cyclic dependency
+    # is never offered: it waits while a dependency that is itself unblocked
+    # (if any) is offered in its place.
+    waiting_intake: list[tuple[core.Ticket, str]] = []
+    available_intake: list[core.Ticket] = []
+    for candidate in intake_candidates:
+        candidate_fields, _ = frontmatter.parse(candidate.text)
+        reason = core.dependency_wait_reason(config, candidate.ticket_id, candidate_fields)
+        if reason:
+            waiting_intake.append((candidate, reason))
+        else:
+            available_intake.append(candidate)
+    if available_intake and (preferred_role in (None, roles.SPEC_ANALYST)):
+        target = available_intake[0]
         fields, body = frontmatter.parse(target.text)
         t_title = str(fields.get("title") or target.ticket_id)
         return DispatchRecommendation(
@@ -217,6 +229,18 @@ def resolve_next_action(
                 ticket=target.ticket_id,
                 title=t_title,
                 facts=[f"Ticket file: {core.relative_path(config, target.path)}"],
+            ),
+        )
+    if waiting_intake and (preferred_role in (None, roles.SPEC_ANALYST)):
+        names = ", ".join(f"{t.ticket_id} ({reason})" for t, reason in waiting_intake)
+        return DispatchRecommendation(
+            action="idle",
+            assigned_role="none",
+            summary=f"Board is idle. Waiting on dependencies: {names}.",
+            command="kahnban status",
+            prompt=(
+                f"No backlog or refining ticket can advance to spec & refine yet: {names}. "
+                "Resolve the dependency, or fix depends_on, then rerun."
             ),
         )
 
