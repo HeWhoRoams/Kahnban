@@ -24,7 +24,7 @@ confirmed: ""
 verified_sha: 180dcf74b3d0c00f6fc8aa868dccb3c1335cafb3
 reviewer: qa-reviewer
 approved_sha: 180dcf74b3d0c00f6fc8aa868dccb3c1335cafb3
-approval_sig: ""
+approval_sig: ebfe432ddcb6327cded226d8681ae4b06b6aa5eba1568fa68408572c351b6240
 reviewer_sig: ""
 integrated_sha: ""
 ---
@@ -105,3 +105,4 @@ python -m pytest tests/test_status_docs.py -q
 
     full output: plans/tickets/.artifacts/KB-026-20261029-225532.log
 - 2026-10-29 22:59 - approved by qa-reviewer at 180dcf74b3d0
+- 2026-10-29 22:59 - approval by qa-reviewer countersigned by the runner at 180dcf74b3d0
