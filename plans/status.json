@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:16:43",
+  "generated": "2026-10-29T23:20:22",
   "generator": "kahnban",
   "columns": [
     {
@@ -30,8 +30,18 @@
     },
     {
       "name": "1-refining",
-      "count": 12,
+      "count": 13,
       "tickets": [
+        {
+          "id": "KB-015",
+          "title": "Localize every shipped skill under the kb- prefix",
+          "status": "refining",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-015",
+          "worktree": ".worktrees/KB-015",
+          "updated": "2026-10-29",
+          "column": "1-refining"
+        },
         {
           "id": "KB-016",
           "title": "Record skill provenance in the lock",
@@ -182,7 +192,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 1,
       "tickets": [
         {
           "id": "KB-014",
@@ -191,16 +201,6 @@
           "owner": "coder-agent",
           "branch": "ticket/KB-014",
           "worktree": ".worktrees/KB-014",
-          "updated": "2026-10-29",
-          "column": "3-in-progress"
-        },
-        {
-          "id": "KB-015",
-          "title": "Localize every shipped skill under the kb- prefix",
-          "status": "in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-015",
-          "worktree": ".worktrees/KB-015",
           "updated": "2026-10-29",
           "column": "3-in-progress"
         }

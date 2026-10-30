@@ -1,7 +1,7 @@
 ---
 id: KB-015
 title: Localize every shipped skill under the kb- prefix
-status: in-progress
+status: refining
 owner: coder-agent
 branch: ticket/KB-015
 worktree: .worktrees/KB-015
@@ -332,3 +332,4 @@ python -m pytest tests/test_skill_localization.py -q
     739 tests, 8 workers, 215s, FAILURES
 
     full output: plans/tickets/.artifacts/KB-015-20261029-230729.log
+- 2026-10-29 23:20 - manual move 3-in-progress -> 1-refining: KB-015's radius missed cli.py, test_trust.py and test_hooks_trust_edges.py (SPEC-001 breakdown error); contract must be re-frozen. Coder's attempt kept on ticket/KB-015.
