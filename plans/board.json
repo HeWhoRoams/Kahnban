@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T20:44:06",
+  "generated": "2026-10-29T20:44:07",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 11,
+      "count": 10,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,23 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/cli.py",
-            "tests/test_lint_help.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -208,7 +191,7 @@
     },
     {
       "name": "1-refining",
-      "count": 8,
+      "count": 9,
       "tickets": [
         {
           "id": "KB-016",
@@ -568,6 +551,23 @@
           "blast_radius": [
             "pyproject.toml",
             "tests/test_license.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/cli.py",
+            "tests/test_lint_help.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,23 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-025": {
-      "id": "KB-025",
-      "title": "lint help names the real rule range",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/cli.py",
-        "tests/test_lint_help.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-026": {
       "id": "KB-026",
       "title": "Status docs stop making stale claims",
@@ -1667,6 +1650,23 @@
       "blast_radius": [
         "pyproject.toml",
         "tests/test_license.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-025": {
+      "id": "KB-025",
+      "title": "lint help names the real rule range",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/cli.py",
+        "tests/test_lint_help.py"
       ],
       "updated": "2026-10-29"
     },
