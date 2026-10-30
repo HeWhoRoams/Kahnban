@@ -1,7 +1,7 @@
 ---
 id: KB-017
 title: Re-base the Pocock-derived skills on mattpocock/skills v1.3.2
-status: backlog
+status: refining
 owner: unassigned
 branch: ""
 worktree: ""
@@ -87,3 +87,4 @@ python -m pytest tests/test_skill_upstream_pocock.py -q
 
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/re-base-the-pocock-derived-skills-on-mat
+- 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement

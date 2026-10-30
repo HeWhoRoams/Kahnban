@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T20:44:03",
+  "generated": "2026-10-29T20:44:04",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 19,
+      "count": 18,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,16 +19,6 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-017",
-          "title": "Re-base the Pocock-derived skills on mattpocock/skills v1.3.2",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -200,11 +190,21 @@
     },
     {
       "name": "1-refining",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-016",
           "title": "Record skill provenance in the lock",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "1-refining"
+        },
+        {
+          "id": "KB-017",
+          "title": "Re-base the Pocock-derived skills on mattpocock/skills v1.3.2",
           "status": "refining",
           "owner": "unassigned",
           "branch": "",
