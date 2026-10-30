@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:28:06",
+  "generated": "2026-10-29T23:29:02",
   "generator": "kahnban",
   "columns": [
     {
@@ -172,7 +172,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-014",
@@ -181,16 +181,6 @@
           "owner": "coder-agent",
           "branch": "ticket/KB-014",
           "worktree": ".worktrees/KB-014",
-          "updated": "2026-10-29",
-          "column": "3-in-progress"
-        },
-        {
-          "id": "KB-024",
-          "title": "Declare the licence in pyproject.toml",
-          "status": "in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-024",
-          "worktree": ".worktrees/KB-024",
           "updated": "2026-10-29",
           "column": "3-in-progress"
         },
@@ -208,8 +198,19 @@
     },
     {
       "name": "4-verifying",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-024",
+          "title": "Declare the licence in pyproject.toml",
+          "status": "verifying",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-024",
+          "worktree": ".worktrees/KB-024",
+          "updated": "2026-10-29",
+          "column": "4-verifying"
+        }
+      ]
     },
     {
       "name": "5-done",
@@ -591,7 +592,7 @@
       "KB-024": {
         "by_owner": {},
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 1,
         "cycle_hours": null

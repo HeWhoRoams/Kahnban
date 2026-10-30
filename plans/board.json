@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:28:06",
+  "generated": "2026-10-29T23:29:02",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -766,7 +766,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-014",
@@ -782,25 +782,6 @@
           "blast_radius": [
             "src/kahnban/core.py",
             "tests/test_reviewer_keys.py"
-          ],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-024",
-          "title": "Declare the licence in pyproject.toml",
-          "status": "in-progress",
-          "column": "3-in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-024",
-          "worktree": ".worktrees/KB-024",
-          "description": "",
-          "depends_on": [
-            "KB-023"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "pyproject.toml",
-            "tests/test_license.py"
           ],
           "updated": "2026-10-29"
         },
@@ -827,8 +808,28 @@
     },
     {
       "name": "4-verifying",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-024",
+          "title": "Declare the licence in pyproject.toml",
+          "status": "verifying",
+          "column": "4-verifying",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-024",
+          "worktree": ".worktrees/KB-024",
+          "description": "",
+          "depends_on": [
+            "KB-023"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "pyproject.toml",
+            "tests/test_license.py"
+          ],
+          "updated": "2026-10-29"
+        }
+      ]
     },
     {
       "name": "5-done",
@@ -1873,25 +1874,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-024": {
-      "id": "KB-024",
-      "title": "Declare the licence in pyproject.toml",
-      "status": "in-progress",
-      "column": "3-in-progress",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-024",
-      "worktree": ".worktrees/KB-024",
-      "description": "",
-      "depends_on": [
-        "KB-023"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "pyproject.toml",
-        "tests/test_license.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-032": {
       "id": "KB-032",
       "title": "Ingest warns on traceability and size problems",
@@ -1908,6 +1890,25 @@
       "blast_radius": [
         "src/kahnban/ingest.py",
         "tests/test_ingest_traceability.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-024": {
+      "id": "KB-024",
+      "title": "Declare the licence in pyproject.toml",
+      "status": "verifying",
+      "column": "4-verifying",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-024",
+      "worktree": ".worktrees/KB-024",
+      "description": "",
+      "depends_on": [
+        "KB-023"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "pyproject.toml",
+        "tests/test_license.py"
       ],
       "updated": "2026-10-29"
     },
