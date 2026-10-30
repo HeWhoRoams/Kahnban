@@ -3,8 +3,8 @@ id: KB-031
 title: Ingest report shows spec with covers
 status: done
 owner: coder-agent
-branch: ticket/KB-031
-worktree: .worktrees/KB-031
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -123,3 +123,4 @@ python -m pytest tests/test_ingest_traceability.py -q
 
     full output: plans/tickets/.artifacts/KB-031-20261029-232057.log
 - 2026-10-29 23:24 - done gate passed -> 5-done | merge-commit: dc0509efeb5e6ee824231f5ffbb92db339b79912
+- 2026-10-29 23:24 - cleanup: removed worktree: KB-031; deleted branch: ticket/KB-031

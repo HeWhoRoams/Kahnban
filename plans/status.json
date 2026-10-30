@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:24:07",
+  "generated": "2026-10-29T23:24:08",
   "generator": "kahnban",
   "columns": [
     {
@@ -360,8 +360,8 @@
           "title": "Ingest report shows spec with covers",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-031",
-          "worktree": ".worktrees/KB-031",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         }

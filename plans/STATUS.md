@@ -75,4 +75,4 @@ _empty_
 | KB-023 | Add the MIT licence with third-party notices | coder-agent | - | 2026-10-29 |
 | KB-025 | lint help names the real rule range | coder-agent | - | 2026-10-29 |
 | KB-026 | Status docs stop making stale claims | coder-agent | - | 2026-10-29 |
-| KB-031 | Ingest report shows spec with covers | coder-agent | ticket/KB-031 | 2026-10-29 |
+| KB-031 | Ingest report shows spec with covers | coder-agent | - | 2026-10-29 |
