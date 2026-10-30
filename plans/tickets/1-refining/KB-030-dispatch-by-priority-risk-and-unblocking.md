@@ -1,7 +1,7 @@
 ---
 id: KB-030
 title: "Dispatch by priority, risk and unblocking"
-status: backlog
+status: refining
 owner: unassigned
 branch: ""
 worktree: ""
@@ -40,3 +40,4 @@ python -m pytest tests/test_dispatch_order.py -q
 
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/dispatch-by-priority-risk-and-unblocking
+- 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement

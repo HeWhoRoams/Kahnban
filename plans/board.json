@@ -6,7 +6,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 6,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,25 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-030",
-          "title": "Dispatch by priority, risk and unblocking",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-027"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/dispatcher.py",
-            "tests/test_dispatch_order.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -114,7 +95,7 @@
     },
     {
       "name": "1-refining",
-      "count": 11,
+      "count": 12,
       "tickets": [
         {
           "id": "KB-016",
@@ -533,6 +514,25 @@
             "src/kahnban/linter.py",
             "src/kahnban/templates/ticket.md",
             "tests/test_lint_priority_risk.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-030",
+          "title": "Dispatch by priority, risk and unblocking",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-027"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/dispatcher.py",
+            "tests/test_dispatch_order.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,25 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-030": {
-      "id": "KB-030",
-      "title": "Dispatch by priority, risk and unblocking",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-027"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/dispatcher.py",
-        "tests/test_dispatch_order.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-031": {
       "id": "KB-031",
       "title": "Ingest report shows spec with covers",
@@ -1632,6 +1613,25 @@
         "src/kahnban/linter.py",
         "src/kahnban/templates/ticket.md",
         "tests/test_lint_priority_risk.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-030": {
+      "id": "KB-030",
+      "title": "Dispatch by priority, risk and unblocking",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-027"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/dispatcher.py",
+        "tests/test_dispatch_order.py"
       ],
       "updated": "2026-10-29"
     },
