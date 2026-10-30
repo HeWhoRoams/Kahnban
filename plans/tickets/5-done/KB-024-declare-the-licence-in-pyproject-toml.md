@@ -3,8 +3,8 @@ id: KB-024
 title: Declare the licence in pyproject.toml
 status: done
 owner: coder-agent
-branch: ticket/KB-024
-worktree: .worktrees/KB-024
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -97,3 +97,4 @@ python -m pytest tests/test_license.py -q
 
     full output: plans/tickets/.artifacts/KB-024-20261029-233348.log
 - 2026-10-29 23:37 - done gate passed -> 5-done | merge-commit: 43f33780af246b312a3f90acf4ccadf7942277ee
+- 2026-10-29 23:37 - cleanup: removed worktree: KB-024; deleted branch: ticket/KB-024

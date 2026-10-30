@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:37:11",
+  "generated": "2026-10-29T23:37:12",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -1045,8 +1045,8 @@
           "status": "done",
           "column": "5-done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-024",
-          "worktree": ".worktrees/KB-024",
+          "branch": "",
+          "worktree": "",
           "description": "",
           "depends_on": [
             "KB-023"
@@ -2122,8 +2122,8 @@
       "status": "done",
       "column": "5-done",
       "owner": "coder-agent",
-      "branch": "ticket/KB-024",
-      "worktree": ".worktrees/KB-024",
+      "branch": "",
+      "worktree": "",
       "description": "",
       "depends_on": [
         "KB-023"

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:37:11",
+  "generated": "2026-10-29T23:37:12",
   "generator": "kahnban",
   "columns": [
     {
@@ -330,8 +330,8 @@
           "title": "Declare the licence in pyproject.toml",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-024",
-          "worktree": ".worktrees/KB-024",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         },
