@@ -112,6 +112,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "stability":
+        if args.accept and not BASELINE.exists():
+            sys.exit(f"no baseline at {BASELINE}; run `compare --accept` first")
         runs = [run_scenarios(args) for _ in range(args.runs)]
         moved = stability_report(runs)
         print(f"{len(moved)} metric(s) moved over {args.runs} runs: {', '.join(moved) or 'none'}")

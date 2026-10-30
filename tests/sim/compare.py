@@ -55,13 +55,23 @@ def normalize(scorecard: dict[str, Any]) -> dict[str, Any]:
 
 
 def stability_report(cards: list[dict[str, Any]]) -> list[str]:
-    """'S3 steps_to_done' for every metric whose value differs between runs of one unchanged tree."""
+    """'S3 steps_to_done' for every metric whose value differs between runs of one unchanged tree.
+
+    Takes the union of scenario ids and metric names across all cards: a scenario or metric
+    missing from some run is just another value it can take, reported like any other move.
+    """
     moved = set()
-    for ident in cards[0]["scenarios"]:
-        for name in cards[0]["scenarios"][ident]["metrics"]:
-            if name in IGNORED:
-                continue
-            if len({repr(card["scenarios"][ident]["metrics"].get(name)) for card in cards}) > 1:
+    idents = {ident for card in cards for ident in card["scenarios"]}
+    for ident in idents:
+        names = {
+            name
+            for card in cards
+            for name in card["scenarios"].get(ident, {}).get("metrics", {})
+            if name not in IGNORED
+        }
+        for name in names:
+            values = {repr(card["scenarios"].get(ident, {}).get("metrics", {}).get(name)) for card in cards}
+            if len(values) > 1:
                 moved.add(f"{ident} {name}")
     return sorted(moved)
 
