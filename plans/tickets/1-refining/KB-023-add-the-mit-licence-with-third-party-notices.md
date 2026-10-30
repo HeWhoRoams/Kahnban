@@ -1,7 +1,7 @@
 ---
 id: KB-023
 title: Add the MIT licence with third-party notices
-status: backlog
+status: refining
 owner: unassigned
 branch: ""
 worktree: ""
@@ -40,3 +40,4 @@ python -m pytest tests/test_license.py -q
 
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/add-the-mit-licence-with-third-party-not
+- 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement

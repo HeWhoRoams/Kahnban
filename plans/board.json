@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T20:44:05",
+  "generated": "2026-10-29T20:44:06",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 13,
+      "count": 12,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,24 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-023",
-          "title": "Add the MIT licence with third-party notices",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "license",
-            "third_party_notices.md",
-            "tests/test_license.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -245,7 +227,7 @@
     },
     {
       "name": "1-refining",
-      "count": 7,
+      "count": 8,
       "tickets": [
         {
           "id": "KB-016",
@@ -586,6 +568,24 @@
           "blast_radius": [
             "src/kahnban/skills.py",
             "tests/test_skills_sources.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-023",
+          "title": "Add the MIT licence with third-party notices",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "license",
+            "third_party_notices.md",
+            "tests/test_license.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,24 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-023": {
-      "id": "KB-023",
-      "title": "Add the MIT licence with third-party notices",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "license",
-        "third_party_notices.md",
-        "tests/test_license.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-024": {
       "id": "KB-024",
       "title": "Declare the licence in pyproject.toml",
@@ -1685,6 +1667,24 @@
       "blast_radius": [
         "src/kahnban/skills.py",
         "tests/test_skills_sources.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-023": {
+      "id": "KB-023",
+      "title": "Add the MIT licence with third-party notices",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "license",
+        "third_party_notices.md",
+        "tests/test_license.py"
       ],
       "updated": "2026-10-29"
     },
