@@ -75,4 +75,4 @@ _empty_
 | KB-011 | Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps | coder-agent | - | 2026-10-29 |
 | KB-012 | Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error | coder-agent | - | 2026-10-29 |
 | KB-013 | Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do | coder-agent | - | 2026-10-29 |
-| KB-023 | Add the MIT licence with third-party notices | coder-agent | ticket/KB-023 | 2026-10-29 |
+| KB-023 | Add the MIT licence with third-party notices | coder-agent | - | 2026-10-29 |

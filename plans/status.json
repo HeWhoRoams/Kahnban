@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:30:42",
+  "generated": "2026-10-29T22:30:43",
   "generator": "kahnban",
   "columns": [
     {
@@ -360,8 +360,8 @@
           "title": "Add the MIT licence with third-party notices",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-023",
-          "worktree": ".worktrees/KB-023",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         }

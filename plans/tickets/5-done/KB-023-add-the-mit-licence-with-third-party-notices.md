@@ -3,8 +3,8 @@ id: KB-023
 title: Add the MIT licence with third-party notices
 status: done
 owner: coder-agent
-branch: ticket/KB-023
-worktree: .worktrees/KB-023
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -156,3 +156,4 @@ python -m pytest tests/test_license.py -q
 
     full output: plans/tickets/.artifacts/KB-023-20261029-222737.log
 - 2026-10-29 22:30 - done gate passed -> 5-done | merge-commit: 65330bde009372664f6877ca9a40504def1302e8
+- 2026-10-29 22:30 - cleanup: removed worktree: KB-023; deleted branch: ticket/KB-023
