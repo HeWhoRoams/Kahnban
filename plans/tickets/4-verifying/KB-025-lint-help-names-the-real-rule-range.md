@@ -26,7 +26,7 @@ reviewer: qa-reviewer
 approved_sha: b61d3b728973f554f4299494683c22ae740604ac
 approval_sig: 37c05ab4bc793a8b8143f31b848df63d59b1c311cebbaa8175c182b722a97c10
 reviewer_sig: ""
-integrated_sha: ""
+integrated_sha: 5eaa6df26ba3964ac708c2bc3050e2386d9efea8
 ---
 
 ## Problem
@@ -95,3 +95,13 @@ python -m pytest tests/test_lint_help.py -q
     full output: plans/tickets/.artifacts/KB-025-20261029-223643.log
 - 2026-10-29 22:40 - approved by qa-reviewer at b61d3b728973
 - 2026-10-29 22:40 - approval by qa-reviewer countersigned by the runner at b61d3b728973
+- 2026-10-29 22:40 - integrated into main | merge-commit: 5eaa6df26ba3964ac708c2bc3050e2386d9efea8
+    $ merge ticket/KB-025 onto main a5b8297f7d00
+    === INTEGRATION: FEATURE TESTS ===
+    .                                                                        [100%]
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    739 tests, 8 workers, 184s, all passed
+
+    full output: plans/tickets/.artifacts/KB-025-20261029-224043.log
