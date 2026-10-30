@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:25:24",
+  "generated": "2026-10-30T00:36:54",
   "generator": "kahnban",
   "columns": [
     {
@@ -162,24 +162,24 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-027",
           "title": "Dispatch waits on unfinished dependencies",
-          "status": "in-progress",
+          "status": "verifying",
           "owner": "coder-agent",
           "branch": "ticket/KB-027",
           "worktree": ".worktrees/KB-027",
           "updated": "2026-10-30",
-          "column": "3-in-progress"
+          "column": "4-verifying"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -615,7 +615,7 @@
       "KB-027": {
         "by_owner": {},
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null

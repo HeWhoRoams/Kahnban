@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:25:24",
+  "generated": "2026-10-30T00:36:54",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -748,13 +748,18 @@
     },
     {
       "name": "3-in-progress",
+      "count": 0,
+      "tickets": []
+    },
+    {
+      "name": "4-verifying",
       "count": 1,
       "tickets": [
         {
           "id": "KB-027",
           "title": "Dispatch waits on unfinished dependencies",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "verifying",
+          "column": "4-verifying",
           "owner": "coder-agent",
           "branch": "ticket/KB-027",
           "worktree": ".worktrees/KB-027",
@@ -769,11 +774,6 @@
           "updated": "2026-10-30"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -1841,8 +1841,8 @@
     "KB-027": {
       "id": "KB-027",
       "title": "Dispatch waits on unfinished dependencies",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "verifying",
+      "column": "4-verifying",
       "owner": "coder-agent",
       "branch": "ticket/KB-027",
       "worktree": ".worktrees/KB-027",
