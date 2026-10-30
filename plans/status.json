@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:44:53",
+  "generated": "2026-10-29T20:44:54",
   "generator": "kahnban",
   "columns": [
     {
@@ -30,7 +30,7 @@
     },
     {
       "name": "1-refining",
-      "count": 14,
+      "count": 13,
       "tickets": [
         {
           "id": "KB-016",
@@ -113,16 +113,6 @@
           "column": "1-refining"
         },
         {
-          "id": "KB-027",
-          "title": "Dispatch waits on unfinished dependencies",
-          "status": "refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "1-refining"
-        },
-        {
           "id": "KB-028",
           "title": "Lint reports dependency cycles",
           "status": "refining",
@@ -176,7 +166,7 @@
     },
     {
       "name": "2-ready",
-      "count": 6,
+      "count": 7,
       "tickets": [
         {
           "id": "KB-014",
@@ -221,6 +211,16 @@
         {
           "id": "KB-026",
           "title": "Status docs stop making stale claims",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        },
+        {
+          "id": "KB-027",
+          "title": "Dispatch waits on unfinished dependencies",
           "status": "ready",
           "owner": "unassigned",
           "branch": "",
