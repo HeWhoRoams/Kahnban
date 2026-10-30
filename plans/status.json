@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:03:26",
+  "generated": "2026-10-29T23:16:43",
   "generator": "kahnban",
   "columns": [
     {
@@ -182,7 +182,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-014",
@@ -203,23 +203,24 @@
           "worktree": ".worktrees/KB-015",
           "updated": "2026-10-29",
           "column": "3-in-progress"
-        },
-        {
-          "id": "KB-031",
-          "title": "Ingest report shows spec with covers",
-          "status": "in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-031",
-          "worktree": ".worktrees/KB-031",
-          "updated": "2026-10-29",
-          "column": "3-in-progress"
         }
       ]
     },
     {
       "name": "4-verifying",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-031",
+          "title": "Ingest report shows spec with covers",
+          "status": "verifying",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-031",
+          "worktree": ".worktrees/KB-031",
+          "updated": "2026-10-29",
+          "column": "4-verifying"
+        }
+      ]
     },
     {
       "name": "5-done",
@@ -375,7 +376,7 @@
         "rejections": 0
       },
       "coder-agent": {
-        "failed_verifies": 2,
+        "failed_verifies": 3,
         "rejections": 0
       }
     },
@@ -512,9 +513,14 @@
         "cycle_hours": null
       },
       "KB-015": {
-        "by_owner": {},
+        "by_owner": {
+          "coder-agent": {
+            "failed_verifies": 1,
+            "rejections": 0
+          }
+        },
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
@@ -642,7 +648,7 @@
       "KB-031": {
         "by_owner": {},
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null

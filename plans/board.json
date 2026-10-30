@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:03:26",
+  "generated": "2026-10-29T23:16:43",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -527,7 +527,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-014",
@@ -819,12 +819,18 @@
             "tests/test_skill_localization.py"
           ],
           "updated": "2026-10-29"
-        },
+        }
+      ]
+    },
+    {
+      "name": "4-verifying",
+      "count": 1,
+      "tickets": [
         {
           "id": "KB-031",
           "title": "Ingest report shows spec with covers",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "verifying",
+          "column": "4-verifying",
           "owner": "coder-agent",
           "branch": "ticket/KB-031",
           "worktree": ".worktrees/KB-031",
@@ -838,11 +844,6 @@
           "updated": "2026-10-29"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -1908,8 +1909,8 @@
     "KB-031": {
       "id": "KB-031",
       "title": "Ingest report shows spec with covers",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "verifying",
+      "column": "4-verifying",
       "owner": "coder-agent",
       "branch": "ticket/KB-031",
       "worktree": ".worktrees/KB-031",
