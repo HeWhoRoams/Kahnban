@@ -434,7 +434,7 @@
           "depends_on": [
             "KB-028"
           ],
-          "blocked_on": "",
+          "blocked_on": "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.",
           "blast_radius": [
             "src/kahnban/linter.py",
             "src/kahnban/templates/ticket.md",
@@ -1531,7 +1531,7 @@
       "depends_on": [
         "KB-028"
       ],
-      "blocked_on": "",
+      "blocked_on": "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.",
       "blast_radius": [
         "src/kahnban/linter.py",
         "src/kahnban/templates/ticket.md",
