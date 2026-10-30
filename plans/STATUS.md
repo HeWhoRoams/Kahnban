@@ -8,26 +8,25 @@ Generated: 2026-10-29 20:44
 
 | Column | Tickets |
 | :--- | ---: |
-| 0-backlog | 7 |
-| 1-refining | 10 |
+| 0-backlog | 6 |
+| 1-refining | 11 |
 | 2-ready | 5 |
 | 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 10 |
 
-## 0-backlog (7)
+## 0-backlog (6)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-002 | Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show | unassigned | - | 2026-10-29 |
 | KB-009 | The citadel portability smoke test (plan.md phase 4) | unassigned | - | 2026-10-29 |
-| KB-029 | Lint priority and risk values | unassigned | - | 2026-10-29 |
 | KB-030 | Dispatch by priority, risk and unblocking | unassigned | - | 2026-10-29 |
 | KB-031 | Ingest report shows spec with covers | unassigned | - | 2026-10-29 |
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 1-refining (10)
+## 1-refining (11)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
@@ -41,6 +40,7 @@ Generated: 2026-10-29 20:44
 | KB-024 | Declare the licence in pyproject.toml | unassigned | - | 2026-10-29 |
 | KB-027 | Dispatch waits on unfinished dependencies | unassigned | - | 2026-10-29 |
 | KB-028 | Lint reports dependency cycles | unassigned | - | 2026-10-29 |
+| KB-029 | Lint priority and risk values | unassigned | - | 2026-10-29 |
 
 ## 2-ready (5)
 

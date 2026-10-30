@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T20:44:08",
+  "generated": "2026-10-29T20:44:09",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 7,
+      "count": 6,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,16 +19,6 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-029",
-          "title": "Lint priority and risk values",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -80,7 +70,7 @@
     },
     {
       "name": "1-refining",
-      "count": 10,
+      "count": 11,
       "tickets": [
         {
           "id": "KB-016",
@@ -175,6 +165,16 @@
         {
           "id": "KB-028",
           "title": "Lint reports dependency cycles",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "1-refining"
+        },
+        {
+          "id": "KB-029",
+          "title": "Lint priority and risk values",
           "status": "refining",
           "owner": "unassigned",
           "branch": "",
