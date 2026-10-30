@@ -1,7 +1,7 @@
 ---
 id: KB-024
 title: Declare the licence in pyproject.toml
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -18,6 +18,9 @@ source_hash: 1e78674ef093
 validation_class: headless-verified
 covers: [R10]
 spec: SPEC-001
+contract_hash: df3650d17f2aa8d7
+contract_sig: 57be048441e09f8ae49b817c5dc454e17af37cf2808913789b68c93aa45c1f28
+confirmed: ""
 ---
 
 ## Problem
@@ -41,3 +44,4 @@ python -m pytest tests/test_license.py -q
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
 - 2026-10-29 21:05 - escalated to a human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.
 - 2026-10-29 22:31 - unblocked: dependencies are in 5-done (supervisor)
+- 2026-10-29 23:03 - ready gate passed -> 2-ready | contract df3650d17f2aa8d7
