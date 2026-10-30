@@ -201,6 +201,8 @@ class IngestReport:
                     "has_validation": bool(draft.validation),
                     "depends_on": draft.depends_on,
                     "blocked_on": draft.blocked_on,
+                    "spec": draft.extra_frontmatter.get("spec", ""),
+                    "covers": list(draft.extra_frontmatter.get("covers", [])),  # type: ignore[arg-type]
                 }
                 for draft in self.drafts
             ],
@@ -1012,6 +1014,12 @@ def render_report(reports: Sequence[IngestReport]) -> str:
                 lines.append(f"      depends_on: {', '.join(draft.depends_on)}")
             if draft.blocked_on:
                 lines.append(f"      blocked_on: {console_safe(draft.blocked_on)}")
+            spec = draft.extra_frontmatter.get("spec")
+            if spec:
+                lines.append(f"      spec: {console_safe(str(spec))}")
+            covers = draft.extra_frontmatter.get("covers")
+            if covers:
+                lines.append(f"      covers: {', '.join(covers)}")  # type: ignore[arg-type]
         for result in report.created:
             lines.append(
                 f"  [OK] created {result.ticket_id}: "
