@@ -191,7 +191,7 @@
     },
     {
       "name": "1-refining",
-      "count": 9,
+      "count": 8,
       "tickets": [
         {
           "id": "KB-016",
@@ -553,29 +553,12 @@
             "tests/test_license.py"
           ],
           "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "refining",
-          "column": "1-refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/cli.py",
-            "tests/test_lint_help.py"
-          ],
-          "updated": "2026-10-29"
         }
       ]
     },
     {
       "name": "2-ready",
-      "count": 3,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-014",
@@ -883,6 +866,23 @@
             "license",
             "third_party_notices.md",
             "tests/test_license.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/cli.py",
+            "tests/test_lint_help.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1653,23 +1653,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-025": {
-      "id": "KB-025",
-      "title": "lint help names the real rule range",
-      "status": "refining",
-      "column": "1-refining",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/cli.py",
-        "tests/test_lint_help.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -1976,6 +1959,23 @@
         "license",
         "third_party_notices.md",
         "tests/test_license.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-025": {
+      "id": "KB-025",
+      "title": "lint help names the real rule range",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/cli.py",
+        "tests/test_lint_help.py"
       ],
       "updated": "2026-10-29"
     },

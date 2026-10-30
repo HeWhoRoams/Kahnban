@@ -9,8 +9,8 @@ Generated: 2026-10-29 20:44
 | Column | Tickets |
 | :--- | ---: |
 | 0-backlog | 10 |
-| 1-refining | 9 |
-| 2-ready | 3 |
+| 1-refining | 8 |
+| 2-ready | 4 |
 | 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 10 |
@@ -30,7 +30,7 @@ Generated: 2026-10-29 20:44
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 1-refining (9)
+## 1-refining (8)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
@@ -42,15 +42,15 @@ Generated: 2026-10-29 20:44
 | KB-021 | skills install prunes skills it no longer ships | unassigned | - | 2026-10-29 |
 | KB-022 | Upstream installs never overwrite kb- skills | unassigned | - | 2026-10-29 |
 | KB-024 | Declare the licence in pyproject.toml | unassigned | - | 2026-10-29 |
-| KB-025 | lint help names the real rule range | unassigned | - | 2026-10-29 |
 
-## 2-ready (3)
+## 2-ready (4)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-014 | Core clean-up: one list of approval fields to clear, rename _signature_problem | unassigned | - | 2026-10-29 |
 | KB-015 | Localize every shipped skill under the kb- prefix | unassigned | - | 2026-10-29 |
 | KB-023 | Add the MIT licence with third-party notices | unassigned | - | 2026-10-29 |
+| KB-025 | lint help names the real rule range | unassigned | - | 2026-10-29 |
 
 ## 3-in-progress (1)
 

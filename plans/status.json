@@ -110,7 +110,7 @@
     },
     {
       "name": "1-refining",
-      "count": 9,
+      "count": 8,
       "tickets": [
         {
           "id": "KB-016",
@@ -191,22 +191,12 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "1-refining"
-        },
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "1-refining"
         }
       ]
     },
     {
       "name": "2-ready",
-      "count": 3,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-014",
@@ -231,6 +221,16 @@
         {
           "id": "KB-023",
           "title": "Add the MIT licence with third-party notices",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
           "status": "ready",
           "owner": "unassigned",
           "branch": "",
