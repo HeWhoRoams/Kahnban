@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:24:22",
+  "generated": "2026-10-29T20:24:24",
   "generator": "kahnban",
   "columns": [
     {
@@ -35,18 +35,8 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 1,
       "tickets": [
-        {
-          "id": "KB-012",
-          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "2-ready"
-        },
         {
           "id": "KB-014",
           "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -61,8 +51,19 @@
     },
     {
       "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-012",
+          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+          "status": "in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-012",
+          "worktree": ".worktrees/KB-012",
+          "updated": "2026-10-29",
+          "column": "3-in-progress"
+        }
+      ]
     },
     {
       "name": "4-verifying",

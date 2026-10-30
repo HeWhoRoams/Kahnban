@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:24:22",
+  "generated": "2026-10-29T20:24:24",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -45,26 +45,8 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 1,
       "tickets": [
-        {
-          "id": "KB-012",
-          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/trust.py",
-            "src/kahnban/cli.py",
-            "tests/test_reviewer_keys.py"
-          ],
-          "updated": "2026-10-29"
-        },
         {
           "id": "KB-014",
           "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -86,8 +68,27 @@
     },
     {
       "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-012",
+          "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-012",
+          "worktree": ".worktrees/KB-012",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/trust.py",
+            "src/kahnban/cli.py",
+            "tests/test_reviewer_keys.py"
+          ],
+          "updated": "2026-10-29"
+        }
+      ]
     },
     {
       "name": "4-verifying",
@@ -318,24 +319,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-012": {
-      "id": "KB-012",
-      "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/trust.py",
-        "src/kahnban/cli.py",
-        "tests/test_reviewer_keys.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -349,6 +332,24 @@
       "blocked_on": "",
       "blast_radius": [
         "src/kahnban/core.py",
+        "tests/test_reviewer_keys.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-012": {
+      "id": "KB-012",
+      "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-012",
+      "worktree": ".worktrees/KB-012",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/trust.py",
+        "src/kahnban/cli.py",
         "tests/test_reviewer_keys.py"
       ],
       "updated": "2026-10-29"

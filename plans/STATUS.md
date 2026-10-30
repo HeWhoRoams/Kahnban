@@ -10,8 +10,8 @@ Generated: 2026-10-29 20:24
 | :--- | ---: |
 | 0-backlog | 2 |
 | 1-refining | 0 |
-| 2-ready | 2 |
-| 3-in-progress | 0 |
+| 2-ready | 1 |
+| 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 10 |
 
@@ -26,16 +26,17 @@ Generated: 2026-10-29 20:24
 
 _empty_
 
-## 2-ready (2)
+## 2-ready (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-012 | Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error | unassigned | - | 2026-10-29 |
 | KB-014 | Core clean-up: one list of approval fields to clear, rename _signature_problem | unassigned | - | 2026-10-29 |
 
-## 3-in-progress (0)
+## 3-in-progress (1)
 
-_empty_
+| ID | Title | Owner | Branch | Updated |
+| :--- | :--- | :--- | :--- | :--- |
+| KB-012 | Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error | coder-agent | ticket/KB-012 | 2026-10-29 |
 
 ## 4-verifying (0)
 

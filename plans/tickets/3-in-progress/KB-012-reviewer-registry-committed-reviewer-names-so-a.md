@@ -1,10 +1,10 @@
 ---
 id: KB-012
 title: "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error"
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-012
+worktree: .worktrees/KB-012
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -67,3 +67,4 @@ python tests/run_parallel.py -j 8
 ## Log
 - 2026-10-29 19:29 - created -> 0-backlog
 - 2026-10-29 19:36 - ready gate passed -> 2-ready | contract 2097b578f5077dac
+- 2026-10-29 20:24 - claimed by coder-agent -> 3-in-progress
