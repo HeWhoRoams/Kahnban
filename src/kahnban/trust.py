@@ -34,6 +34,7 @@ LOCK = Path(".agents") / "skills.lock.json"
 LOCKED_DIRS = (Path(".agents") / "skills", Path(".kahnban") / "hooks", Path("plans") / "hooks")
 KEY_ENV = "KAHNBAN_SIGNING_KEY"
 KEY_DIR_ENV = "KAHNBAN_KEY_DIR"
+REVIEWERS_REGISTRY = Path("plans") / "reviewers.json"
 
 
 def _digest(path: Path) -> str:
@@ -179,8 +180,50 @@ def _reviewer_file(root: Path, reviewer: str) -> Path:
     return _reviewers_dir(root) / (hashlib.sha256(reviewer.strip().lower().encode()).hexdigest()[:16] + ".json")
 
 
+def _registry_path(root: Path) -> Path:
+    return root / REVIEWERS_REGISTRY
+
+
+def _registry_problem(root: Path) -> str:
+    """'' unless ``plans/reviewers.json`` exists but cannot be parsed, in which case a one-line
+    reason naming the path (for callers that must refuse cleanly instead of silently skipping it)."""
+    path = _registry_path(root)
+    if not path.is_file():
+        return ""
+    try:
+        names = json.loads(path.read_text(encoding="utf-8"))["names"]
+        if not isinstance(names, list):
+            raise TypeError
+    except (OSError, ValueError, KeyError, TypeError):
+        return f"{REVIEWERS_REGISTRY.as_posix()} is unreadable; fix or delete it"
+    return ""
+
+
+def registered_reviewers(root: Path) -> list[str]:
+    """Names in the committed registry (``plans/reviewers.json``, never a key): non-empty means a
+    reviewer is required in every checkout, not just the one with a local key.
+
+    An unreadable file is skipped here (empty, as if unset); see ``reviewer_problem`` for the
+    clean refusal that a corrupt file gets at merge/approve time instead.
+    """
+    path = _registry_path(root)
+    if not path.is_file():
+        return []
+    try:
+        names = json.loads(path.read_text(encoding="utf-8"))["names"]
+        if not isinstance(names, list):
+            raise TypeError
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+    return sorted(str(name) for name in names)
+
+
 def register_reviewer(root: Path, reviewer: str) -> None:
-    """Give ``reviewer`` a key of their own; refuses a name that already has one."""
+    """Give ``reviewer`` a key of their own, and commit their name (never the key) to the registry.
+
+    Refuses a name that already has a key on this machine; the committed registry is
+    case-insensitively de-duplicated.
+    """
     reviewer = reviewer.strip()
     if not reviewer:
         raise ValueError("a reviewer needs a name")
@@ -192,19 +235,25 @@ def register_reviewer(root: Path, reviewer: str) -> None:
         raise ValueError(f"reviewer '{reviewer}' is already registered") from None
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         json.dump({"name": reviewer, "key": secrets.token_hex(32)}, handle)
-
-
-def registered_reviewers(root: Path) -> list[str]:
-    directory = _reviewers_dir(root)
-    if not directory.is_dir():
-        return []
-    return sorted(json.loads(path.read_text(encoding="utf-8"))["name"] for path in directory.glob("*.json"))
+    names = registered_reviewers(root)
+    if reviewer.lower() not in {name.lower() for name in names}:
+        registry = json.dumps({"names": sorted(names + [reviewer])}, indent=2) + "\n"
+        write_text_atomic(_registry_path(root), registry)
 
 
 def sign_reviewer(root: Path, approval: Approval) -> str:
-    """The reviewer's own seal on an approval; ValueError when that name has no key."""
+    """The reviewer's own seal on an approval.
+
+    ValueError when that name has no key on this machine (naming whether it is registered
+    elsewhere, in the committed registry, or not registered at all).
+    """
     path = _reviewer_file(root, approval.reviewer)
     if not path.is_file():
+        reviewer = approval.reviewer.strip()
+        if any(name.lower() == reviewer.lower() for name in registered_reviewers(root)):
+            raise ValueError(
+                f"reviewer '{reviewer}' has no key on this machine; run 'kahnban reviewers add {reviewer}' here"
+            )
         raise ValueError(f"reviewer '{approval.reviewer}' is not registered; run 'kahnban reviewers add {approval.reviewer}'")
     key = json.loads(path.read_text(encoding="utf-8"))["key"].encode()
     message = f"reviewer\n{approval.ticket_id}\n{approval.tip}\n{approval.reviewer.strip().lower()}".encode()
@@ -212,7 +261,9 @@ def sign_reviewer(root: Path, approval: Approval) -> str:
 
 
 def reviewer_problem(root: Path, approval: Approval, signature: str) -> str:
-    """Why this approval is not by a registered reviewer, or ''. Empty when no reviewer is registered."""
+    """Why this approval is not by a registered reviewer, or ''. Empty when no reviewer is required."""
+    if problem := _registry_problem(root):
+        return problem
     if not registered_reviewers(root):
         return ""
     if not signature:
