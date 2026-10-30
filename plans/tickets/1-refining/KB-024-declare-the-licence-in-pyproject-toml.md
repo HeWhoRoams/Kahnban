@@ -1,7 +1,7 @@
 ---
 id: KB-024
 title: Declare the licence in pyproject.toml
-status: backlog
+status: refining
 owner: unassigned
 branch: ""
 worktree: ""
@@ -38,3 +38,4 @@ python -m pytest tests/test_license.py -q
 
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/declare-the-licence-in-pyproject-toml
+- 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement

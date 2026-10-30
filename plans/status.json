@@ -4,7 +4,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 12,
+      "count": 11,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,16 +19,6 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-024",
-          "title": "Declare the licence in pyproject.toml",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -130,7 +120,7 @@
     },
     {
       "name": "1-refining",
-      "count": 7,
+      "count": 8,
       "tickets": [
         {
           "id": "KB-016",
@@ -195,6 +185,16 @@
         {
           "id": "KB-022",
           "title": "Upstream installs never overwrite kb- skills",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "1-refining"
+        },
+        {
+          "id": "KB-024",
+          "title": "Declare the licence in pyproject.toml",
           "status": "refining",
           "owner": "unassigned",
           "branch": "",

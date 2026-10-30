@@ -6,7 +6,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 12,
+      "count": 11,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,25 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-024",
-          "title": "Declare the licence in pyproject.toml",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-023"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "pyproject.toml",
-            "tests/test_license.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -227,7 +208,7 @@
     },
     {
       "name": "1-refining",
-      "count": 7,
+      "count": 8,
       "tickets": [
         {
           "id": "KB-016",
@@ -568,6 +549,25 @@
           "blast_radius": [
             "src/kahnban/skills.py",
             "tests/test_skills_sources.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-024",
+          "title": "Declare the licence in pyproject.toml",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-023"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "pyproject.toml",
+            "tests/test_license.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,25 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-024": {
-      "id": "KB-024",
-      "title": "Declare the licence in pyproject.toml",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-023"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "pyproject.toml",
-        "tests/test_license.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-025": {
       "id": "KB-025",
       "title": "lint help names the real rule range",
@@ -1667,6 +1648,25 @@
       "blast_radius": [
         "src/kahnban/skills.py",
         "tests/test_skills_sources.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-024": {
+      "id": "KB-024",
+      "title": "Declare the licence in pyproject.toml",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-023"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "pyproject.toml",
+        "tests/test_license.py"
       ],
       "updated": "2026-10-29"
     },
