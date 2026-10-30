@@ -57,3 +57,34 @@ python tests/run_parallel.py -j 8
 - 2026-10-29 19:29 - created -> 0-backlog
 - 2026-10-29 19:41 - ready gate passed -> 2-ready | contract 1e0d5fe012da54e4
 - 2026-10-29 21:13 - claimed by coder-agent -> 3-in-progress
+- 2026-10-29 21:22 - verify exit=1 in 38.9s (cwd=KB-014) (no transition)
+    verifying ticket/KB-014 at ab033b90de3a; Running Tier 1 (Feature Tests): python -m pytest tests/test_reviewer_keys.py -q
+python tests/run_parallel.py -j 8
+    $ python -m pytest tests/test_reviewer_keys.py -q
+python tests/run_parallel.py -j 8
+    $ python -m pytest tests/test_reviewer_keys.py -q
+    .........F.                                                              [100%]
+    ================================== FAILURES ===================================
+    _____ test_approval_fields_are_cleared_the_same_way_by_verify_and_reject ______
+
+    repo = WindowsPath('C:/Users/User/AppData/Local/Temp/pytest-of-User/pytest-856/test_approval_fields_are_clear0/scratch')
+
+        def test_approval_fields_are_cleared_the_same_way_by_verify_and_reject(repo: Path) -> None:
+            config = factory_board(repo)
+            verified(config)
+            cli.main(["reviewers", "add", "alice", "--project-root", str(repo)])
+            core.approve(config, "TST-001", "alice")
+            assert core.merge(config, "TST-001").passed
+            fields = fields_of(config)
+    >       assert all(fields.get(name) for name in APPROVAL_FIELD_NAMES - {"confirmed"})
+    E       assert False
+    E        +  where False = all(<generator object test_approval_fields_are_cleared_the_same_way_by_verify_and_reject.<locals>.<genexpr> at 0x000001F73ECA82E0>)
+
+    tests\test_reviewer_keys.py:164: AssertionError
+    ---------------------------- Captured stdout call -----------------------------
+    [OK] registered reviewer 'alice'; 'kahnban approve' now needs a registered reviewer
+    =========================== short test summary info ===========================
+    FAILED tests/test_reviewer_keys.py::test_approval_fields_are_cleared_the_same_way_by_verify_and_reject
+
+    [line 1 of 2 exited 1; rest skipped]
+    full output: plans/tickets/.artifacts/KB-014-20261029-212229.log
