@@ -1441,6 +1441,59 @@ def _dependency_problems(config: Config, fields: Mapping[str, object]) -> list[s
     return problems
 
 
+def dependency_wait_reason(
+    config: Config, ticket_id: str, fields: Mapping[str, object]
+) -> str | None:
+    """Why ``depends_on`` keeps this ticket out of dispatch, or None when it may proceed.
+
+    A missing dependency id, a cycle (a self-dependency counts as one), or an
+    existing dependency that has not yet reached ``done_column`` all block it.
+    """
+    depends = _as_list(fields.get("depends_on"))
+    if not depends:
+        return None
+
+    def deps_of(tid: str) -> list[str]:
+        try:
+            dependency_ticket = find_ticket(config, tid)
+        except KahnbanError:
+            return []
+        try:
+            dependency_fields, _ = frontmatter.parse(dependency_ticket.text)
+        except frontmatter.FrontmatterError:
+            return []
+        return _as_list(dependency_fields.get("depends_on"))
+
+    cycle = _find_dependency_cycle(ticket_id, deps_of)
+    if cycle:
+        return "cycle: " + " -> ".join(cycle)
+
+    for dependency in depends:
+        try:
+            dependency_ticket = find_ticket(config, dependency)
+        except KahnbanError:
+            return f"missing dependency {dependency}"
+        if dependency_ticket.column != config.done_column:
+            return f"waiting on {dependency}"
+    return None
+
+
+def _find_dependency_cycle(
+    start: str, deps_of: Callable[[str], list[str]]
+) -> list[str] | None:
+    """A path ``start -> ... -> start`` along ``depends_on`` edges, or None."""
+    stack: list[tuple[str, list[str]]] = [(start, [start])]
+    while stack:
+        current, path = stack.pop()
+        for dependency in deps_of(current):
+            if dependency == start:
+                return [*path, dependency]
+            if dependency in path:
+                continue  # a cycle elsewhere in the graph; not this ticket's problem
+            stack.append((dependency, [*path, dependency]))
+    return None
+
+
 def _as_list(value: object) -> list[str]:
     if value is None:
         return []
