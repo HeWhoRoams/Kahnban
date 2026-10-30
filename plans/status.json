@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:59:33",
+  "generated": "2026-10-29T23:02:38",
   "generator": "kahnban",
   "columns": [
     {
@@ -218,23 +218,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-026",
-          "title": "Status docs stop making stale claims",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-026",
-          "worktree": ".worktrees/KB-026",
-          "updated": "2026-10-29",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 13,
+      "count": 14,
       "tickets": [
         {
           "id": "KB-001",
@@ -365,6 +354,16 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
+        },
+        {
+          "id": "KB-026",
+          "title": "Status docs stop making stale claims",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-026",
+          "worktree": ".worktrees/KB-026",
+          "updated": "2026-10-29",
+          "column": "5-done"
         }
       ]
     }
@@ -381,9 +380,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 13,
-    "first_pass_yield": 0.85,
-    "median_cycle_hours": 23.5,
+    "done": 14,
+    "first_pass_yield": 0.86,
+    "median_cycle_hours": 21.55,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -606,7 +605,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 2.3
       },
       "KB-027": {
         "by_owner": {},

@@ -1,7 +1,7 @@
 ---
 id: KB-026
 title: Status docs stop making stale claims
-status: verifying
+status: done
 owner: coder-agent
 branch: ticket/KB-026
 worktree: .worktrees/KB-026
@@ -116,3 +116,4 @@ python -m pytest tests/test_status_docs.py -q
     741 tests, 8 workers, 178s, all passed
 
     full output: plans/tickets/.artifacts/KB-026-20261029-225933.log
+- 2026-10-29 23:02 - done gate passed -> 5-done | merge-commit: da3c237525c68fb2ba3b32f3efd14581fe68a188

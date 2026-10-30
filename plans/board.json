@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:59:33",
+  "generated": "2026-10-29T23:02:38",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -841,31 +841,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-026",
-          "title": "Status docs stop making stale claims",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-026",
-          "worktree": ".worktrees/KB-026",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "implementation_status.md",
-            "next_steps.md",
-            "tests/test_status_docs.py"
-          ],
-          "updated": "2026-10-29"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 13,
+      "count": 14,
       "tickets": [
         {
           "id": "KB-001",
@@ -1105,6 +1086,24 @@
           "blast_radius": [
             "src/kahnban/cli.py",
             "tests/test_lint_help.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-026",
+          "title": "Status docs stop making stale claims",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-026",
+          "worktree": ".worktrees/KB-026",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "implementation_status.md",
+            "next_steps.md",
+            "tests/test_status_docs.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1923,24 +1922,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-026": {
-      "id": "KB-026",
-      "title": "Status docs stop making stale claims",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-026",
-      "worktree": ".worktrees/KB-026",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "implementation_status.md",
-        "next_steps.md",
-        "tests/test_status_docs.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -2179,6 +2160,24 @@
       "blast_radius": [
         "src/kahnban/cli.py",
         "tests/test_lint_help.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-026": {
+      "id": "KB-026",
+      "title": "Status docs stop making stale claims",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-026",
+      "worktree": ".worktrees/KB-026",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "implementation_status.md",
+        "next_steps.md",
+        "tests/test_status_docs.py"
       ],
       "updated": "2026-10-29"
     }
