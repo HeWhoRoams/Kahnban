@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:27:37",
+  "generated": "2026-10-29T22:30:42",
   "generator": "kahnban",
   "columns": [
     {
@@ -238,23 +238,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-023",
-          "title": "Add the MIT licence with third-party notices",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-023",
-          "worktree": ".worktrees/KB-023",
-          "updated": "2026-10-29",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 11,
+      "count": 12,
       "tickets": [
         {
           "id": "KB-001",
@@ -365,6 +354,16 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
+        },
+        {
+          "id": "KB-023",
+          "title": "Add the MIT licence with third-party notices",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-023",
+          "worktree": ".worktrees/KB-023",
+          "updated": "2026-10-29",
+          "column": "5-done"
         }
       ]
     }
@@ -381,9 +380,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 11,
-    "first_pass_yield": 0.82,
-    "median_cycle_hours": 26.2,
+    "done": 12,
+    "first_pass_yield": 0.83,
+    "median_cycle_hours": 24.85,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -582,7 +581,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 1.8
       },
       "KB-024": {
         "by_owner": {},

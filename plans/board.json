@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:27:37",
+  "generated": "2026-10-29T22:30:42",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -876,31 +876,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-023",
-          "title": "Add the MIT licence with third-party notices",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-023",
-          "worktree": ".worktrees/KB-023",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "license",
-            "third_party_notices.md",
-            "tests/test_license.py"
-          ],
-          "updated": "2026-10-29"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 11,
+      "count": 12,
       "tickets": [
         {
           "id": "KB-001",
@@ -1105,6 +1086,24 @@
             "tests/sim/compare.py",
             "tests/sim/__main__.py",
             "tests/test_sim_compare.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-023",
+          "title": "Add the MIT licence with third-party notices",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-023",
+          "worktree": ".worktrees/KB-023",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "license",
+            "third_party_notices.md",
+            "tests/test_license.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1958,24 +1957,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-023": {
-      "id": "KB-023",
-      "title": "Add the MIT licence with third-party notices",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-023",
-      "worktree": ".worktrees/KB-023",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "license",
-        "third_party_notices.md",
-        "tests/test_license.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -2179,6 +2160,24 @@
         "tests/sim/compare.py",
         "tests/sim/__main__.py",
         "tests/test_sim_compare.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-023": {
+      "id": "KB-023",
+      "title": "Add the MIT licence with third-party notices",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-023",
+      "worktree": ".worktrees/KB-023",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "license",
+        "third_party_notices.md",
+        "tests/test_license.py"
       ],
       "updated": "2026-10-29"
     }
