@@ -919,9 +919,10 @@ def build_parser() -> argparse.ArgumentParser:
     capture.add_argument("--dry-run", action="store_true")
     capture.set_defaults(handler=cmd_capture)
 
+    rule_ids = sorted(linter.RULES)
     lint = subparsers.add_parser(
         "lint",
-        parents=[board], help="run board rules BL01-BL16")
+        parents=[board], help=f"run board rules {rule_ids[0]}-{rule_ids[-1]}")
     lint.add_argument("--json", action="store_true", help="machine-readable output")
     lint.add_argument(
         "--strict", action="store_true", help="promote WIP warnings to violations"
