@@ -22,8 +22,8 @@ contract_hash: 92f5edd88d033004
 contract_sig: 6f9e08b42a98bd62d77e120053e695f134b9fc7a7392107aa37feda229bd17d0
 confirmed: ""
 verified_sha: 180dcf74b3d0c00f6fc8aa868dccb3c1335cafb3
-reviewer: ""
-approved_sha: ""
+reviewer: qa-reviewer
+approved_sha: 180dcf74b3d0c00f6fc8aa868dccb3c1335cafb3
 approval_sig: ""
 reviewer_sig: ""
 integrated_sha: ""
@@ -104,3 +104,4 @@ python -m pytest tests/test_status_docs.py -q
     FAILED tests/test_status_docs.py::test_no_sequential_claim - AssertionError: ...
 
     full output: plans/tickets/.artifacts/KB-026-20261029-225532.log
+- 2026-10-29 22:59 - approved by qa-reviewer at 180dcf74b3d0
