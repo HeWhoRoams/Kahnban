@@ -205,7 +205,7 @@ One `###` item per ticket. Wide tickets (the skill set) run under a temporarily 
 ### Dispatch waits on unfinished dependencies
 - Files: `src/kahnban/dispatcher.py`, `src/kahnban/core.py`, `tests/test_dispatch_dependencies.py`
 - Covers: R13, R14
-- Depends on: Localize every shipped skill under the kb- prefix
+- Depends on: none
 - Acceptance:
   - [ ] a backlog ticket listed before its unfinished dependency is never offered; the dependency is (test: `python -m pytest tests/test_dispatch_dependencies.py -q -k dependent_waits`)
   - [ ] a ticket with a missing dependency or on a cycle (self-dependency included) is never offered (test: `python -m pytest tests/test_dispatch_dependencies.py -q -k missing_and_cycle_wait`)
