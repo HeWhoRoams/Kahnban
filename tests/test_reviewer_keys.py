@@ -155,7 +155,7 @@ def test_approval_fields_mapping_is_shared() -> None:
 
 
 def test_approval_fields_are_cleared_the_same_way_by_verify_and_reject(repo: Path) -> None:
-    config = factory_board(repo)
+    config = factory_board(repo, require_signed_approvals=True)
     verified(config)
     cli.main(["reviewers", "add", "alice", "--project-root", str(repo)])
     core.approve(config, "TST-001", "alice")
