@@ -26,7 +26,7 @@ reviewer: qa-reviewer
 approved_sha: 3b13cf56cb6954eb7aca24483474913f96b7d4e2
 approval_sig: 59617a5ccaaa496b07818e315bd95915b74f29461a42150d072b2bc0f23771e0
 reviewer_sig: ""
-integrated_sha: ""
+integrated_sha: 8f3ae271cc5936888550f661590cd35054a9a365
 ---
 
 ## Problem
@@ -144,3 +144,13 @@ python -m pytest tests/test_dispatch_dependencies.py -q
     full output: plans/tickets/.artifacts/KB-027-20261030-003654.log
 - 2026-10-30 00:41 - approved by qa-reviewer at 3b13cf56cb69
 - 2026-10-30 00:42 - approval by qa-reviewer countersigned by the runner at 3b13cf56cb69
+- 2026-10-30 00:42 - integrated into main | merge-commit: 8f3ae271cc5936888550f661590cd35054a9a365
+    $ merge ticket/KB-027 onto main 646b999dbfbc
+    === INTEGRATION: FEATURE TESTS ===
+    ...                                                                      [100%]
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    757 tests, 8 workers, 183s, all passed
+
+    full output: plans/tickets/.artifacts/KB-027-20261030-004204.log
