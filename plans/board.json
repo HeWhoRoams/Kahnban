@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:47:50",
+  "generated": "2026-10-30T00:47:59",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -446,7 +446,7 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 1,
       "tickets": [
         {
           "id": "KB-015",
@@ -724,15 +724,21 @@
             "tests/test_skill_localization.py"
           ],
           "updated": "2026-10-29"
-        },
+        }
+      ]
+    },
+    {
+      "name": "3-in-progress",
+      "count": 1,
+      "tickets": [
         {
           "id": "KB-028",
           "title": "Lint reports dependency cycles",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-028",
+          "worktree": ".worktrees/KB-028",
           "description": "",
           "depends_on": [
             "KB-027"
@@ -745,11 +751,6 @@
           "updated": "2026-10-30"
         }
       ]
-    },
-    {
-      "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "4-verifying",
@@ -1821,11 +1822,11 @@
     "KB-028": {
       "id": "KB-028",
       "title": "Lint reports dependency cycles",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-028",
+      "worktree": ".worktrees/KB-028",
       "description": "",
       "depends_on": [
         "KB-027"

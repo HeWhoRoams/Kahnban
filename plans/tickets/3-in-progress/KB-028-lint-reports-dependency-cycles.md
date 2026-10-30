@@ -1,10 +1,10 @@
 ---
 id: KB-028
 title: Lint reports dependency cycles
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-028
+worktree: .worktrees/KB-028
 created: 2026-10-29
 updated: 2026-10-30
 legacy_id: ""
@@ -46,3 +46,4 @@ python -m pytest tests/test_lint_cycles.py -q
 - 2026-10-29 21:05 - escalated to a human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.
 - 2026-10-30 00:45 - unblocked: dependencies are in 5-done (supervisor)
 - 2026-10-30 00:47 - ready gate passed -> 2-ready | contract 218a65fc86818449
+- 2026-10-30 00:47 - claimed by coder-agent -> 3-in-progress

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:47:50",
+  "generated": "2026-10-30T00:47:59",
   "generator": "kahnban",
   "columns": [
     {
@@ -136,7 +136,7 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 1,
       "tickets": [
         {
           "id": "KB-015",
@@ -147,23 +147,24 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "2-ready"
-        },
-        {
-          "id": "KB-028",
-          "title": "Lint reports dependency cycles",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-30",
-          "column": "2-ready"
         }
       ]
     },
     {
       "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-028",
+          "title": "Lint reports dependency cycles",
+          "status": "in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-028",
+          "worktree": ".worktrees/KB-028",
+          "updated": "2026-10-30",
+          "column": "3-in-progress"
+        }
+      ]
     },
     {
       "name": "4-verifying",
