@@ -9,12 +9,12 @@ created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
 design_docs: []
-depends_on: [KB-015]
+depends_on: []
 blocked_on: ""
 junctions: []
 source_doc: .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md
 source_anchor: tickets/dispatch-waits-on-unfinished-dependencie
-source_hash: 9313b916e454
+source_hash: bcc76f9923f4
 validation_class: headless-verified
 covers: [R13, R14]
 spec: SPEC-001
@@ -42,3 +42,4 @@ python -m pytest tests/test_dispatch_dependencies.py -q
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/dispatch-waits-on-unfinished-dependencie
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
+- 2026-10-29 20:44 - re-ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/dispatch-waits-on-unfinished-dependencie (source_hash bcc76f9923f4)

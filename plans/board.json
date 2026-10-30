@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:44:10",
+  "generated": "2026-10-29T20:44:53",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -412,9 +412,7 @@
           "branch": "",
           "worktree": "",
           "description": "",
-          "depends_on": [
-            "KB-015"
-          ],
+          "depends_on": [],
           "blocked_on": "",
           "blast_radius": [
             "src/kahnban/dispatcher.py",
@@ -1511,9 +1509,7 @@
       "branch": "",
       "worktree": "",
       "description": "",
-      "depends_on": [
-        "KB-015"
-      ],
+      "depends_on": [],
       "blocked_on": "",
       "blast_radius": [
         "src/kahnban/dispatcher.py",
