@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T20:24:24",
+  "generated": "2026-10-29T20:44:02",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 2,
+      "count": 21,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,6 +19,196 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-015",
+          "title": "Localize every shipped skill under the kb- prefix",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-016",
+          "title": "Record skill provenance in the lock",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-017",
+          "title": "Re-base the Pocock-derived skills on mattpocock/skills v1.3.2",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-018",
+          "title": "Re-base the pstack-derived skills on cursor/plugins c742dd6",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-019",
+          "title": "Ship the kahnban-comment-sicko helper agent",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-020",
+          "title": "skills check catches bold and subagent references",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-021",
+          "title": "skills install prunes skills it no longer ships",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-022",
+          "title": "Upstream installs never overwrite kb- skills",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-023",
+          "title": "Add the MIT licence with third-party notices",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-024",
+          "title": "Declare the licence in pyproject.toml",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-026",
+          "title": "Status docs stop making stale claims",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-027",
+          "title": "Dispatch waits on unfinished dependencies",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-028",
+          "title": "Lint reports dependency cycles",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-029",
+          "title": "Lint priority and risk values",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-030",
+          "title": "Dispatch by priority, risk and unblocking",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-031",
+          "title": "Ingest report shows spec with covers",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-032",
+          "title": "Ingest warns on traceability and size problems",
+          "status": "backlog",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "0-backlog"
+        },
+        {
+          "id": "KB-033",
+          "title": "Reject and escalate capture learnings",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -182,6 +372,10 @@
       "claude-coder": {
         "failed_verifies": 1,
         "rejections": 0
+      },
+      "coder-agent": {
+        "failed_verifies": 1,
+        "rejections": 0
       }
     },
     "by_reviewer": {},
@@ -283,9 +477,14 @@
         "cycle_hours": 0.8
       },
       "KB-012": {
-        "by_owner": {},
+        "by_owner": {
+          "coder-agent": {
+            "failed_verifies": 1,
+            "rejections": 0
+          }
+        },
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
@@ -299,6 +498,158 @@
         "cycle_hours": 0.9
       },
       "KB-014": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-015": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-016": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-017": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-018": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-019": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-020": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-021": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-022": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-023": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-024": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-025": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-026": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-027": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-028": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-029": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-030": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-031": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-032": {
+        "by_owner": {},
+        "rejected_by": {},
+        "verify_attempts": 0,
+        "rejections": 0,
+        "escalations": 0,
+        "cycle_hours": null
+      },
+      "KB-033": {
         "by_owner": {},
         "rejected_by": {},
         "verify_attempts": 0,
