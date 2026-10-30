@@ -78,7 +78,7 @@
     },
     {
       "name": "1-refining",
-      "count": 13,
+      "count": 12,
       "tickets": [
         {
           "id": "KB-016",
@@ -518,29 +518,12 @@
             "tests/test_dispatch_order.py"
           ],
           "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-031",
-          "title": "Ingest report shows spec with covers",
-          "status": "refining",
-          "column": "1-refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/ingest.py",
-            "tests/test_ingest_traceability.py"
-          ],
-          "updated": "2026-10-29"
         }
       ]
     },
     {
       "name": "2-ready",
-      "count": 5,
+      "count": 6,
       "tickets": [
         {
           "id": "KB-014",
@@ -883,6 +866,23 @@
             "implementation_status.md",
             "next_steps.md",
             "tests/test_status_docs.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-031",
+          "title": "Ingest report shows spec with covers",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/ingest.py",
+            "tests/test_ingest_traceability.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1618,23 +1618,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-031": {
-      "id": "KB-031",
-      "title": "Ingest report shows spec with covers",
-      "status": "refining",
-      "column": "1-refining",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/ingest.py",
-        "tests/test_ingest_traceability.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -1976,6 +1959,23 @@
         "implementation_status.md",
         "next_steps.md",
         "tests/test_status_docs.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-031": {
+      "id": "KB-031",
+      "title": "Ingest report shows spec with covers",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/ingest.py",
+        "tests/test_ingest_traceability.py"
       ],
       "updated": "2026-10-29"
     },

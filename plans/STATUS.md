@@ -9,8 +9,8 @@ Generated: 2026-10-29 20:44
 | Column | Tickets |
 | :--- | ---: |
 | 0-backlog | 4 |
-| 1-refining | 13 |
-| 2-ready | 5 |
+| 1-refining | 12 |
+| 2-ready | 6 |
 | 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 10 |
@@ -24,7 +24,7 @@ Generated: 2026-10-29 20:44
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 1-refining (13)
+## 1-refining (12)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
@@ -40,9 +40,8 @@ Generated: 2026-10-29 20:44
 | KB-028 | Lint reports dependency cycles | unassigned | - | 2026-10-29 |
 | KB-029 | Lint priority and risk values | unassigned | - | 2026-10-29 |
 | KB-030 | Dispatch by priority, risk and unblocking | unassigned | - | 2026-10-29 |
-| KB-031 | Ingest report shows spec with covers | unassigned | - | 2026-10-29 |
 
-## 2-ready (5)
+## 2-ready (6)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
@@ -51,6 +50,7 @@ Generated: 2026-10-29 20:44
 | KB-023 | Add the MIT licence with third-party notices | unassigned | - | 2026-10-29 |
 | KB-025 | lint help names the real rule range | unassigned | - | 2026-10-29 |
 | KB-026 | Status docs stop making stale claims | unassigned | - | 2026-10-29 |
+| KB-031 | Ingest report shows spec with covers | unassigned | - | 2026-10-29 |
 
 ## 3-in-progress (1)
 
