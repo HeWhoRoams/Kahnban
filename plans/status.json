@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:31:11",
+  "generated": "2026-10-29T22:36:43",
   "generator": "kahnban",
   "columns": [
     {
@@ -202,7 +202,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-014",
@@ -223,23 +223,24 @@
           "worktree": ".worktrees/KB-015",
           "updated": "2026-10-29",
           "column": "3-in-progress"
-        },
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-025",
-          "worktree": ".worktrees/KB-025",
-          "updated": "2026-10-29",
-          "column": "3-in-progress"
         }
       ]
     },
     {
       "name": "4-verifying",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "verifying",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-025",
+          "worktree": ".worktrees/KB-025",
+          "updated": "2026-10-29",
+          "column": "4-verifying"
+        }
+      ]
     },
     {
       "name": "5-done",
@@ -594,7 +595,7 @@
       "KB-025": {
         "by_owner": {},
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
