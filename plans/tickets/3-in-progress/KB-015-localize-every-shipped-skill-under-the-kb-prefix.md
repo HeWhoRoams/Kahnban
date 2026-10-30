@@ -304,3 +304,31 @@ python -m pytest tests/test_skill_localization.py -q
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
 - 2026-10-29 20:44 - ready gate passed -> 2-ready | contract f7ba8882bc61f282
 - 2026-10-29 21:13 - claimed by coder-agent -> 3-in-progress
+- 2026-10-29 23:07 - verify exit=1 in 235.8s (cwd=KB-015) (no transition)
+    verifying ticket/KB-015 at 5ab8e60f53f2; Running Tier 1 (Feature Tests): python -m pytest tests/test_skill_localization.py -q; Running Tier 2 (Regression Tests): python tests/run_parallel.py -j 8
+    $ [python -m pytest tests/test_skill_localization.py -q] && [4/4 criterion tests] && [python tests/run_parallel.py -j 8]
+    === TIER 1: FEATURE TESTS ===
+    ...                                                                      [100%]
+
+
+    === ACCEPTANCE CRITERIA ===
+    [PASS] $ python -m pytest tests/test_skill_localization.py -q -k prefixed
+    ..                                                                       [100%]
+
+    [PASS] $ python -m pytest tests/test_skill_localization.py -q -k no_unprefixed_refs
+    .                                                                        [100%]
+
+    [PASS] $ python -m pytest tests/test_skill_localization.py -q -k no_stale_attributions
+    .                                                                        [100%]
+
+    [PASS] $ kahnban skills check
+    [OK] skills, roles and generated agent files agree
+
+
+    === TIER 2: REGRESSION TESTS ===
+    FAILED tests/test_trust.py::test_installing_says_which_tampered_file_it_restored
+    FAILED tests/test_contracts.py::test_adapter_skills_match_the_shipped_templates
+    FAILED tests/test_trust.py::test_a_changed_skill_or_hook_breaks_the_check_until_it_is_re_pinned
+    739 tests, 8 workers, 215s, FAILURES
+
+    full output: plans/tickets/.artifacts/KB-015-20261029-230729.log
