@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from kahnban import cli, core, frontmatter
+from kahnban import cli, core, frontmatter, trust
 from conftest import git
 from test_factory_gates import factory_board, verified
 
@@ -15,6 +15,8 @@ from test_factory_gates import factory_board, verified
 @pytest.fixture(autouse=True)
 def isolated_keys(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("KAHNBAN_KEY_DIR", str(tmp_path / "keys"))
+    # a reviewer registers and approves as a human, not whatever role happens to run this suite
+    monkeypatch.delenv("KAHNBAN_ROLE", raising=False)
 
 
 def fields_of(config: core.Config) -> dict:
@@ -104,14 +106,15 @@ def test_reviewers_add_writes_the_committed_registry(repo: Path) -> None:
     assert sorted(json.loads(registry_path.read_text(encoding="utf-8"))["names"]) == ["Bob", "Tim Niles"]
 
 
-def test_committed_registry_without_a_local_key_refuses(repo: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_committed_registry_without_a_local_key_refuses(repo: Path) -> None:
     config = factory_board(repo)
     verified(config)
     cli.main(["reviewers", "add", "alice", "--project-root", str(repo)])
     core.approve(config, "TST-001", "alice")
 
     # a fresh checkout: the committed registry still names alice, but there is no local key for her
-    monkeypatch.setenv("KAHNBAN_KEY_DIR", str(tmp_path / "elsewhere"))
+    # (only her key is gone; the engine's own signing key, which signed the frozen contract, stays put)
+    trust._reviewer_file(config.project_root, "alice").unlink()
     message = "reviewer 'alice' has no key on this machine; run 'kahnban reviewers add alice' here"
 
     with pytest.raises(core.GateError, match=message):
