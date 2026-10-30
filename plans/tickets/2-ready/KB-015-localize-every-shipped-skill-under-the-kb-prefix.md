@@ -1,7 +1,7 @@
 ---
 id: KB-015
 title: Localize every shipped skill under the kb- prefix
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -18,6 +18,9 @@ source_hash: d825b39e1294
 validation_class: headless-verified
 covers: [R1, R2, R11]
 spec: SPEC-001
+contract_hash: 98bf897322080243
+contract_sig: c82a57301659f196b2f916565436b78baf364c1a5b5609975e07917a142df9ba
+confirmed: ""
 ---
 
 ## Problem
@@ -326,3 +329,4 @@ python -m pytest tests/test_skill_localization.py -q
     full output: plans/tickets/.artifacts/KB-015-20261029-230729.log
 - 2026-10-29 23:20 - manual move 3-in-progress -> 1-refining: KB-015's radius missed cli.py, test_trust.py and test_hooks_trust_edges.py (SPEC-001 breakdown error); contract must be re-frozen. Coder's attempt kept on ticket/KB-015.
 - 2026-10-29 23:20 - re-ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/localize-every-shipped-skill-under-the-k (source_hash d825b39e1294)
+- 2026-10-29 23:20 - ready gate passed -> 2-ready | contract 98bf897322080243

@@ -9,8 +9,8 @@ Generated: 2026-10-29 23:20
 | Column | Tickets |
 | :--- | ---: |
 | 0-backlog | 2 |
-| 1-refining | 13 |
-| 2-ready | 2 |
+| 1-refining | 12 |
+| 2-ready | 3 |
 | 3-in-progress | 1 |
 | 4-verifying | 1 |
 | 5-done | 14 |
@@ -22,11 +22,10 @@ Generated: 2026-10-29 23:20
 | KB-002 | Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show | unassigned | - | 2026-10-29 |
 | KB-009 | The citadel portability smoke test (plan.md phase 4) | unassigned | - | 2026-10-29 |
 
-## 1-refining (13)
+## 1-refining (12)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-015 | Localize every shipped skill under the kb- prefix | unassigned | - | 2026-10-29 |
 | KB-016 | Record skill provenance in the lock | unassigned | - | 2026-10-29 |
 | KB-017 | Re-base the Pocock-derived skills on mattpocock/skills v1.3.2 | unassigned | - | 2026-10-29 |
 | KB-018 | Re-base the pstack-derived skills on cursor/plugins c742dd6 | unassigned | - | 2026-10-29 |
@@ -40,10 +39,11 @@ Generated: 2026-10-29 23:20
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 2-ready (2)
+## 2-ready (3)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
+| KB-015 | Localize every shipped skill under the kb- prefix | unassigned | - | 2026-10-29 |
 | KB-024 | Declare the licence in pyproject.toml | unassigned | - | 2026-10-29 |
 | KB-027 | Dispatch waits on unfinished dependencies | unassigned | - | 2026-10-29 |
 

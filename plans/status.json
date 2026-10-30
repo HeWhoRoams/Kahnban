@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:20:23",
+  "generated": "2026-10-29T23:20:24",
   "generator": "kahnban",
   "columns": [
     {
@@ -30,18 +30,8 @@
     },
     {
       "name": "1-refining",
-      "count": 13,
+      "count": 12,
       "tickets": [
-        {
-          "id": "KB-015",
-          "title": "Localize every shipped skill under the kb- prefix",
-          "status": "refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "1-refining"
-        },
         {
           "id": "KB-016",
           "title": "Record skill provenance in the lock",
@@ -166,8 +156,18 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 3,
       "tickets": [
+        {
+          "id": "KB-015",
+          "title": "Localize every shipped skill under the kb- prefix",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        },
         {
           "id": "KB-024",
           "title": "Declare the licence in pyproject.toml",
