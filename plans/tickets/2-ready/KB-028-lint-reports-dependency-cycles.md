@@ -1,7 +1,7 @@
 ---
 id: KB-028
 title: Lint reports dependency cycles
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -18,6 +18,9 @@ source_hash: b067ce6bece5
 validation_class: headless-verified
 covers: [R15]
 spec: SPEC-001
+contract_hash: 218a65fc86818449
+contract_sig: a42b8bce78196ba051023cf2682bb74701f75151d77f9ec33b984dfc1e345ffb
+confirmed: ""
 ---
 
 ## Problem
@@ -42,3 +45,4 @@ python -m pytest tests/test_lint_cycles.py -q
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
 - 2026-10-29 21:05 - escalated to a human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.
 - 2026-10-30 00:45 - unblocked: dependencies are in 5-done (supervisor)
+- 2026-10-30 00:47 - ready gate passed -> 2-ready | contract 218a65fc86818449

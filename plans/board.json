@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:45:57",
+  "generated": "2026-10-30T00:47:50",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -40,7 +40,7 @@
     },
     {
       "name": "1-refining",
-      "count": 11,
+      "count": 10,
       "tickets": [
         {
           "id": "KB-016",
@@ -385,25 +385,6 @@
           "updated": "2026-10-29"
         },
         {
-          "id": "KB-028",
-          "title": "Lint reports dependency cycles",
-          "status": "refining",
-          "column": "1-refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-027"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/linter.py",
-            "tests/test_lint_cycles.py"
-          ],
-          "updated": "2026-10-30"
-        },
-        {
           "id": "KB-029",
           "title": "Lint priority and risk values",
           "status": "refining",
@@ -465,7 +446,7 @@
     },
     {
       "name": "2-ready",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-015",
@@ -743,6 +724,25 @@
             "tests/test_skill_localization.py"
           ],
           "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-028",
+          "title": "Lint reports dependency cycles",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-027"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/linter.py",
+            "tests/test_lint_cycles.py"
+          ],
+          "updated": "2026-10-30"
         }
       ]
     },
@@ -1483,25 +1483,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-028": {
-      "id": "KB-028",
-      "title": "Lint reports dependency cycles",
-      "status": "refining",
-      "column": "1-refining",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-027"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/linter.py",
-        "tests/test_lint_cycles.py"
-      ],
-      "updated": "2026-10-30"
-    },
     "KB-029": {
       "id": "KB-029",
       "title": "Lint priority and risk values",
@@ -1836,6 +1817,25 @@
         "tests/test_skill_localization.py"
       ],
       "updated": "2026-10-29"
+    },
+    "KB-028": {
+      "id": "KB-028",
+      "title": "Lint reports dependency cycles",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-027"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/linter.py",
+        "tests/test_lint_cycles.py"
+      ],
+      "updated": "2026-10-30"
     },
     "KB-001": {
       "id": "KB-001",
