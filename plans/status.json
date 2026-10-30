@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:17:40",
+  "generated": "2026-10-29T20:24:21",
   "generator": "kahnban",
   "columns": [
     {
@@ -66,23 +66,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-013",
-          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-013",
-          "worktree": ".worktrees/KB-013",
-          "updated": "2026-10-29",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 9,
+      "count": 10,
       "tickets": [
         {
           "id": "KB-001",
@@ -173,6 +162,16 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
+        },
+        {
+          "id": "KB-013",
+          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-013",
+          "worktree": ".worktrees/KB-013",
+          "updated": "2026-10-29",
+          "column": "5-done"
         }
       ]
     }
@@ -185,9 +184,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 9,
-    "first_pass_yield": 0.89,
-    "median_cycle_hours": 28.5,
+    "done": 10,
+    "first_pass_yield": 0.9,
+    "median_cycle_hours": 27.35,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -296,7 +295,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 0.9
       },
       "KB-014": {
         "by_owner": {},

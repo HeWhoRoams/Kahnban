@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:17:40",
+  "generated": "2026-10-29T20:24:21",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -91,31 +91,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-013",
-          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-013",
-          "worktree": ".worktrees/KB-013",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "tests/sim/compare.py",
-            "tests/sim/__main__.py",
-            "tests/test_sim_compare.py"
-          ],
-          "updated": "2026-10-29"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 9,
+      "count": 10,
       "tickets": [
         {
           "id": "KB-001",
@@ -286,6 +267,24 @@
             "tests/test_runner_parallel.py"
           ],
           "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-013",
+          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-013",
+          "worktree": ".worktrees/KB-013",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "tests/sim/compare.py",
+            "tests/sim/__main__.py",
+            "tests/test_sim_compare.py"
+          ],
+          "updated": "2026-10-29"
         }
       ]
     }
@@ -351,24 +350,6 @@
       "blast_radius": [
         "src/kahnban/core.py",
         "tests/test_reviewer_keys.py"
-      ],
-      "updated": "2026-10-29"
-    },
-    "KB-013": {
-      "id": "KB-013",
-      "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-013",
-      "worktree": ".worktrees/KB-013",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "tests/sim/compare.py",
-        "tests/sim/__main__.py",
-        "tests/test_sim_compare.py"
       ],
       "updated": "2026-10-29"
     },
@@ -539,6 +520,24 @@
         "src/kahnban/runner.py",
         "src/kahnban/cli.py",
         "tests/test_runner_parallel.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-013": {
+      "id": "KB-013",
+      "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-013",
+      "worktree": ".worktrees/KB-013",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "tests/sim/compare.py",
+        "tests/sim/__main__.py",
+        "tests/test_sim_compare.py"
       ],
       "updated": "2026-10-29"
     }
