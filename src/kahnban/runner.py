@@ -36,6 +36,9 @@ class RunStop(core.KahnbanError):
     """The loop cannot continue (for example, no worker is configured)."""
 
 
+_REFUSALS = (core.KahnbanError, gitops.GitError, worktree.WorktreeError)
+
+
 @dataclass
 class Step:
     number: int
@@ -144,11 +147,15 @@ def _loop(config: core.Config, result: RunResult, flight: _Flight, max_steps: in
                 outcome = _step(config, rec, result.log_path)
             except RunStop:
                 raise
-            except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
+            except _REFUSALS as error:
                 outcome = f"refused: {error}"
         _note(config, result, number, rec, outcome, echo)
-    flight.drain(max_steps)
+    unverified = flight.drain_unverified()
     result.stopped = f"stopped after {max_steps} steps"
+    if unverified:
+        result.stopped += (
+            f"; {len(unverified)} worker(s) finished unverified; run again ({', '.join(unverified)})"
+        )
     result.parked = _parked(config)
     _guard_summary(result, echo)
 
@@ -201,17 +208,25 @@ class _Flight:
         ticket = rec.ticket_id or ""
         outcome = _admit(self.config, rec, ticket)
         if outcome is None:
+            claimed = False
             try:
                 if rec.action == "claim_and_implement":
                     core.claim(self.config, ticket, CODER, create_worktree=True)
                 else:
                     core.lease(self.config, ticket, CODER)
+                claimed = True  # a failure past this point must drop what it just took
                 assert self.pool is not None
                 self.active[self.pool.submit(_code, self.config, rec, self.result.log_path)] = rec
                 self.echo(f"[{number}] {rec.action} {ticket}: worker started ({len(self.active)}/{self.jobs})")
                 return
-            except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
+            except _REFUSALS as error:
+                if claimed:
+                    core.drop_lease(self.config, ticket)
                 outcome = f"refused: {error}"
+            except Exception:
+                if claimed:
+                    core.drop_lease(self.config, ticket)
+                raise
         _note(self.config, self.result, number, rec, outcome, self.echo)
 
     def wait(self, number: int) -> None:
@@ -225,21 +240,44 @@ class _Flight:
         if self.pool:
             self.pool.shutdown()
 
+    def drain_unverified(self) -> list[str]:
+        """At the max_steps budget: wait for the workers still running, but do not
+        verify them. Each ticket keeps its lease dropped and stays in-progress, to be
+        verified (or resumed) on the next run."""
+        if not self.active:
+            return []
+        wait(self.active)
+        unverified = []
+        for future, rec in list(self.active.items()):
+            del self.active[future]
+            ticket = rec.ticket_id or ""
+            core.drop_lease(self.config, ticket)
+            unverified.append(ticket)
+        return unverified
+
     def harvest(self, number: int) -> None:
         """Verify each worker that has finished; its lease is held until then."""
         for future in [f for f in self.active if f.done()]:
             rec = self.active.pop(future)
             ticket = rec.ticket_id or ""
             try:
-                try:
-                    code = future.result()
-                finally:
-                    core.drop_lease(self.config, ticket)
-                outcome = _verified(self.config, ticket, code)
+                code = future.result()
             except RunStop as error:
+                core.drop_lease(self.config, ticket)
+                _note(self.config, self.result, number, rec, str(error), self.echo)
                 self.stop = self.stop or error
                 continue
-            except (core.KahnbanError, gitops.GitError, worktree.WorktreeError) as error:
+            except Exception as error:
+                core.drop_lease(self.config, ticket)
+                _note(self.config, self.result, number, rec, f"refused: {error}", self.echo)
+                continue
+            try:
+                outcome = _finish(self.config, ticket, code)
+            except RunStop as error:
+                _note(self.config, self.result, number, rec, str(error), self.echo)
+                self.stop = self.stop or error
+                continue
+            except Exception as error:
                 outcome = f"refused: {error}"
             _note(self.config, self.result, number, rec, outcome, self.echo)
 
@@ -345,8 +383,15 @@ def _implement(config: core.Config, rec: dispatcher.DispatchRecommendation, log:
     ticket = rec.ticket_id or ""
     try:
         code = _code(config, rec, log)
-    finally:
+    except Exception:
         core.drop_lease(config, ticket)
+        raise
+    return _finish(config, ticket, code)
+
+
+def _finish(config: core.Config, ticket: str, code: int) -> str:
+    """Drop the ticket's lease, then verify it (shared by the sequential and the ``--jobs`` paths)."""
+    core.drop_lease(config, ticket)
     return _verified(config, ticket, code)
 
 
