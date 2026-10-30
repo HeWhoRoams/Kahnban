@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:20:57",
+  "generated": "2026-10-29T23:24:07",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -827,30 +827,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-031",
-          "title": "Ingest report shows spec with covers",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-031",
-          "worktree": ".worktrees/KB-031",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/ingest.py",
-            "tests/test_ingest_traceability.py"
-          ],
-          "updated": "2026-10-29"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 14,
+      "count": 15,
       "tickets": [
         {
           "id": "KB-001",
@@ -1108,6 +1090,23 @@
             "implementation_status.md",
             "next_steps.md",
             "tests/test_status_docs.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-031",
+          "title": "Ingest report shows spec with covers",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-031",
+          "worktree": ".worktrees/KB-031",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/ingest.py",
+            "tests/test_ingest_traceability.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1912,23 +1911,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-031": {
-      "id": "KB-031",
-      "title": "Ingest report shows spec with covers",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-031",
-      "worktree": ".worktrees/KB-031",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/ingest.py",
-        "tests/test_ingest_traceability.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -2185,6 +2167,23 @@
         "implementation_status.md",
         "next_steps.md",
         "tests/test_status_docs.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-031": {
+      "id": "KB-031",
+      "title": "Ingest report shows spec with covers",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-031",
+      "worktree": ".worktrees/KB-031",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/ingest.py",
+        "tests/test_ingest_traceability.py"
       ],
       "updated": "2026-10-29"
     }

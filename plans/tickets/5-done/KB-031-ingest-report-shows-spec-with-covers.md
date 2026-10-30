@@ -1,7 +1,7 @@
 ---
 id: KB-031
 title: Ingest report shows spec with covers
-status: verifying
+status: done
 owner: coder-agent
 branch: ticket/KB-031
 worktree: .worktrees/KB-031
@@ -122,3 +122,4 @@ python -m pytest tests/test_ingest_traceability.py -q
     743 tests, 8 workers, 186s, all passed
 
     full output: plans/tickets/.artifacts/KB-031-20261029-232057.log
+- 2026-10-29 23:24 - done gate passed -> 5-done | merge-commit: dc0509efeb5e6ee824231f5ffbb92db339b79912

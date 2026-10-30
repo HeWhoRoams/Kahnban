@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:20:57",
+  "generated": "2026-10-29T23:24:07",
   "generator": "kahnban",
   "columns": [
     {
@@ -208,23 +208,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-031",
-          "title": "Ingest report shows spec with covers",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-031",
-          "worktree": ".worktrees/KB-031",
-          "updated": "2026-10-29",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 14,
+      "count": 15,
       "tickets": [
         {
           "id": "KB-001",
@@ -365,6 +354,16 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
+        },
+        {
+          "id": "KB-031",
+          "title": "Ingest report shows spec with covers",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-031",
+          "worktree": ".worktrees/KB-031",
+          "updated": "2026-10-29",
+          "column": "5-done"
         }
       ]
     }
@@ -381,9 +380,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 14,
-    "first_pass_yield": 0.86,
-    "median_cycle_hours": 21.55,
+    "done": 15,
+    "first_pass_yield": 0.87,
+    "median_cycle_hours": 19.6,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -651,7 +650,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 2.7
       },
       "KB-032": {
         "by_owner": {},
