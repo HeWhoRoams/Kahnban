@@ -3,8 +3,8 @@ id: KB-012
 title: "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error"
 status: done
 owner: coder-agent
-branch: ticket/KB-012
-worktree: .worktrees/KB-012
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -313,3 +313,4 @@ python tests/run_parallel.py -j 8] && [4/4 criterion tests] && [python tests/run
 
     full output: plans/tickets/.artifacts/KB-012-20261029-210619.log
 - 2026-10-29 21:13 - done gate passed -> 5-done | merge-commit: 1091cbfd742ed1cf65bf5b49a9b6d37770c752e9
+- 2026-10-29 21:13 - cleanup: removed worktree: KB-012; deleted branch: ticket/KB-012

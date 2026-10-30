@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T21:13:03",
+  "generated": "2026-10-29T21:13:04",
   "generator": "kahnban",
   "columns": [
     {
@@ -349,8 +349,8 @@
           "title": "Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-012",
-          "worktree": ".worktrees/KB-012",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         },

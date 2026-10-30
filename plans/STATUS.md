@@ -73,5 +73,5 @@ _empty_
 | KB-008 | Parallel workers in kahnban run (leases already allow it) | claude-coder | - | 2026-10-29 |
 | KB-010 | The default worker command cannot finish a ticket headlessly: claude -p with acceptEdits is asked to approve git and kahnban commands. Allow the commands each role needs (allowedTools or project permission rules written by skills install) and prove it with the live test | claude-coder | - | 2026-10-26 |
 | KB-011 | Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps | coder-agent | - | 2026-10-29 |
-| KB-012 | Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error | coder-agent | ticket/KB-012 | 2026-10-29 |
+| KB-012 | Reviewer registry: committed reviewer names so a missing key dir refuses, and a corrupt reviewer file gives a clear error | coder-agent | - | 2026-10-29 |
 | KB-013 | Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do | coder-agent | - | 2026-10-29 |
