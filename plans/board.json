@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:27:59",
+  "generated": "2026-10-29T23:28:06",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -465,7 +465,7 @@
     },
     {
       "name": "2-ready",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-015",
@@ -761,31 +761,12 @@
             "tests/test_dispatch_dependencies.py"
           ],
           "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-032",
-          "title": "Ingest warns on traceability and size problems",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "`kahnban ingest` (`src/kahnban/ingest.py`) builds each `TicketDraft`'s `spec`/`covers` (KB-031, R18) but never checks them against the spec, and never checks blast radius size or an orphaned `## Requirements` section. A draft can cite a `covers` id the spec does not define, a spec requirement can go uncovered by every draft, an unapproved spec can be cited, a draft's blast radius can be empty or exceed `config.max_blast_radius_files`, and a non-spec document's `## Requirements` section can produce no `covers` at all — and ingest stays silent on every one of these, exiting 0 either way. `src/kahnban/specs.py` already has the primitives (`find_spec`, `Spec.approved`, `Spec.requirements`) `ingest_document` needs to turn each case into an entry on `report.warnings`, which `render_report` already prints and `--json` already carries (`as_dict`'s `warnings` key) — so exit code 0 is kept as-is and nothing escalates to an error.",
-          "depends_on": [
-            "KB-031"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/ingest.py",
-            "tests/test_ingest_traceability.py"
-          ],
-          "updated": "2026-10-29"
         }
       ]
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-014",
@@ -820,6 +801,25 @@
           "blast_radius": [
             "pyproject.toml",
             "tests/test_license.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-032",
+          "title": "Ingest warns on traceability and size problems",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-032",
+          "worktree": ".worktrees/KB-032",
+          "description": "`kahnban ingest` (`src/kahnban/ingest.py`) builds each `TicketDraft`'s `spec`/`covers` (KB-031, R18) but never checks them against the spec, and never checks blast radius size or an orphaned `## Requirements` section. A draft can cite a `covers` id the spec does not define, a spec requirement can go uncovered by every draft, an unapproved spec can be cited, a draft's blast radius can be empty or exceed `config.max_blast_radius_files`, and a non-spec document's `## Requirements` section can produce no `covers` at all — and ingest stays silent on every one of these, exiting 0 either way. `src/kahnban/specs.py` already has the primitives (`find_spec`, `Spec.approved`, `Spec.requirements`) `ingest_document` needs to turn each case into an entry on `report.warnings`, which `render_report` already prints and `--json` already carries (`as_dict`'s `warnings` key) — so exit code 0 is kept as-is and nothing escalates to an error.",
+          "depends_on": [
+            "KB-031"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/ingest.py",
+            "tests/test_ingest_traceability.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1856,25 +1856,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-032": {
-      "id": "KB-032",
-      "title": "Ingest warns on traceability and size problems",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "`kahnban ingest` (`src/kahnban/ingest.py`) builds each `TicketDraft`'s `spec`/`covers` (KB-031, R18) but never checks them against the spec, and never checks blast radius size or an orphaned `## Requirements` section. A draft can cite a `covers` id the spec does not define, a spec requirement can go uncovered by every draft, an unapproved spec can be cited, a draft's blast radius can be empty or exceed `config.max_blast_radius_files`, and a non-spec document's `## Requirements` section can produce no `covers` at all — and ingest stays silent on every one of these, exiting 0 either way. `src/kahnban/specs.py` already has the primitives (`find_spec`, `Spec.approved`, `Spec.requirements`) `ingest_document` needs to turn each case into an entry on `report.warnings`, which `render_report` already prints and `--json` already carries (`as_dict`'s `warnings` key) — so exit code 0 is kept as-is and nothing escalates to an error.",
-      "depends_on": [
-        "KB-031"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/ingest.py",
-        "tests/test_ingest_traceability.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -1908,6 +1889,25 @@
       "blast_radius": [
         "pyproject.toml",
         "tests/test_license.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-032": {
+      "id": "KB-032",
+      "title": "Ingest warns on traceability and size problems",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-032",
+      "worktree": ".worktrees/KB-032",
+      "description": "`kahnban ingest` (`src/kahnban/ingest.py`) builds each `TicketDraft`'s `spec`/`covers` (KB-031, R18) but never checks them against the spec, and never checks blast radius size or an orphaned `## Requirements` section. A draft can cite a `covers` id the spec does not define, a spec requirement can go uncovered by every draft, an unapproved spec can be cited, a draft's blast radius can be empty or exceed `config.max_blast_radius_files`, and a non-spec document's `## Requirements` section can produce no `covers` at all — and ingest stays silent on every one of these, exiting 0 either way. `src/kahnban/specs.py` already has the primitives (`find_spec`, `Spec.approved`, `Spec.requirements`) `ingest_document` needs to turn each case into an entry on `report.warnings`, which `render_report` already prints and `--json` already carries (`as_dict`'s `warnings` key) — so exit code 0 is kept as-is and nothing escalates to an error.",
+      "depends_on": [
+        "KB-031"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/ingest.py",
+        "tests/test_ingest_traceability.py"
       ],
       "updated": "2026-10-29"
     },

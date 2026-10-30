@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:27:59",
+  "generated": "2026-10-29T23:28:06",
   "generator": "kahnban",
   "columns": [
     {
@@ -146,7 +146,7 @@
     },
     {
       "name": "2-ready",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-015",
@@ -167,22 +167,12 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "2-ready"
-        },
-        {
-          "id": "KB-032",
-          "title": "Ingest warns on traceability and size problems",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "2-ready"
         }
       ]
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-014",
@@ -201,6 +191,16 @@
           "owner": "coder-agent",
           "branch": "ticket/KB-024",
           "worktree": ".worktrees/KB-024",
+          "updated": "2026-10-29",
+          "column": "3-in-progress"
+        },
+        {
+          "id": "KB-032",
+          "title": "Ingest warns on traceability and size problems",
+          "status": "in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-032",
+          "worktree": ".worktrees/KB-032",
           "updated": "2026-10-29",
           "column": "3-in-progress"
         }
