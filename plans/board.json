@@ -6,7 +6,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 15,
+      "count": 14,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,25 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-021",
-          "title": "skills install prunes skills it no longer ships",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-018"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/skills.py",
-            "tests/test_skills_prune.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -283,7 +264,7 @@
     },
     {
       "name": "1-refining",
-      "count": 5,
+      "count": 6,
       "tickets": [
         {
           "id": "KB-016",
@@ -586,6 +567,25 @@
           "blast_radius": [
             "src/kahnban/skills_check.py",
             "tests/test_skills_check_refs.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-021",
+          "title": "skills install prunes skills it no longer ships",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-018"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/skills.py",
+            "tests/test_skills_prune.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,25 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-021": {
-      "id": "KB-021",
-      "title": "skills install prunes skills it no longer ships",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-018"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/skills.py",
-        "tests/test_skills_prune.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-022": {
       "id": "KB-022",
       "title": "Upstream installs never overwrite kb- skills",
@@ -1685,6 +1666,25 @@
       "blast_radius": [
         "src/kahnban/skills_check.py",
         "tests/test_skills_check_refs.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-021": {
+      "id": "KB-021",
+      "title": "skills install prunes skills it no longer ships",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-018"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/skills.py",
+        "tests/test_skills_prune.py"
       ],
       "updated": "2026-10-29"
     },
