@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T20:44:02",
+  "generated": "2026-10-29T20:44:03",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 21,
+      "count": 20,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,16 +19,6 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-015",
-          "title": "Localize every shipped skill under the kb- prefix",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -220,8 +210,19 @@
     },
     {
       "name": "1-refining",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-015",
+          "title": "Localize every shipped skill under the kb- prefix",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "1-refining"
+        }
+      ]
     },
     {
       "name": "2-ready",
