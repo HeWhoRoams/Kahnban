@@ -6,7 +6,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 17,
+      "count": 16,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,33 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-019",
-          "title": "Ship the kahnban-comment-sicko helper agent",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-018"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/harnesses.py",
-            "src/kahnban/templates/agents/comment-sicko.md",
-            ".claude/agents/kahnban-comment-sicko.md",
-            "src/kahnban/templates/skills/kb-no-comments/skill.md",
-            ".agents/skills/kb-no-comments/skill.md",
-            ".claude/skills/kb-no-comments/skill.md",
-            "adapters/skills/kb-no-comments/skill.md",
-            "src/kahnban/templates/provenance.json",
-            ".agents/skills.lock.json",
-            "tests/test_comment_sicko_agent.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -329,7 +302,7 @@
     },
     {
       "name": "1-refining",
-      "count": 3,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-016",
@@ -586,6 +559,33 @@
             "src/kahnban/templates/provenance.json",
             ".agents/skills.lock.json",
             "tests/test_skill_upstream_pstack.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-019",
+          "title": "Ship the kahnban-comment-sicko helper agent",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-018"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/harnesses.py",
+            "src/kahnban/templates/agents/comment-sicko.md",
+            ".claude/agents/kahnban-comment-sicko.md",
+            "src/kahnban/templates/skills/kb-no-comments/skill.md",
+            ".agents/skills/kb-no-comments/skill.md",
+            ".claude/skills/kb-no-comments/skill.md",
+            "adapters/skills/kb-no-comments/skill.md",
+            "src/kahnban/templates/provenance.json",
+            ".agents/skills.lock.json",
+            "tests/test_comment_sicko_agent.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,33 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-019": {
-      "id": "KB-019",
-      "title": "Ship the kahnban-comment-sicko helper agent",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-018"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/harnesses.py",
-        "src/kahnban/templates/agents/comment-sicko.md",
-        ".claude/agents/kahnban-comment-sicko.md",
-        "src/kahnban/templates/skills/kb-no-comments/skill.md",
-        ".agents/skills/kb-no-comments/skill.md",
-        ".claude/skills/kb-no-comments/skill.md",
-        "adapters/skills/kb-no-comments/skill.md",
-        "src/kahnban/templates/provenance.json",
-        ".agents/skills.lock.json",
-        "tests/test_comment_sicko_agent.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-020": {
       "id": "KB-020",
       "title": "skills check catches bold and subagent references",
@@ -1685,6 +1658,33 @@
         "src/kahnban/templates/provenance.json",
         ".agents/skills.lock.json",
         "tests/test_skill_upstream_pstack.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-019": {
+      "id": "KB-019",
+      "title": "Ship the kahnban-comment-sicko helper agent",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-018"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/harnesses.py",
+        "src/kahnban/templates/agents/comment-sicko.md",
+        ".claude/agents/kahnban-comment-sicko.md",
+        "src/kahnban/templates/skills/kb-no-comments/skill.md",
+        ".agents/skills/kb-no-comments/skill.md",
+        ".claude/skills/kb-no-comments/skill.md",
+        "adapters/skills/kb-no-comments/skill.md",
+        "src/kahnban/templates/provenance.json",
+        ".agents/skills.lock.json",
+        "tests/test_comment_sicko_agent.py"
       ],
       "updated": "2026-10-29"
     },

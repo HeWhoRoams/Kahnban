@@ -1,7 +1,7 @@
 ---
 id: KB-019
 title: Ship the kahnban-comment-sicko helper agent
-status: backlog
+status: refining
 owner: unassigned
 branch: ""
 worktree: ""
@@ -48,3 +48,4 @@ python -m pytest tests/test_comment_sicko_agent.py -q
 
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/ship-the-kahnban-comment-sicko-helper-ag
+- 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement

@@ -8,20 +8,19 @@ Generated: 2026-10-29 20:44
 
 | Column | Tickets |
 | :--- | ---: |
-| 0-backlog | 17 |
-| 1-refining | 3 |
+| 0-backlog | 16 |
+| 1-refining | 4 |
 | 2-ready | 2 |
 | 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 10 |
 
-## 0-backlog (17)
+## 0-backlog (16)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-002 | Run the unit suite, the simulation and the canaries on Linux and on GitHub, and fix what they show | unassigned | - | 2026-10-29 |
 | KB-009 | The citadel portability smoke test (plan.md phase 4) | unassigned | - | 2026-10-29 |
-| KB-019 | Ship the kahnban-comment-sicko helper agent | unassigned | - | 2026-10-29 |
 | KB-020 | skills check catches bold and subagent references | unassigned | - | 2026-10-29 |
 | KB-021 | skills install prunes skills it no longer ships | unassigned | - | 2026-10-29 |
 | KB-022 | Upstream installs never overwrite kb- skills | unassigned | - | 2026-10-29 |
@@ -37,13 +36,14 @@ Generated: 2026-10-29 20:44
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 1-refining (3)
+## 1-refining (4)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-016 | Record skill provenance in the lock | unassigned | - | 2026-10-29 |
 | KB-017 | Re-base the Pocock-derived skills on mattpocock/skills v1.3.2 | unassigned | - | 2026-10-29 |
 | KB-018 | Re-base the pstack-derived skills on cursor/plugins c742dd6 | unassigned | - | 2026-10-29 |
+| KB-019 | Ship the kahnban-comment-sicko helper agent | unassigned | - | 2026-10-29 |
 
 ## 2-ready (2)
 
