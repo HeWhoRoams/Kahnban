@@ -299,8 +299,8 @@
           "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-014",
-          "worktree": ".worktrees/KB-014",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-30",
           "column": "5-done"
         },
