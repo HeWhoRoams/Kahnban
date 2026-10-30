@@ -1,7 +1,7 @@
 ---
 id: KB-015
 title: Localize every shipped skill under the kb- prefix
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -18,6 +18,9 @@ source_hash: bf395d64e1d9
 validation_class: headless-verified
 covers: [R1, R2, R11]
 spec: SPEC-001
+contract_hash: f7ba8882bc61f282
+contract_sig: 6f0e2a632157ca79e683e56f5f5b916b442d8fb796d0d72a49b85c3c77de66b2
+confirmed: ""
 ---
 
 ## Problem
@@ -299,3 +302,4 @@ python -m pytest tests/test_skill_localization.py -q
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/localize-every-shipped-skill-under-the-k
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
+- 2026-10-29 20:44 - ready gate passed -> 2-ready | contract f7ba8882bc61f282

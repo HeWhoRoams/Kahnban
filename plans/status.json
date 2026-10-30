@@ -210,27 +210,26 @@
     },
     {
       "name": "1-refining",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-015",
-          "title": "Localize every shipped skill under the kb- prefix",
-          "status": "refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "1-refining"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "2-ready",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-014",
           "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        },
+        {
+          "id": "KB-015",
+          "title": "Localize every shipped skill under the kb- prefix",
           "status": "ready",
           "owner": "unassigned",
           "branch": "",

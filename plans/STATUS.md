@@ -9,8 +9,8 @@ Generated: 2026-10-29 20:44
 | Column | Tickets |
 | :--- | ---: |
 | 0-backlog | 20 |
-| 1-refining | 1 |
-| 2-ready | 1 |
+| 1-refining | 0 |
+| 2-ready | 2 |
 | 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 10 |
@@ -40,17 +40,16 @@ Generated: 2026-10-29 20:44
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 1-refining (1)
+## 1-refining (0)
 
-| ID | Title | Owner | Branch | Updated |
-| :--- | :--- | :--- | :--- | :--- |
-| KB-015 | Localize every shipped skill under the kb- prefix | unassigned | - | 2026-10-29 |
+_empty_
 
-## 2-ready (1)
+## 2-ready (2)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-014 | Core clean-up: one list of approval fields to clear, rename _signature_problem | unassigned | - | 2026-10-29 |
+| KB-015 | Localize every shipped skill under the kb- prefix | unassigned | - | 2026-10-29 |
 
 ## 3-in-progress (1)
 
