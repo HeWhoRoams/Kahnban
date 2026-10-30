@@ -1943,8 +1943,21 @@ def branch_tip(config: Config, branch: str) -> str:
     return gitops.rev_parse(config.project_root, branch)
 
 
-def _signature_problem(config: Config, fields: Mapping[str, object]) -> str:
-    """With ``require_signed_approvals``: why this approval is not the engine's own, or ''."""
+# Cleared together by both ``verify`` (a fresh verify invalidates any earlier approval or
+# integration) and ``reject`` (sent back to the coder). ``verified_sha`` is deliberately not
+# here: the two callers disagree on its value, so each sets it itself.
+_APPROVAL_FIELDS: dict[str, str] = {
+    "reviewer": "",
+    "approved_sha": "",
+    "approval_sig": "",
+    "reviewer_sig": "",
+    "integrated_sha": "",
+    "confirmed": "",
+}
+
+
+def _approval_problem(config: Config, fields: Mapping[str, object]) -> str:
+    """Why this approval is not genuine, or '': checks both the engine HMAC and the reviewer seal."""
     approval = trust.Approval.from_fields(fields)
     if config.require_signed_approvals and (problem := trust.signature_problem(config.project_root, approval)):
         return problem
@@ -1971,7 +1984,7 @@ def _release_problems(
             problems.append(f"approved by its own owner '{owner}'")
         elif tip and str(fields.get("approved_sha") or "").strip() != tip:
             problems.append(f"{branch} moved after approval; reject it and re-verify")
-    if reviewer and (forged := _signature_problem(config, fields)):
+    if reviewer and (forged := _approval_problem(config, fields)):
         problems.append(forged)
     if config.require_integration:
         integrated = str(fields.get("integrated_sha") or "").strip()
@@ -2263,15 +2276,7 @@ def verify(
                 ticket.ticket_id,
                 target,
                 log_entry=entry,
-                fm_updates={
-                    "verified_sha": tip,
-                    "reviewer": "",
-                    "approved_sha": "",
-                    "approval_sig": "",
-                    "reviewer_sig": "",
-                    "integrated_sha": "",
-                    "confirmed": "",
-                },
+                fm_updates={"verified_sha": tip, **_APPROVAL_FIELDS},
                 timestamp=now,
                 verification=verification,
             )
@@ -2609,15 +2614,7 @@ def reject(
         unticked = _tick_acceptance_criteria(ticket.text, ticked=False)
         if unticked != ticket.text:
             write_text(ticket.path, unticked)
-        updates = {
-            "verified_sha": "",
-            "reviewer": "",
-            "approved_sha": "",
-            "approval_sig": "",
-            "reviewer_sig": "",
-            "integrated_sha": "",
-            "confirmed": "",
-        }
+        updates = {"verified_sha": "", **_APPROVAL_FIELDS}
         if integration_refusal:
             updates["integration_refusals"] = str(integration_refusals(config, ticket.ticket_id) + 1)
         result = transition(
@@ -2680,7 +2677,7 @@ def merge(
                 f"{ticket.ticket_id} is not approved at {tip[:12]}; a reviewer runs "
                 f"'kahnban approve {ticket.ticket_id} --reviewer <name>' first"
             )
-        if reviewer and (forged := _signature_problem(config, fields)):
+        if reviewer and (forged := _approval_problem(config, fields)):
             raise GateError(f"{ticket.ticket_id}: {forged}")
         _require_allowed_commands(config, ticket.ticket_id, body)
         feat_cmd, reg_cmd = parse_validation_commands(config, body)

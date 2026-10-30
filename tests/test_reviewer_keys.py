@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 from pathlib import Path
 
@@ -132,3 +133,43 @@ def test_corrupt_reviewers_file_refuses_cleanly(repo: Path) -> None:
 
     with pytest.raises(core.GateError, match=r"plans/reviewers\.json is unreadable"):
         core.merge(config, "TST-001")
+
+
+APPROVAL_FIELD_NAMES = {"reviewer", "approved_sha", "approval_sig", "reviewer_sig", "integrated_sha", "confirmed"}
+
+
+def test_approval_fields_mapping_is_shared() -> None:
+    # One module-level mapping, not two duplicated dict literals in verify() and reject().
+    assert core._APPROVAL_FIELDS == {name: "" for name in APPROVAL_FIELD_NAMES}
+    # verified_sha is deliberately excluded: verify and reject disagree on its value.
+    assert "verified_sha" not in core._APPROVAL_FIELDS
+
+    verify_source = inspect.getsource(core.verify)
+    reject_source = inspect.getsource(core.reject)
+    assert "_APPROVAL_FIELDS" in verify_source
+    assert "_APPROVAL_FIELDS" in reject_source
+    # no duplicated dict literal spelling out every field by hand in either function
+    for name in APPROVAL_FIELD_NAMES:
+        assert f'"{name}": ""' not in verify_source
+        assert f'"{name}": ""' not in reject_source
+
+
+def test_approval_fields_are_cleared_the_same_way_by_verify_and_reject(repo: Path) -> None:
+    config = factory_board(repo, require_signed_approvals=True)
+    verified(config)
+    cli.main(["reviewers", "add", "alice", "--project-root", str(repo)])
+    core.approve(config, "TST-001", "alice")
+    assert core.merge(config, "TST-001").passed
+    fields = fields_of(config)
+    assert all(fields.get(name) for name in APPROVAL_FIELD_NAMES - {"confirmed"})
+
+    core.reject(config, "TST-001", "bob", "needs more work")
+    fields = fields_of(config)
+    assert all(not fields.get(name) for name in APPROVAL_FIELD_NAMES)
+
+
+def test_approval_problem_checks_hmac_and_seal() -> None:
+    assert not hasattr(core, "_signature_problem")
+    docstring = core._approval_problem.__doc__ or ""
+    assert "HMAC" in docstring
+    assert "reviewer seal" in docstring
