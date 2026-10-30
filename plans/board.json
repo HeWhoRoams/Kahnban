@@ -227,7 +227,7 @@
     },
     {
       "name": "1-refining",
-      "count": 8,
+      "count": 7,
       "tickets": [
         {
           "id": "KB-016",
@@ -570,30 +570,12 @@
             "tests/test_skills_sources.py"
           ],
           "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-023",
-          "title": "Add the MIT licence with third-party notices",
-          "status": "refining",
-          "column": "1-refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "license",
-            "third_party_notices.md",
-            "tests/test_license.py"
-          ],
-          "updated": "2026-10-29"
         }
       ]
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-014",
@@ -883,6 +865,24 @@
             "tests/test_contracts.py",
             ".agents/skills.lock.json",
             "tests/test_skill_localization.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-023",
+          "title": "Add the MIT licence with third-party notices",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "license",
+            "third_party_notices.md",
+            "tests/test_license.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1670,24 +1670,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-023": {
-      "id": "KB-023",
-      "title": "Add the MIT licence with third-party notices",
-      "status": "refining",
-      "column": "1-refining",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "license",
-        "third_party_notices.md",
-        "tests/test_license.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -1976,6 +1958,24 @@
         "tests/test_contracts.py",
         ".agents/skills.lock.json",
         "tests/test_skill_localization.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-023": {
+      "id": "KB-023",
+      "title": "Add the MIT licence with third-party notices",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "license",
+        "third_party_notices.md",
+        "tests/test_license.py"
       ],
       "updated": "2026-10-29"
     },

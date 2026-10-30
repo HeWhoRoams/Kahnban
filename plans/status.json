@@ -130,7 +130,7 @@
     },
     {
       "name": "1-refining",
-      "count": 8,
+      "count": 7,
       "tickets": [
         {
           "id": "KB-016",
@@ -201,22 +201,12 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "1-refining"
-        },
-        {
-          "id": "KB-023",
-          "title": "Add the MIT licence with third-party notices",
-          "status": "refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "1-refining"
         }
       ]
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-014",
@@ -231,6 +221,16 @@
         {
           "id": "KB-015",
           "title": "Localize every shipped skill under the kb- prefix",
+          "status": "ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "2-ready"
+        },
+        {
+          "id": "KB-023",
+          "title": "Add the MIT licence with third-party notices",
           "status": "ready",
           "owner": "unassigned",
           "branch": "",

@@ -9,8 +9,8 @@ Generated: 2026-10-29 20:44
 | Column | Tickets |
 | :--- | ---: |
 | 0-backlog | 12 |
-| 1-refining | 8 |
-| 2-ready | 2 |
+| 1-refining | 7 |
+| 2-ready | 3 |
 | 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 10 |
@@ -32,7 +32,7 @@ Generated: 2026-10-29 20:44
 | KB-032 | Ingest warns on traceability and size problems | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 1-refining (8)
+## 1-refining (7)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
@@ -43,14 +43,14 @@ Generated: 2026-10-29 20:44
 | KB-020 | skills check catches bold and subagent references | unassigned | - | 2026-10-29 |
 | KB-021 | skills install prunes skills it no longer ships | unassigned | - | 2026-10-29 |
 | KB-022 | Upstream installs never overwrite kb- skills | unassigned | - | 2026-10-29 |
-| KB-023 | Add the MIT licence with third-party notices | unassigned | - | 2026-10-29 |
 
-## 2-ready (2)
+## 2-ready (3)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-014 | Core clean-up: one list of approval fields to clear, rename _signature_problem | unassigned | - | 2026-10-29 |
 | KB-015 | Localize every shipped skill under the kb- prefix | unassigned | - | 2026-10-29 |
+| KB-023 | Add the MIT licence with third-party notices | unassigned | - | 2026-10-29 |
 
 ## 3-in-progress (1)
 
