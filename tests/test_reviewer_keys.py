@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -84,3 +85,47 @@ def test_a_worker_cannot_register_a_reviewer(repo: Path, monkeypatch: pytest.Mon
     assert cli.main(["reviewers", "add", "mallory", "--project-root", str(repo)]) != 0
     monkeypatch.delenv("KAHNBAN_ROLE")
     assert cli.main(["reviewers", "list", "--project-root", str(repo)]) == 0
+
+
+def test_reviewers_add_writes_the_committed_registry(repo: Path) -> None:
+    factory_board(repo)
+    root = ["--project-root", str(repo)]
+    registry_path = repo / "plans" / "reviewers.json"
+
+    assert cli.main(["reviewers", "add", "Tim Niles", *root]) == 0
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    assert registry["names"] == ["Tim Niles"]
+    assert "key" not in json.dumps(registry)  # the name, never the key
+
+    assert cli.main(["reviewers", "add", "tim niles", *root]) != 0  # the same person, any case
+    assert json.loads(registry_path.read_text(encoding="utf-8"))["names"] == ["Tim Niles"]  # not duplicated
+
+    assert cli.main(["reviewers", "add", "Bob", *root]) == 0
+    assert sorted(json.loads(registry_path.read_text(encoding="utf-8"))["names"]) == ["Bob", "Tim Niles"]
+
+
+def test_committed_registry_without_a_local_key_refuses(repo: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    config = factory_board(repo)
+    verified(config)
+    cli.main(["reviewers", "add", "alice", "--project-root", str(repo)])
+    core.approve(config, "TST-001", "alice")
+
+    # a fresh checkout: the committed registry still names alice, but there is no local key for her
+    monkeypatch.setenv("KAHNBAN_KEY_DIR", str(tmp_path / "elsewhere"))
+    message = "reviewer 'alice' has no key on this machine; run 'kahnban reviewers add alice' here"
+
+    with pytest.raises(core.GateError, match=message):
+        core.approve(config, "TST-001", "alice")
+    with pytest.raises(core.GateError, match=message):
+        core.merge(config, "TST-001")
+
+
+def test_corrupt_reviewers_file_refuses_cleanly(repo: Path) -> None:
+    config = factory_board(repo)
+    verified(config)
+    core.approve(config, "TST-001", "alice")  # no registered reviewers yet, so this needs no signature
+
+    (repo / "plans" / "reviewers.json").write_text("{not json", encoding="utf-8")
+
+    with pytest.raises(core.GateError, match=r"plans/reviewers\.json is unreadable"):
+        core.merge(config, "TST-001")
