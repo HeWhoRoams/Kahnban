@@ -6,7 +6,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 5,
+      "count": 4,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,23 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-031",
-          "title": "Ingest report shows spec with covers",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/ingest.py",
-            "tests/test_ingest_traceability.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -95,7 +78,7 @@
     },
     {
       "name": "1-refining",
-      "count": 12,
+      "count": 13,
       "tickets": [
         {
           "id": "KB-016",
@@ -533,6 +516,23 @@
           "blast_radius": [
             "src/kahnban/dispatcher.py",
             "tests/test_dispatch_order.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-031",
+          "title": "Ingest report shows spec with covers",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/ingest.py",
+            "tests/test_ingest_traceability.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,23 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-031": {
-      "id": "KB-031",
-      "title": "Ingest report shows spec with covers",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/ingest.py",
-        "tests/test_ingest_traceability.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-032": {
       "id": "KB-032",
       "title": "Ingest warns on traceability and size problems",
@@ -1632,6 +1615,23 @@
       "blast_radius": [
         "src/kahnban/dispatcher.py",
         "tests/test_dispatch_order.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-031": {
+      "id": "KB-031",
+      "title": "Ingest report shows spec with covers",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/ingest.py",
+        "tests/test_ingest_traceability.py"
       ],
       "updated": "2026-10-29"
     },
