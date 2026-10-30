@@ -1,10 +1,10 @@
 ---
 id: KB-025
 title: lint help names the real rule range
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-025
+worktree: .worktrees/KB-025
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -43,3 +43,4 @@ python -m pytest tests/test_lint_help.py -q
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/lint-help-names-the-real-rule-range
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
 - 2026-10-29 20:44 - ready gate passed -> 2-ready | contract 56148b8bf0ac0793
+- 2026-10-29 22:30 - claimed by coder-agent -> 3-in-progress

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:30:43",
+  "generated": "2026-10-29T22:30:45",
   "generator": "kahnban",
   "columns": [
     {
@@ -166,18 +166,8 @@
     },
     {
       "name": "2-ready",
-      "count": 4,
+      "count": 3,
       "tickets": [
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "2-ready"
-        },
         {
           "id": "KB-026",
           "title": "Status docs stop making stale claims",
@@ -212,7 +202,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-014",
@@ -231,6 +221,16 @@
           "owner": "coder-agent",
           "branch": "ticket/KB-015",
           "worktree": ".worktrees/KB-015",
+          "updated": "2026-10-29",
+          "column": "3-in-progress"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-025",
+          "worktree": ".worktrees/KB-025",
           "updated": "2026-10-29",
           "column": "3-in-progress"
         }

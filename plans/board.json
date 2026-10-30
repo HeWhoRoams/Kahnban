@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:30:43",
+  "generated": "2026-10-29T22:30:45",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -503,25 +503,8 @@
     },
     {
       "name": "2-ready",
-      "count": 4,
+      "count": 3,
       "tickets": [
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/cli.py",
-            "tests/test_lint_help.py"
-          ],
-          "updated": "2026-10-29"
-        },
         {
           "id": "KB-026",
           "title": "Status docs stop making stale claims",
@@ -579,7 +562,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-014",
@@ -869,6 +852,23 @@
             "tests/test_contracts.py",
             ".agents/skills.lock.json",
             "tests/test_skill_localization.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-025",
+          "worktree": ".worktrees/KB-025",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/cli.py",
+            "tests/test_lint_help.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1596,23 +1596,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-025": {
-      "id": "KB-025",
-      "title": "lint help names the real rule range",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/cli.py",
-        "tests/test_lint_help.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-026": {
       "id": "KB-026",
       "title": "Status docs stop making stale claims",
@@ -1954,6 +1937,23 @@
         "tests/test_contracts.py",
         ".agents/skills.lock.json",
         "tests/test_skill_localization.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-025": {
+      "id": "KB-025",
+      "title": "lint help names the real rule range",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-025",
+      "worktree": ".worktrees/KB-025",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/cli.py",
+        "tests/test_lint_help.py"
       ],
       "updated": "2026-10-29"
     },
