@@ -22,8 +22,8 @@ contract_hash: 56148b8bf0ac0793
 contract_sig: b01efc62360c1a919c5a6d7ad88d717531ce0d22db21ba3204b30fb4add510db
 confirmed: ""
 verified_sha: b61d3b728973f554f4299494683c22ae740604ac
-reviewer: ""
-approved_sha: ""
+reviewer: qa-reviewer
+approved_sha: b61d3b728973f554f4299494683c22ae740604ac
 approval_sig: ""
 reviewer_sig: ""
 integrated_sha: ""
@@ -93,3 +93,4 @@ python -m pytest tests/test_lint_help.py -q
     FAILED tests/test_lint_help.py::test_help_range_from_table - AssertionError: ...
 
     full output: plans/tickets/.artifacts/KB-025-20261029-223643.log
+- 2026-10-29 22:40 - approved by qa-reviewer at b61d3b728973
