@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:40:43",
+  "generated": "2026-10-29T22:43:55",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -859,30 +859,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-025",
-          "worktree": ".worktrees/KB-025",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/cli.py",
-            "tests/test_lint_help.py"
-          ],
-          "updated": "2026-10-29"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 12,
+      "count": 13,
       "tickets": [
         {
           "id": "KB-001",
@@ -1105,6 +1087,23 @@
             "license",
             "third_party_notices.md",
             "tests/test_license.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-025",
+          "worktree": ".worktrees/KB-025",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/cli.py",
+            "tests/test_lint_help.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1941,23 +1940,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-025": {
-      "id": "KB-025",
-      "title": "lint help names the real rule range",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-025",
-      "worktree": ".worktrees/KB-025",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/cli.py",
-        "tests/test_lint_help.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -2179,6 +2161,23 @@
         "license",
         "third_party_notices.md",
         "tests/test_license.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-025": {
+      "id": "KB-025",
+      "title": "lint help names the real rule range",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-025",
+      "worktree": ".worktrees/KB-025",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/cli.py",
+        "tests/test_lint_help.py"
       ],
       "updated": "2026-10-29"
     }

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:40:43",
+  "generated": "2026-10-29T22:43:55",
   "generator": "kahnban",
   "columns": [
     {
@@ -228,23 +228,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-025",
-          "title": "lint help names the real rule range",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-025",
-          "worktree": ".worktrees/KB-025",
-          "updated": "2026-10-29",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 12,
+      "count": 13,
       "tickets": [
         {
           "id": "KB-001",
@@ -365,6 +354,16 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
+        },
+        {
+          "id": "KB-025",
+          "title": "lint help names the real rule range",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-025",
+          "worktree": ".worktrees/KB-025",
+          "updated": "2026-10-29",
+          "column": "5-done"
         }
       ]
     }
@@ -381,9 +380,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 12,
-    "first_pass_yield": 0.83,
-    "median_cycle_hours": 24.85,
+    "done": 13,
+    "first_pass_yield": 0.85,
+    "median_cycle_hours": 23.5,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -598,7 +597,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
-        "cycle_hours": null
+        "cycle_hours": 2.0
       },
       "KB-026": {
         "by_owner": {},
