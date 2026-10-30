@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:49:20",
+  "generated": "2026-10-29T23:55:47",
   "generator": "kahnban",
   "columns": [
     {
@@ -188,23 +188,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-032",
-          "title": "Ingest warns on traceability and size problems",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-032",
-          "worktree": ".worktrees/KB-032",
-          "updated": "2026-10-29",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 16,
+      "count": 17,
       "tickets": [
         {
           "id": "KB-001",
@@ -365,6 +354,16 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
+        },
+        {
+          "id": "KB-032",
+          "title": "Ingest warns on traceability and size problems",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-032",
+          "worktree": ".worktrees/KB-032",
+          "updated": "2026-10-29",
+          "column": "5-done"
         }
       ]
     }
@@ -381,9 +380,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 16,
+    "done": 17,
     "first_pass_yield": 0.88,
-    "median_cycle_hours": 11.25,
+    "median_cycle_hours": 3.2,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -659,7 +658,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 1,
-        "cycle_hours": null
+        "cycle_hours": 3.2
       },
       "KB-033": {
         "by_owner": {},

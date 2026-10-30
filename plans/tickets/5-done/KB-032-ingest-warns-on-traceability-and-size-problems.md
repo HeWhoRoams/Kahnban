@@ -1,7 +1,7 @@
 ---
 id: KB-032
 title: Ingest warns on traceability and size problems
-status: verifying
+status: done
 owner: coder-agent
 branch: ticket/KB-032
 worktree: .worktrees/KB-032
@@ -257,3 +257,4 @@ python tests/run_parallel.py -j 8] && [6/6 criterion tests] && [python tests/run
     751 tests, 8 workers, 180s, all passed
 
     full output: plans/tickets/.artifacts/KB-032-20261029-234920.log
+- 2026-10-29 23:55 - done gate passed -> 5-done | merge-commit: 37e5deebd0b12a3116c2fa7da2c036a4580b7bcd
