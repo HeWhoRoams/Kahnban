@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T19:52:37",
+  "generated": "2026-10-29T20:01:05",
   "generator": "kahnban",
   "columns": [
     {
@@ -61,23 +61,12 @@
     },
     {
       "name": "3-in-progress",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-013",
-          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
-          "status": "in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-013",
-          "worktree": ".worktrees/KB-013",
-          "updated": "2026-10-29",
-          "column": "3-in-progress"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "4-verifying",
-      "count": 1,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-011",
@@ -86,6 +75,16 @@
           "owner": "coder-agent",
           "branch": "ticket/KB-011",
           "worktree": ".worktrees/KB-011",
+          "updated": "2026-10-29",
+          "column": "4-verifying"
+        },
+        {
+          "id": "KB-013",
+          "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
+          "status": "verifying",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-013",
+          "worktree": ".worktrees/KB-013",
           "updated": "2026-10-29",
           "column": "4-verifying"
         }
@@ -294,7 +293,7 @@
       "KB-013": {
         "by_owner": {},
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null
