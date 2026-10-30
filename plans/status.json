@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:43:55",
+  "generated": "2026-10-29T22:43:56",
   "generator": "kahnban",
   "columns": [
     {
@@ -360,8 +360,8 @@
           "title": "lint help names the real rule range",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-025",
-          "worktree": ".worktrees/KB-025",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         }

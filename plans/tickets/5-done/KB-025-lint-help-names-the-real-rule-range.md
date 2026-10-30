@@ -3,8 +3,8 @@ id: KB-025
 title: lint help names the real rule range
 status: done
 owner: coder-agent
-branch: ticket/KB-025
-worktree: .worktrees/KB-025
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -106,3 +106,4 @@ python -m pytest tests/test_lint_help.py -q
 
     full output: plans/tickets/.artifacts/KB-025-20261029-224043.log
 - 2026-10-29 22:43 - done gate passed -> 5-done | merge-commit: 5eaa6df26ba3964ac708c2bc3050e2386d9efea8
+- 2026-10-29 22:43 - cleanup: removed worktree: KB-025; deleted branch: ticket/KB-025
