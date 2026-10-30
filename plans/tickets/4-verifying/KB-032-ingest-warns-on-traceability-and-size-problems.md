@@ -26,7 +26,7 @@ reviewer: qa-reviewer
 approved_sha: 9a9dc21e1f1a0848703b7b9120f4eddd9cee1179
 approval_sig: 7e140f9823aaf9bb5705bd21871ceee6a67a2383a7e0ff1cab65444e44d8a057
 reviewer_sig: ""
-integrated_sha: ""
+integrated_sha: 37e5deebd0b12a3116c2fa7da2c036a4580b7bcd
 ---
 
 ## Problem
@@ -243,3 +243,17 @@ python tests/run_parallel.py -j 8] && [6/6 criterion tests] && [python tests/run
     full output: plans/tickets/.artifacts/KB-032-20261029-234102.log
 - 2026-10-29 23:49 - approved by qa-reviewer at 9a9dc21e1f1a
 - 2026-10-29 23:49 - approval by qa-reviewer countersigned by the runner at 9a9dc21e1f1a
+- 2026-10-29 23:49 - integrated into main | merge-commit: 37e5deebd0b12a3116c2fa7da2c036a4580b7bcd
+    $ merge ticket/KB-032 onto main ae12bdcdf19b
+    === INTEGRATION: FEATURE TESTS ===
+    $ python -m pytest tests/test_ingest_traceability.py -q
+    .........                                                                [100%]
+
+    $ python tests/run_parallel.py -j 8
+    751 tests, 8 workers, 193s, all passed
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    751 tests, 8 workers, 180s, all passed
+
+    full output: plans/tickets/.artifacts/KB-032-20261029-234920.log
