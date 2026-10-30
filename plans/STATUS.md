@@ -35,7 +35,7 @@ Generated: 2026-10-30 00:45
 | KB-022 | Upstream installs never overwrite kb- skills | unassigned | - | 2026-10-29 |
 | KB-028 | Lint reports dependency cycles | unassigned | - | 2026-10-30 |
 | KB-029 | Lint priority and risk values | unassigned | - | 2026-10-29 |
-| KB-030 | Dispatch by priority, risk and unblocking | unassigned | - | 2026-10-29 |
+| KB-030 | Dispatch by priority, risk and unblocking | unassigned | - | 2026-10-30 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
 ## 2-ready (1)

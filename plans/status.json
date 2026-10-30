@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:45:55",
+  "generated": "2026-10-30T00:45:56",
   "generator": "kahnban",
   "columns": [
     {
@@ -129,7 +129,7 @@
           "owner": "unassigned",
           "branch": "",
           "worktree": "",
-          "updated": "2026-10-29",
+          "updated": "2026-10-30",
           "column": "1-refining"
         },
         {

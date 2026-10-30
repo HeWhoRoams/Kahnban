@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:45:55",
+  "generated": "2026-10-30T00:45:56",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -435,12 +435,12 @@
           "depends_on": [
             "KB-027"
           ],
-          "blocked_on": "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.",
+          "blocked_on": "",
           "blast_radius": [
             "src/kahnban/dispatcher.py",
             "tests/test_dispatch_order.py"
           ],
-          "updated": "2026-10-29"
+          "updated": "2026-10-30"
         },
         {
           "id": "KB-033",
@@ -1534,12 +1534,12 @@
       "depends_on": [
         "KB-027"
       ],
-      "blocked_on": "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.",
+      "blocked_on": "",
       "blast_radius": [
         "src/kahnban/dispatcher.py",
         "tests/test_dispatch_order.py"
       ],
-      "updated": "2026-10-29"
+      "updated": "2026-10-30"
     },
     "KB-033": {
       "id": "KB-033",
