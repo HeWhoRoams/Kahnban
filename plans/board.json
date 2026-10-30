@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T20:44:04",
+  "generated": "2026-10-29T20:44:05",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 16,
+      "count": 15,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,25 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-020",
-          "title": "skills check catches bold and subagent references",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-019"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/skills_check.py",
-            "tests/test_skills_check_refs.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -302,7 +283,7 @@
     },
     {
       "name": "1-refining",
-      "count": 4,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-016",
@@ -586,6 +567,25 @@
             "src/kahnban/templates/provenance.json",
             ".agents/skills.lock.json",
             "tests/test_comment_sicko_agent.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-020",
+          "title": "skills check catches bold and subagent references",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-019"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/skills_check.py",
+            "tests/test_skills_check_refs.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,25 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-020": {
-      "id": "KB-020",
-      "title": "skills check catches bold and subagent references",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-019"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/skills_check.py",
-        "tests/test_skills_check_refs.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-021": {
       "id": "KB-021",
       "title": "skills install prunes skills it no longer ships",
@@ -1685,6 +1666,25 @@
         "src/kahnban/templates/provenance.json",
         ".agents/skills.lock.json",
         "tests/test_comment_sicko_agent.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-020": {
+      "id": "KB-020",
+      "title": "skills check catches bold and subagent references",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-019"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/skills_check.py",
+        "tests/test_skills_check_refs.py"
       ],
       "updated": "2026-10-29"
     },

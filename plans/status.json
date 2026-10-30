@@ -1,10 +1,10 @@
 {
-  "generated": "2026-10-29T20:44:04",
+  "generated": "2026-10-29T20:44:05",
   "generator": "kahnban",
   "columns": [
     {
       "name": "0-backlog",
-      "count": 16,
+      "count": 15,
       "tickets": [
         {
           "id": "KB-002",
@@ -19,16 +19,6 @@
         {
           "id": "KB-009",
           "title": "The citadel portability smoke test (plan.md phase 4)",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
-        },
-        {
-          "id": "KB-020",
-          "title": "skills check catches bold and subagent references",
           "status": "backlog",
           "owner": "unassigned",
           "branch": "",
@@ -170,7 +160,7 @@
     },
     {
       "name": "1-refining",
-      "count": 4,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-016",
@@ -205,6 +195,16 @@
         {
           "id": "KB-019",
           "title": "Ship the kahnban-comment-sicko helper agent",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "1-refining"
+        },
+        {
+          "id": "KB-020",
+          "title": "skills check catches bold and subagent references",
           "status": "refining",
           "owner": "unassigned",
           "branch": "",

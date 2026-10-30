@@ -1,7 +1,7 @@
 ---
 id: KB-020
 title: skills check catches bold and subagent references
-status: backlog
+status: refining
 owner: unassigned
 branch: ""
 worktree: ""
@@ -41,3 +41,4 @@ python -m pytest tests/test_skills_check_refs.py -q
 
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/skills-check-catches-bold-and-subagent-r
+- 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
