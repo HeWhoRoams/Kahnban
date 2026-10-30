@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T19:41:09",
+  "generated": "2026-10-29T19:52:37",
   "generator": "kahnban",
   "columns": [
     {
@@ -61,18 +61,8 @@
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 1,
       "tickets": [
-        {
-          "id": "KB-011",
-          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
-          "status": "in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-011",
-          "worktree": ".worktrees/KB-011",
-          "updated": "2026-10-29",
-          "column": "3-in-progress"
-        },
         {
           "id": "KB-013",
           "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
@@ -87,8 +77,19 @@
     },
     {
       "name": "4-verifying",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-011",
+          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+          "status": "verifying",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-011",
+          "worktree": ".worktrees/KB-011",
+          "updated": "2026-10-29",
+          "column": "4-verifying"
+        }
+      ]
     },
     {
       "name": "5-done",
@@ -277,7 +278,7 @@
       "KB-011": {
         "by_owner": {},
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null

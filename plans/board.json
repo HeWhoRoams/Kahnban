@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T19:41:09",
+  "generated": "2026-10-29T19:52:37",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -86,26 +86,8 @@
     },
     {
       "name": "3-in-progress",
-      "count": 2,
+      "count": 1,
       "tickets": [
-        {
-          "id": "KB-011",
-          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
-          "status": "in-progress",
-          "column": "3-in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-011",
-          "worktree": ".worktrees/KB-011",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/runner.py",
-            "src/kahnban/cli.py",
-            "tests/test_runner_parallel.py"
-          ],
-          "updated": "2026-10-29"
-        },
         {
           "id": "KB-013",
           "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
@@ -128,8 +110,27 @@
     },
     {
       "name": "4-verifying",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-011",
+          "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+          "status": "verifying",
+          "column": "4-verifying",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-011",
+          "worktree": ".worktrees/KB-011",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/runner.py",
+            "src/kahnban/cli.py",
+            "tests/test_runner_parallel.py"
+          ],
+          "updated": "2026-10-29"
+        }
+      ]
     },
     {
       "name": "5-done",
@@ -354,24 +355,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-011": {
-      "id": "KB-011",
-      "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
-      "status": "in-progress",
-      "column": "3-in-progress",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-011",
-      "worktree": ".worktrees/KB-011",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/runner.py",
-        "src/kahnban/cli.py",
-        "tests/test_runner_parallel.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-013": {
       "id": "KB-013",
       "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
@@ -387,6 +370,24 @@
         "tests/sim/compare.py",
         "tests/sim/__main__.py",
         "tests/test_sim_compare.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-011": {
+      "id": "KB-011",
+      "title": "Runner robustness for --jobs: log worker stops, drop leaked leases, no verify past max_steps",
+      "status": "verifying",
+      "column": "4-verifying",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-011",
+      "worktree": ".worktrees/KB-011",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/runner.py",
+        "src/kahnban/cli.py",
+        "tests/test_runner_parallel.py"
       ],
       "updated": "2026-10-29"
     },
