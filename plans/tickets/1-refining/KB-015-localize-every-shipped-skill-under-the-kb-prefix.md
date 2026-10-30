@@ -2,9 +2,9 @@
 id: KB-015
 title: Localize every shipped skill under the kb- prefix
 status: refining
-owner: coder-agent
-branch: ticket/KB-015
-worktree: .worktrees/KB-015
+owner: unassigned
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -14,13 +14,10 @@ blocked_on: ""
 junctions: []
 source_doc: .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md
 source_anchor: tickets/localize-every-shipped-skill-under-the-k
-source_hash: bf395d64e1d9
+source_hash: d825b39e1294
 validation_class: headless-verified
 covers: [R1, R2, R11]
 spec: SPEC-001
-contract_hash: f7ba8882bc61f282
-contract_sig: 6f0e2a632157ca79e683e56f5f5b916b442d8fb796d0d72a49b85c3c77de66b2
-confirmed: ""
 ---
 
 ## Problem
@@ -286,6 +283,9 @@ confirmed: ""
 - `tests/test_init_agentic.py`
 - `tests/test_roles.py`
 - `tests/test_runner_edges.py`
+- `src/kahnban/cli.py`
+- `tests/test_trust.py`
+- `tests/test_hooks_trust_edges.py`
 - `tests/test_skills.py`
 - `tests/test_skills_sources.py`
 - `tests/test_contracts.py`
@@ -309,27 +309,20 @@ python -m pytest tests/test_skill_localization.py -q
     $ [python -m pytest tests/test_skill_localization.py -q] && [4/4 criterion tests] && [python tests/run_parallel.py -j 8]
     === TIER 1: FEATURE TESTS ===
     ...                                                                      [100%]
-
-
     === ACCEPTANCE CRITERIA ===
     [PASS] $ python -m pytest tests/test_skill_localization.py -q -k prefixed
     ..                                                                       [100%]
-
     [PASS] $ python -m pytest tests/test_skill_localization.py -q -k no_unprefixed_refs
     .                                                                        [100%]
-
     [PASS] $ python -m pytest tests/test_skill_localization.py -q -k no_stale_attributions
     .                                                                        [100%]
-
     [PASS] $ kahnban skills check
     [OK] skills, roles and generated agent files agree
-
-
     === TIER 2: REGRESSION TESTS ===
     FAILED tests/test_trust.py::test_installing_says_which_tampered_file_it_restored
     FAILED tests/test_contracts.py::test_adapter_skills_match_the_shipped_templates
     FAILED tests/test_trust.py::test_a_changed_skill_or_hook_breaks_the_check_until_it_is_re_pinned
     739 tests, 8 workers, 215s, FAILURES
-
     full output: plans/tickets/.artifacts/KB-015-20261029-230729.log
 - 2026-10-29 23:20 - manual move 3-in-progress -> 1-refining: KB-015's radius missed cli.py, test_trust.py and test_hooks_trust_edges.py (SPEC-001 breakdown error); contract must be re-frozen. Coder's attempt kept on ticket/KB-015.
+- 2026-10-29 23:20 - re-ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/localize-every-shipped-skill-under-the-k (source_hash d825b39e1294)

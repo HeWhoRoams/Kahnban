@@ -26,7 +26,7 @@ Generated: 2026-10-29 23:20
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
-| KB-015 | Localize every shipped skill under the kb- prefix | coder-agent | ticket/KB-015 | 2026-10-29 |
+| KB-015 | Localize every shipped skill under the kb- prefix | unassigned | - | 2026-10-29 |
 | KB-016 | Record skill provenance in the lock | unassigned | - | 2026-10-29 |
 | KB-017 | Re-base the Pocock-derived skills on mattpocock/skills v1.3.2 | unassigned | - | 2026-10-29 |
 | KB-018 | Re-base the pstack-derived skills on cursor/plugins c742dd6 | unassigned | - | 2026-10-29 |

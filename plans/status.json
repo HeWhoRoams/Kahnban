@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:20:22",
+  "generated": "2026-10-29T23:20:23",
   "generator": "kahnban",
   "columns": [
     {
@@ -36,9 +36,9 @@
           "id": "KB-015",
           "title": "Localize every shipped skill under the kb- prefix",
           "status": "refining",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-015",
-          "worktree": ".worktrees/KB-015",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "1-refining"
         },
