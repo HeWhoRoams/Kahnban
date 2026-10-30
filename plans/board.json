@@ -1,12 +1,12 @@
 {
-  "generated": "2026-10-29T20:44:09",
+  "generated": "2026-10-29T20:44:10",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
   "columns": [
     {
       "name": "0-backlog",
-      "count": 4,
+      "count": 3,
       "tickets": [
         {
           "id": "KB-002",
@@ -37,25 +37,6 @@
           "updated": "2026-10-29"
         },
         {
-          "id": "KB-032",
-          "title": "Ingest warns on traceability and size problems",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-031"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/ingest.py",
-            "tests/test_ingest_traceability.py"
-          ],
-          "updated": "2026-10-29"
-        },
-        {
           "id": "KB-033",
           "title": "Reject and escalate capture learnings",
           "status": "backlog",
@@ -78,7 +59,7 @@
     },
     {
       "name": "1-refining",
-      "count": 12,
+      "count": 13,
       "tickets": [
         {
           "id": "KB-016",
@@ -516,6 +497,25 @@
           "blast_radius": [
             "src/kahnban/dispatcher.py",
             "tests/test_dispatch_order.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-032",
+          "title": "Ingest warns on traceability and size problems",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-031"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/ingest.py",
+            "tests/test_ingest_traceability.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,25 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-032": {
-      "id": "KB-032",
-      "title": "Ingest warns on traceability and size problems",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-031"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/ingest.py",
-        "tests/test_ingest_traceability.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-033": {
       "id": "KB-033",
       "title": "Reject and escalate capture learnings",
@@ -1615,6 +1596,25 @@
       "blast_radius": [
         "src/kahnban/dispatcher.py",
         "tests/test_dispatch_order.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-032": {
+      "id": "KB-032",
+      "title": "Ingest warns on traceability and size problems",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-031"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/ingest.py",
+        "tests/test_ingest_traceability.py"
       ],
       "updated": "2026-10-29"
     },

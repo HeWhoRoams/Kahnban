@@ -1,7 +1,7 @@
 ---
 id: KB-032
 title: Ingest warns on traceability and size problems
-status: backlog
+status: refining
 owner: unassigned
 branch: ""
 worktree: ""
@@ -43,3 +43,4 @@ python -m pytest tests/test_ingest_traceability.py -q
 
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/ingest-warns-on-traceability-and-size-pr
+- 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
