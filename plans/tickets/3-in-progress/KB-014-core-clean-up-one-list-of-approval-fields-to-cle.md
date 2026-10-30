@@ -10,7 +10,7 @@ updated: 2026-10-29
 legacy_id: ""
 design_docs: [docs/remediation-plan-3.md]
 depends_on: []
-blocked_on: "human: 'resume_worktree' made no progress after 3 attempts; last: coder worker command exited 1; fix the worker setup and re-run (full output in C:\\github\\kahnban\\plans\\tickets\\.artifacts\\run-20261029-212733.log): You've hit your session limit · resets 9:40pm (America/New_York)"
+blocked_on: ""
 junctions: []
 source_doc: ""
 source_anchor: ""
@@ -89,3 +89,4 @@ python tests/run_parallel.py -j 8
     [line 1 of 2 exited 1; rest skipped]
     full output: plans/tickets/.artifacts/KB-014-20261029-212229.log
 - 2026-10-29 22:16 - escalated to a human: 'resume_worktree' made no progress after 3 attempts; last: coder worker command exited 1; fix the worker setup and re-run (full output in C:\github\kahnban\plans\tickets\.artifacts\run-20261029-212733.log): You've hit your session limit · resets 9:40pm (America/New_York)
+- 2026-10-29 23:59 - unblocked: escalated only by the 21:27 usage-limit worker failures, which have cleared; retry the coder
