@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:33:48",
+  "generated": "2026-10-29T23:37:11",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -808,32 +808,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-024",
-          "title": "Declare the licence in pyproject.toml",
-          "status": "verifying",
-          "column": "4-verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-024",
-          "worktree": ".worktrees/KB-024",
-          "description": "",
-          "depends_on": [
-            "KB-023"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "pyproject.toml",
-            "tests/test_license.py"
-          ],
-          "updated": "2026-10-29"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 15,
+      "count": 16,
       "tickets": [
         {
           "id": "KB-001",
@@ -1055,6 +1035,25 @@
           "blast_radius": [
             "license",
             "third_party_notices.md",
+            "tests/test_license.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-024",
+          "title": "Declare the licence in pyproject.toml",
+          "status": "done",
+          "column": "5-done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-024",
+          "worktree": ".worktrees/KB-024",
+          "description": "",
+          "depends_on": [
+            "KB-023"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "pyproject.toml",
             "tests/test_license.py"
           ],
           "updated": "2026-10-29"
@@ -1893,25 +1892,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-024": {
-      "id": "KB-024",
-      "title": "Declare the licence in pyproject.toml",
-      "status": "verifying",
-      "column": "4-verifying",
-      "owner": "coder-agent",
-      "branch": "ticket/KB-024",
-      "worktree": ".worktrees/KB-024",
-      "description": "",
-      "depends_on": [
-        "KB-023"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "pyproject.toml",
-        "tests/test_license.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-001": {
       "id": "KB-001",
       "title": "A SKILL.md without frontmatter lists with an empty description",
@@ -2132,6 +2112,25 @@
       "blast_radius": [
         "license",
         "third_party_notices.md",
+        "tests/test_license.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-024": {
+      "id": "KB-024",
+      "title": "Declare the licence in pyproject.toml",
+      "status": "done",
+      "column": "5-done",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-024",
+      "worktree": ".worktrees/KB-024",
+      "description": "",
+      "depends_on": [
+        "KB-023"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "pyproject.toml",
         "tests/test_license.py"
       ],
       "updated": "2026-10-29"

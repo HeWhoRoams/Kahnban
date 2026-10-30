@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T23:33:48",
+  "generated": "2026-10-29T23:37:11",
   "generator": "kahnban",
   "columns": [
     {
@@ -198,23 +198,12 @@
     },
     {
       "name": "4-verifying",
-      "count": 1,
-      "tickets": [
-        {
-          "id": "KB-024",
-          "title": "Declare the licence in pyproject.toml",
-          "status": "verifying",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-024",
-          "worktree": ".worktrees/KB-024",
-          "updated": "2026-10-29",
-          "column": "4-verifying"
-        }
-      ]
+      "count": 0,
+      "tickets": []
     },
     {
       "name": "5-done",
-      "count": 15,
+      "count": 16,
       "tickets": [
         {
           "id": "KB-001",
@@ -337,6 +326,16 @@
           "column": "5-done"
         },
         {
+          "id": "KB-024",
+          "title": "Declare the licence in pyproject.toml",
+          "status": "done",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-024",
+          "worktree": ".worktrees/KB-024",
+          "updated": "2026-10-29",
+          "column": "5-done"
+        },
+        {
           "id": "KB-025",
           "title": "lint help names the real rule range",
           "status": "done",
@@ -381,9 +380,9 @@
       }
     },
     "by_reviewer": {},
-    "done": 15,
-    "first_pass_yield": 0.87,
-    "median_cycle_hours": 19.6,
+    "done": 16,
+    "first_pass_yield": 0.88,
+    "median_cycle_hours": 11.25,
     "tickets": {
       "KB-001": {
         "by_owner": {},
@@ -595,7 +594,7 @@
         "verify_attempts": 1,
         "rejections": 0,
         "escalations": 1,
-        "cycle_hours": null
+        "cycle_hours": 2.9
       },
       "KB-025": {
         "by_owner": {},
