@@ -6,7 +6,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 9,
+      "count": 8,
       "tickets": [
         {
           "id": "KB-002",
@@ -34,26 +34,6 @@
           "depends_on": [],
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
-          "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-027",
-          "title": "Dispatch waits on unfinished dependencies",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-015"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/dispatcher.py",
-            "src/kahnban/core.py",
-            "tests/test_dispatch_dependencies.py"
-          ],
           "updated": "2026-10-29"
         },
         {
@@ -173,7 +153,7 @@
     },
     {
       "name": "1-refining",
-      "count": 8,
+      "count": 9,
       "tickets": [
         {
           "id": "KB-016",
@@ -533,6 +513,26 @@
           "blast_radius": [
             "pyproject.toml",
             "tests/test_license.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-027",
+          "title": "Dispatch waits on unfinished dependencies",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-015"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/dispatcher.py",
+            "src/kahnban/core.py",
+            "tests/test_dispatch_dependencies.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,26 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-027": {
-      "id": "KB-027",
-      "title": "Dispatch waits on unfinished dependencies",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-015"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/dispatcher.py",
-        "src/kahnban/core.py",
-        "tests/test_dispatch_dependencies.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-028": {
       "id": "KB-028",
       "title": "Lint reports dependency cycles",
@@ -1632,6 +1612,26 @@
       "blast_radius": [
         "pyproject.toml",
         "tests/test_license.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-027": {
+      "id": "KB-027",
+      "title": "Dispatch waits on unfinished dependencies",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-015"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/dispatcher.py",
+        "src/kahnban/core.py",
+        "tests/test_dispatch_dependencies.py"
       ],
       "updated": "2026-10-29"
     },
