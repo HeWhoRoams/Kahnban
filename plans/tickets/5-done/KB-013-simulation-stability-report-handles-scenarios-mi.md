@@ -3,8 +3,8 @@ id: KB-013
 title: "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do"
 status: done
 owner: coder-agent
-branch: ticket/KB-013
-worktree: .worktrees/KB-013
+branch: ""
+worktree: ""
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -215,3 +215,4 @@ python tests/run_parallel.py -j 8] && [3/3 criterion tests] && [python tests/run
 
     full output: plans/tickets/.artifacts/KB-013-20261029-201740.log
 - 2026-10-29 20:24 - done gate passed -> 5-done | merge-commit: ffd401a09349af508f1a2b10e7e23c5c80d16e77
+- 2026-10-29 20:24 - cleanup: removed worktree: KB-013; deleted branch: ticket/KB-013

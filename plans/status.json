@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:24:21",
+  "generated": "2026-10-29T20:24:22",
   "generator": "kahnban",
   "columns": [
     {
@@ -168,8 +168,8 @@
           "title": "Simulation stability_report handles scenarios missing from a run, and --accept without a baseline says what to do",
           "status": "done",
           "owner": "coder-agent",
-          "branch": "ticket/KB-013",
-          "worktree": ".worktrees/KB-013",
+          "branch": "",
+          "worktree": "",
           "updated": "2026-10-29",
           "column": "5-done"
         }
