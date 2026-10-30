@@ -4,7 +4,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-002",
@@ -25,22 +25,12 @@
           "worktree": "",
           "updated": "2026-10-29",
           "column": "0-backlog"
-        },
-        {
-          "id": "KB-033",
-          "title": "Reject and escalate capture learnings",
-          "status": "backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "0-backlog"
         }
       ]
     },
     {
       "name": "1-refining",
-      "count": 13,
+      "count": 14,
       "tickets": [
         {
           "id": "KB-016",
@@ -165,6 +155,16 @@
         {
           "id": "KB-032",
           "title": "Ingest warns on traceability and size problems",
+          "status": "refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "updated": "2026-10-29",
+          "column": "1-refining"
+        },
+        {
+          "id": "KB-033",
+          "title": "Reject and escalate capture learnings",
           "status": "refining",
           "owner": "unassigned",
           "branch": "",

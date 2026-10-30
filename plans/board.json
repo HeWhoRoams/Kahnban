@@ -6,7 +6,7 @@
   "columns": [
     {
       "name": "0-backlog",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-002",
@@ -35,31 +35,12 @@
           "blocked_on": "human: smoke test done by hand (see Log); no engine change to prove",
           "blast_radius": [],
           "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-033",
-          "title": "Reject and escalate capture learnings",
-          "status": "backlog",
-          "column": "0-backlog",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [
-            "KB-027"
-          ],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/core.py",
-            "tests/test_learning_capture.py"
-          ],
-          "updated": "2026-10-29"
         }
       ]
     },
     {
       "name": "1-refining",
-      "count": 13,
+      "count": 14,
       "tickets": [
         {
           "id": "KB-016",
@@ -516,6 +497,25 @@
           "blast_radius": [
             "src/kahnban/ingest.py",
             "tests/test_ingest_traceability.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-033",
+          "title": "Reject and escalate capture learnings",
+          "status": "refining",
+          "column": "1-refining",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [
+            "KB-027"
+          ],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/core.py",
+            "tests/test_learning_capture.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1141,25 +1141,6 @@
       "blast_radius": [],
       "updated": "2026-10-29"
     },
-    "KB-033": {
-      "id": "KB-033",
-      "title": "Reject and escalate capture learnings",
-      "status": "backlog",
-      "column": "0-backlog",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [
-        "KB-027"
-      ],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/core.py",
-        "tests/test_learning_capture.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-016": {
       "id": "KB-016",
       "title": "Record skill provenance in the lock",
@@ -1615,6 +1596,25 @@
       "blast_radius": [
         "src/kahnban/ingest.py",
         "tests/test_ingest_traceability.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-033": {
+      "id": "KB-033",
+      "title": "Reject and escalate capture learnings",
+      "status": "refining",
+      "column": "1-refining",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [
+        "KB-027"
+      ],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/core.py",
+        "tests/test_learning_capture.py"
       ],
       "updated": "2026-10-29"
     },
