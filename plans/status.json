@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:43:58",
+  "generated": "2026-10-29T22:55:32",
   "generator": "kahnban",
   "columns": [
     {
@@ -192,7 +192,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-014",
@@ -213,23 +213,24 @@
           "worktree": ".worktrees/KB-015",
           "updated": "2026-10-29",
           "column": "3-in-progress"
-        },
-        {
-          "id": "KB-026",
-          "title": "Status docs stop making stale claims",
-          "status": "in-progress",
-          "owner": "coder-agent",
-          "branch": "ticket/KB-026",
-          "worktree": ".worktrees/KB-026",
-          "updated": "2026-10-29",
-          "column": "3-in-progress"
         }
       ]
     },
     {
       "name": "4-verifying",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-026",
+          "title": "Status docs stop making stale claims",
+          "status": "verifying",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-026",
+          "worktree": ".worktrees/KB-026",
+          "updated": "2026-10-29",
+          "column": "4-verifying"
+        }
+      ]
     },
     {
       "name": "5-done",
@@ -602,7 +603,7 @@
       "KB-026": {
         "by_owner": {},
         "rejected_by": {},
-        "verify_attempts": 0,
+        "verify_attempts": 1,
         "rejections": 0,
         "escalations": 0,
         "cycle_hours": null

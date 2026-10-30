@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:43:58",
+  "generated": "2026-10-29T22:55:32",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -544,7 +544,7 @@
     },
     {
       "name": "3-in-progress",
-      "count": 3,
+      "count": 2,
       "tickets": [
         {
           "id": "KB-014",
@@ -836,12 +836,18 @@
             "tests/test_skill_localization.py"
           ],
           "updated": "2026-10-29"
-        },
+        }
+      ]
+    },
+    {
+      "name": "4-verifying",
+      "count": 1,
+      "tickets": [
         {
           "id": "KB-026",
           "title": "Status docs stop making stale claims",
-          "status": "in-progress",
-          "column": "3-in-progress",
+          "status": "verifying",
+          "column": "4-verifying",
           "owner": "coder-agent",
           "branch": "ticket/KB-026",
           "worktree": ".worktrees/KB-026",
@@ -856,11 +862,6 @@
           "updated": "2026-10-29"
         }
       ]
-    },
-    {
-      "name": "4-verifying",
-      "count": 0,
-      "tickets": []
     },
     {
       "name": "5-done",
@@ -1925,8 +1926,8 @@
     "KB-026": {
       "id": "KB-026",
       "title": "Status docs stop making stale claims",
-      "status": "in-progress",
-      "column": "3-in-progress",
+      "status": "verifying",
+      "column": "4-verifying",
       "owner": "coder-agent",
       "branch": "ticket/KB-026",
       "worktree": ".worktrees/KB-026",
