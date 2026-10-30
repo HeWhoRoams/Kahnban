@@ -31,7 +31,7 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
 
-from kahnban import core, frontmatter
+from kahnban import core, frontmatter, specs
 
 WHOLE_DOCUMENT_ANCHOR = "(whole-document)"
 
@@ -797,6 +797,69 @@ def _spec_id(text: str) -> str:
     return spec_id if re.fullmatch(r"SPEC-\d+", spec_id) else ""
 
 
+def _has_requirements_heading(text: str) -> bool:
+    """True when the document has a (possibly orphaned) ``## Requirements`` section."""
+    lines = frontmatter.normalize_newlines(text).split("\n")
+    return any(_normalize_label(heading.title) == "requirements" for heading in iter_headings(lines))
+
+
+def _traceability_warnings(
+    config: core.Config,
+    spec_id: str,
+    text: str,
+    drafts: Sequence[core.TicketDraft],
+) -> list[str]:
+    """KB-032: ingest used to stay silent on traceability and size problems.
+
+    ``src/kahnban/specs.py`` already has the primitives the ready gate and BL18
+    use (``find_spec``, ``Spec.approved``, ``Spec.requirements``); this reuses
+    them against drafts before they ever become tickets.
+    """
+    warnings: list[str] = []
+    spec: specs.Spec | None = None
+    if spec_id:
+        try:
+            spec = specs.find_spec(config, spec_id)
+        except core.KahnbanError as error:
+            warnings.append(str(error))
+
+    covered: set[str] = set()
+    for draft in drafts:
+        label = draft.title or draft.source_anchor
+        radius = draft.blast_radius
+        if not radius:
+            warnings.append(f"{label}: blast radius is empty")
+        elif config.max_blast_radius_files and len(radius) > config.max_blast_radius_files:
+            warnings.append(
+                f"{label}: blast radius lists {len(radius)} path(s); "
+                f"the limit is {config.max_blast_radius_files}"
+            )
+        covers = [str(item).upper() for item in draft.extra_frontmatter.get("covers", [])]  # type: ignore[arg-type]
+        covered.update(covers)
+        if spec is not None:
+            unknown = sorted(item for item in covers if item not in spec.requirements)
+            if unknown:
+                warnings.append(
+                    f"{label}: covers {spec_id} requirement(s) it does not define: "
+                    + ", ".join(unknown)
+                )
+
+    if spec is not None:
+        if not spec.approved:
+            warnings.append(f"{spec_id} is not approved; its drafts cite an unapproved spec")
+        uncovered = sorted(item for item in spec.requirements if item not in covered)
+        if uncovered:
+            warnings.append(
+                f"{spec_id} has requirement(s) no draft covers: " + ", ".join(uncovered)
+            )
+    elif not spec_id and _has_requirements_heading(text) and not covered:
+        warnings.append(
+            "document has a '## Requirements' section but no draft covers any "
+            "requirement; add 'Covers: R#' lines or move it under '## Tickets'"
+        )
+    return warnings
+
+
 def ingest_document(
     config: core.Config,
     path: Path,
@@ -834,6 +897,7 @@ def ingest_document(
     if not drafts:
         report.warnings.append("nothing to ingest")
         return report
+    report.warnings.extend(_traceability_warnings(config, spec_id, text, drafts))
 
     known = existing_sources(config)
     fresh: list[core.TicketDraft] = []
