@@ -1,10 +1,10 @@
 ---
 id: KB-014
 title: "Core clean-up: one list of approval fields to clear, rename _signature_problem"
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-014
+worktree: .worktrees/KB-014
 created: 2026-10-29
 updated: 2026-10-29
 legacy_id: ""
@@ -56,3 +56,4 @@ python tests/run_parallel.py -j 8
 ## Log
 - 2026-10-29 19:29 - created -> 0-backlog
 - 2026-10-29 19:41 - ready gate passed -> 2-ready | contract 1e0d5fe012da54e4
+- 2026-10-29 21:13 - claimed by coder-agent -> 3-in-progress

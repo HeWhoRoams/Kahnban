@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T21:13:04",
+  "generated": "2026-10-29T21:13:06",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -503,25 +503,8 @@
     },
     {
       "name": "2-ready",
-      "count": 7,
+      "count": 6,
       "tickets": [
-        {
-          "id": "KB-014",
-          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-          "status": "ready",
-          "column": "2-ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "src/kahnban/core.py",
-            "tests/test_reviewer_keys.py"
-          ],
-          "updated": "2026-10-29"
-        },
         {
           "id": "KB-015",
           "title": "Localize every shipped skill under the kb- prefix",
@@ -888,8 +871,26 @@
     },
     {
       "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-014",
+          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+          "status": "in-progress",
+          "column": "3-in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-014",
+          "worktree": ".worktrees/KB-014",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "src/kahnban/core.py",
+            "tests/test_reviewer_keys.py"
+          ],
+          "updated": "2026-10-29"
+        }
+      ]
     },
     {
       "name": "4-verifying",
@@ -1595,23 +1596,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-014": {
-      "id": "KB-014",
-      "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-      "status": "ready",
-      "column": "2-ready",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "src/kahnban/core.py",
-        "tests/test_reviewer_keys.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-015": {
       "id": "KB-015",
       "title": "Localize every shipped skill under the kb- prefix",
@@ -1971,6 +1955,23 @@
       "blast_radius": [
         "src/kahnban/ingest.py",
         "tests/test_ingest_traceability.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-014": {
+      "id": "KB-014",
+      "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+      "status": "in-progress",
+      "column": "3-in-progress",
+      "owner": "coder-agent",
+      "branch": "ticket/KB-014",
+      "worktree": ".worktrees/KB-014",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "src/kahnban/core.py",
+        "tests/test_reviewer_keys.py"
       ],
       "updated": "2026-10-29"
     },

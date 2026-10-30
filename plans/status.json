@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T21:13:04",
+  "generated": "2026-10-29T21:13:06",
   "generator": "kahnban",
   "columns": [
     {
@@ -166,18 +166,8 @@
     },
     {
       "name": "2-ready",
-      "count": 7,
+      "count": 6,
       "tickets": [
-        {
-          "id": "KB-014",
-          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "2-ready"
-        },
         {
           "id": "KB-015",
           "title": "Localize every shipped skill under the kb- prefix",
@@ -242,8 +232,19 @@
     },
     {
       "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-014",
+          "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
+          "status": "in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-014",
+          "worktree": ".worktrees/KB-014",
+          "updated": "2026-10-29",
+          "column": "3-in-progress"
+        }
+      ]
     },
     {
       "name": "4-verifying",
