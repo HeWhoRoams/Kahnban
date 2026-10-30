@@ -1,7 +1,7 @@
 ---
 id: KB-026
 title: Status docs stop making stale claims
-status: refining
+status: ready
 owner: unassigned
 branch: ""
 worktree: ""
@@ -18,6 +18,9 @@ source_hash: 01ba13816e3a
 validation_class: headless-verified
 covers: [R12]
 spec: SPEC-001
+contract_hash: 92f5edd88d033004
+contract_sig: 6f9e08b42a98bd62d77e120053e695f134b9fc7a7392107aa37feda229bd17d0
+confirmed: ""
 ---
 
 ## Problem
@@ -41,3 +44,4 @@ python -m pytest tests/test_status_docs.py -q
 ## Log
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/status-docs-stop-making-stale-claims
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
+- 2026-10-29 20:44 - ready gate passed -> 2-ready | contract 92f5edd88d033004

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T20:44:07",
+  "generated": "2026-10-29T20:44:08",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -173,7 +173,7 @@
     },
     {
       "name": "1-refining",
-      "count": 9,
+      "count": 8,
       "tickets": [
         {
           "id": "KB-016",
@@ -535,30 +535,12 @@
             "tests/test_license.py"
           ],
           "updated": "2026-10-29"
-        },
-        {
-          "id": "KB-026",
-          "title": "Status docs stop making stale claims",
-          "status": "refining",
-          "column": "1-refining",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "description": "",
-          "depends_on": [],
-          "blocked_on": "",
-          "blast_radius": [
-            "implementation_status.md",
-            "next_steps.md",
-            "tests/test_status_docs.py"
-          ],
-          "updated": "2026-10-29"
         }
       ]
     },
     {
       "name": "2-ready",
-      "count": 4,
+      "count": 5,
       "tickets": [
         {
           "id": "KB-014",
@@ -883,6 +865,24 @@
           "blast_radius": [
             "src/kahnban/cli.py",
             "tests/test_lint_help.py"
+          ],
+          "updated": "2026-10-29"
+        },
+        {
+          "id": "KB-026",
+          "title": "Status docs stop making stale claims",
+          "status": "ready",
+          "column": "2-ready",
+          "owner": "unassigned",
+          "branch": "",
+          "worktree": "",
+          "description": "",
+          "depends_on": [],
+          "blocked_on": "",
+          "blast_radius": [
+            "implementation_status.md",
+            "next_steps.md",
+            "tests/test_status_docs.py"
           ],
           "updated": "2026-10-29"
         }
@@ -1635,24 +1635,6 @@
       ],
       "updated": "2026-10-29"
     },
-    "KB-026": {
-      "id": "KB-026",
-      "title": "Status docs stop making stale claims",
-      "status": "refining",
-      "column": "1-refining",
-      "owner": "unassigned",
-      "branch": "",
-      "worktree": "",
-      "description": "",
-      "depends_on": [],
-      "blocked_on": "",
-      "blast_radius": [
-        "implementation_status.md",
-        "next_steps.md",
-        "tests/test_status_docs.py"
-      ],
-      "updated": "2026-10-29"
-    },
     "KB-014": {
       "id": "KB-014",
       "title": "Core clean-up: one list of approval fields to clear, rename _signature_problem",
@@ -1976,6 +1958,24 @@
       "blast_radius": [
         "src/kahnban/cli.py",
         "tests/test_lint_help.py"
+      ],
+      "updated": "2026-10-29"
+    },
+    "KB-026": {
+      "id": "KB-026",
+      "title": "Status docs stop making stale claims",
+      "status": "ready",
+      "column": "2-ready",
+      "owner": "unassigned",
+      "branch": "",
+      "worktree": "",
+      "description": "",
+      "depends_on": [],
+      "blocked_on": "",
+      "blast_radius": [
+        "implementation_status.md",
+        "next_steps.md",
+        "tests/test_status_docs.py"
       ],
       "updated": "2026-10-29"
     },
