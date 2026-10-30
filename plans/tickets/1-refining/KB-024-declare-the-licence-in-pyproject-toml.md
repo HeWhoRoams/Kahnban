@@ -10,7 +10,7 @@ updated: 2026-10-29
 legacy_id: ""
 design_docs: []
 depends_on: [KB-023]
-blocked_on: "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done."
+blocked_on: ""
 junctions: []
 source_doc: .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md
 source_anchor: tickets/declare-the-licence-in-pyproject-toml
@@ -40,3 +40,4 @@ python -m pytest tests/test_license.py -q
 - 2026-10-29 20:44 - created -> 0-backlog | ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/declare-the-licence-in-pyproject-toml
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
 - 2026-10-29 21:05 - escalated to a human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.
+- 2026-10-29 22:31 - unblocked: dependencies are in 5-done (supervisor)

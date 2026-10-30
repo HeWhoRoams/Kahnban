@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T22:30:45",
+  "generated": "2026-10-29T22:31:11",
   "generator": "kahnban-v1.4.0",
   "project": "kahnban",
   "wip_limit": 3,
@@ -396,7 +396,7 @@
           "depends_on": [
             "KB-023"
           ],
-          "blocked_on": "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.",
+          "blocked_on": "",
           "blast_radius": [
             "pyproject.toml",
             "tests/test_license.py"
@@ -1493,7 +1493,7 @@
       "depends_on": [
         "KB-023"
       ],
-      "blocked_on": "human: waiting: depends_on not done; the running dispatcher predates KB-027, so this is parked to stop it refining early. The supervisor unblocks it when every dependency is in 5-done.",
+      "blocked_on": "",
       "blast_radius": [
         "pyproject.toml",
         "tests/test_license.py"
