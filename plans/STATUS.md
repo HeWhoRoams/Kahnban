@@ -10,8 +10,8 @@ Generated: 2026-10-30 00:25
 | :--- | ---: |
 | 0-backlog | 2 |
 | 1-refining | 11 |
-| 2-ready | 2 |
-| 3-in-progress | 0 |
+| 2-ready | 1 |
+| 3-in-progress | 1 |
 | 4-verifying | 0 |
 | 5-done | 18 |
 
@@ -38,16 +38,17 @@ Generated: 2026-10-30 00:25
 | KB-030 | Dispatch by priority, risk and unblocking | unassigned | - | 2026-10-29 |
 | KB-033 | Reject and escalate capture learnings | unassigned | - | 2026-10-29 |
 
-## 2-ready (2)
+## 2-ready (1)
 
 | ID | Title | Owner | Branch | Updated |
 | :--- | :--- | :--- | :--- | :--- |
 | KB-015 | Localize every shipped skill under the kb- prefix | unassigned | - | 2026-10-29 |
-| KB-027 | Dispatch waits on unfinished dependencies | unassigned | - | 2026-10-29 |
 
-## 3-in-progress (0)
+## 3-in-progress (1)
 
-_empty_
+| ID | Title | Owner | Branch | Updated |
+| :--- | :--- | :--- | :--- | :--- |
+| KB-027 | Dispatch waits on unfinished dependencies | coder-agent | ticket/KB-027 | 2026-10-30 |
 
 ## 4-verifying (0)
 

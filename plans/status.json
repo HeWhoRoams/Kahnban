@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-30T00:25:22",
+  "generated": "2026-10-30T00:25:24",
   "generator": "kahnban",
   "columns": [
     {
@@ -146,21 +146,11 @@
     },
     {
       "name": "2-ready",
-      "count": 2,
+      "count": 1,
       "tickets": [
         {
           "id": "KB-015",
           "title": "Localize every shipped skill under the kb- prefix",
-          "status": "ready",
-          "owner": "unassigned",
-          "branch": "",
-          "worktree": "",
-          "updated": "2026-10-29",
-          "column": "2-ready"
-        },
-        {
-          "id": "KB-027",
-          "title": "Dispatch waits on unfinished dependencies",
           "status": "ready",
           "owner": "unassigned",
           "branch": "",
@@ -172,8 +162,19 @@
     },
     {
       "name": "3-in-progress",
-      "count": 0,
-      "tickets": []
+      "count": 1,
+      "tickets": [
+        {
+          "id": "KB-027",
+          "title": "Dispatch waits on unfinished dependencies",
+          "status": "in-progress",
+          "owner": "coder-agent",
+          "branch": "ticket/KB-027",
+          "worktree": ".worktrees/KB-027",
+          "updated": "2026-10-30",
+          "column": "3-in-progress"
+        }
+      ]
     },
     {
       "name": "4-verifying",

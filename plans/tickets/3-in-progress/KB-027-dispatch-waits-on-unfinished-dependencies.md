@@ -1,12 +1,12 @@
 ---
 id: KB-027
 title: Dispatch waits on unfinished dependencies
-status: ready
-owner: unassigned
-branch: ""
-worktree: ""
+status: in-progress
+owner: coder-agent
+branch: ticket/KB-027
+worktree: .worktrees/KB-027
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-10-30
 legacy_id: ""
 design_docs: []
 depends_on: []
@@ -47,3 +47,4 @@ python -m pytest tests/test_dispatch_dependencies.py -q
 - 2026-10-29 20:44 - manual move 0-backlog -> 1-refining: ingested plan section entering refinement
 - 2026-10-29 20:44 - re-ingested from .agents/specs/SPEC-001-phase-0-1-elevation-localized-skill-set-dependen.md#tickets/dispatch-waits-on-unfinished-dependencie (source_hash bcc76f9923f4)
 - 2026-10-29 20:44 - ready gate passed -> 2-ready | contract 599e575b6942657e
+- 2026-10-30 00:25 - claimed by coder-agent -> 3-in-progress
