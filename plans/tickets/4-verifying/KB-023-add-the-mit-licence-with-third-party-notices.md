@@ -26,7 +26,7 @@ reviewer: qa-reviewer
 approved_sha: 11044b912ed9a298f3bdcd481a65529e2a90928a
 approval_sig: a8f233b24595de92e6bcfc6f14082dcb0ce1cb08824bfb0dcdaf8402e7569543
 reviewer_sig: ""
-integrated_sha: ""
+integrated_sha: 65330bde009372664f6877ca9a40504def1302e8
 ---
 
 ## Problem
@@ -145,3 +145,13 @@ python -m pytest tests/test_license.py -q
     full output: plans/tickets/.artifacts/KB-023-20261029-222302.log
 - 2026-10-29 22:27 - approved by qa-reviewer at 11044b912ed9
 - 2026-10-29 22:27 - approval by qa-reviewer countersigned by the runner at 11044b912ed9
+- 2026-10-29 22:27 - integrated into main | merge-commit: 65330bde009372664f6877ca9a40504def1302e8
+    $ merge ticket/KB-023 onto main c1e717846373
+    === INTEGRATION: FEATURE TESTS ===
+    ..                                                                       [100%]
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    738 tests, 8 workers, 178s, all passed
+
+    full output: plans/tickets/.artifacts/KB-023-20261029-222737.log
