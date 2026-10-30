@@ -24,7 +24,7 @@ reviewer: qa-reviewer
 approved_sha: 60a3483b2f68b665507801fe6d4753a96ec29b12
 approval_sig: f2c802085c5eb3eb631d805ffff0df68c0a354770cecf4b8c17a58be0a6c7fe9
 reviewer_sig: ""
-integrated_sha: ""
+integrated_sha: b750cfcd45adeab038ba6fec00e079652305782a
 ---
 
 ## Problem
@@ -294,3 +294,17 @@ python tests/run_parallel.py -j 8] && [6/6 criterion tests] && [python tests/run
     full output: plans/tickets/.artifacts/KB-011-20261029-195237.log
 - 2026-10-29 20:10 - approved by qa-reviewer at 60a3483b2f68
 - 2026-10-29 20:10 - approval by qa-reviewer countersigned by the runner at 60a3483b2f68
+- 2026-10-29 20:10 - integrated into main | merge-commit: b750cfcd45adeab038ba6fec00e079652305782a
+    $ merge ticket/KB-011 onto main c755e6d2c307
+    === INTEGRATION: FEATURE TESTS ===
+    $ python -m pytest tests/test_runner_parallel.py -q
+    .......                                                                  [100%]
+
+    $ python tests/run_parallel.py -j 8
+    730 tests, 8 workers, 178s, all passed
+
+
+    === INTEGRATION: REGRESSION TESTS ===
+    730 tests, 8 workers, 179s, all passed
+
+    full output: plans/tickets/.artifacts/KB-011-20261029-201044.log
